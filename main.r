@@ -11,6 +11,7 @@ train_main <- function(args) {
 
     dt_usinas <- get_usinas(input_dir = args$input)
     v_usinas <- dt_usinas$id_usina
+
     dt_ger_obs <- get_geracao_observada(v_usinas, fonte, input_dir = args$input)
     dt_mhg <- get_melhor_historico_geracao(v_usinas, input_dir = args$input)
     dt_mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(v_usinas, input_dir = args$input)
@@ -26,7 +27,6 @@ train_main <- function(args) {
         mhg_sc <- dt_mhg_sem_cortes[id_usina == iu]
         Pinst <- dad_usi$capacidade_instalada_MW
 
-        
         dt_irrad_prev_filt <- associa_NWP_Usina(dt_usinas, dt_irrad_prev)
 
         dt_irrad_prev_filt_n <- adicionar_passo_previsao(dt_irrad_prev_filt)
