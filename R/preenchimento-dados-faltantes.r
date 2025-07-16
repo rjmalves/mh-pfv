@@ -78,8 +78,13 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, arq_model, plotar = TRUE, save_
     dty_f <- dty[hour(data_hora_observacao) == hora_inteira &
       minute(data_hora_observacao) == minuto]
 
-    dtx_f <- dtx[hour(data_hora_observacao) == hora_inteira &
-      minute(data_hora_observacao) == minuto]
+    dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
+      minute(data_hora_previsao) == minuto]
+
+    # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
+    dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
+
+
 
     if (nrow(dty_f) > 5 && nrow(dty_f) == nrow(dtx_f)) {
       dados_validos <- complete.cases(dty_f$valor, dtx_f$valor)
@@ -96,19 +101,19 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, arq_model, plotar = TRUE, save_
         hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
         nomes_linhas <- c(nomes_linhas, hora_txt)
 
-        if (plotar) {
-          dados_plot <- data.frame(irradiacao = x, geracao = y)
-          p <- ggplot(dados_plot, aes(x = irradiacao, y = geracao)) +
-            geom_point(alpha = 0.6, color = "gray30") +
-            geom_abline(intercept = b, slope = a, color = "blue", linewidth = 1.2) +
-            labs(
-              title = paste("Regressão linear (forçada) -", hora_txt),
-              x = "Irradiação",
-              y = "Geração"
-            ) +
-            theme_minimal()
-          print(p)
-        }
+        # if (plotar) {
+        #   dados_plot <- data.frame(irradiacao = x, geracao = y)
+        #   p <- ggplot(dados_plot, aes(x = irradiacao, y = geracao)) +
+        #     geom_point(alpha = 0.6, color = "gray30") +
+        #     geom_abline(intercept = b, slope = a, color = "blue", linewidth = 1.2) +
+        #     labs(
+        #       title = paste("Regressão linear (forçada) -", hora_txt),
+        #       x = "Irradiação",
+        #       y = "Geração"
+        #     ) +
+        #     theme_minimal()
+        #   print(p)
+        # }
       } else {
         angulares <- c(angulares, 0)
         lineares <- c(lineares, 0)
@@ -132,16 +137,15 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, arq_model, plotar = TRUE, save_
 
 
 substitui_por_estimativas <- function(df_ger_usi, df_irrad_prev, regressoes, lim_dados) {
-
-
   # Adicionar coluna hora:minuto
-  df_irrad_prev[, hora_min := format(data_hora_observacao, "%H:%M")]
+  df_irrad_prev[, hora_min := format(data_hora_previsao, "%H:%M")]
 
   # Coeficientes de regressão
   regressoes_dt <- as.data.table(regressoes, keep.rownames = "hora_min")
 
   # Juntar previsões com os coeficientes por hora:minuto
   df_ger_est <- merge(df_irrad_prev, regressoes_dt, by = "hora_min", all.x = FALSE)
+  setnames(df_ger_est, "data_hora_previsao", "data_hora_observacao")
 
   # Calcular a estimativa: ger_est = a * valor (b = 0 sempre)
   df_ger_est[, ger_est := a * valor]
@@ -195,7 +199,6 @@ zera_horarios_extremos <- function(df_ger_usi) {
 
 
 aplica_cortes_em_geracao <- function(dt_geracao_usina, dt_cortes) {
-
   # Filtrar apenas onde valor == 1 (cortes ativos)
   dt_cortes_filtrado <- dt_cortes[valor == 1, .(id_usina, data_hora_observacao)]
 

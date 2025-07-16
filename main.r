@@ -14,7 +14,7 @@ train_main <- function(args) {
     dt_ger_obs <- get_geracao_observada(v_usinas, fonte, input_dir = args$input)
     dt_mhg <- get_melhor_historico_geracao(v_usinas, input_dir = args$input)
     dt_mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(v_usinas, input_dir = args$input)
-    dt_irrad_prev <- get_irradiancia_prevista(v_usinas, input_dir = args$input)
+    dt_irrad_prev <- get_irradiancia_prevista(modelo_nwp = args$ordem_prioridade_modelosNWP, input_dir = args$input)
     dt_corte_obs <- get_corte_observado(v_usinas, input_dir = args$input)
 
     for (iu in v_usinas[1]) {
@@ -26,9 +26,12 @@ train_main <- function(args) {
         mhg_sc <- dt_mhg_sem_cortes[id_usina == iu]
         Pinst <- dad_usi$capacidade_instalada_MW
 
-        # tem que trocar de acessar id_usina para achar o ponto de grade
-        # e filtrar por ele
-        irrad_prev <- dt_irrad_prev[id_usina == iu]
+        
+        dt_irrad_prev_filt <- associa_NWP_Usina(dt_usinas, dt_irrad_prev)
+
+        dt_irrad_prev_filt_n <- adicionar_passo_previsao(dt_irrad_prev_filt)
+
+        irrad_prev <- dt_irrad_prev_filt_n[id_usina == iu & passo_prev == "D+0"]
 
         geracao_usina_consis <- consiste_geracao_unit(
             dados_usina = dad_usi,

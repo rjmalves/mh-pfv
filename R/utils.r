@@ -105,3 +105,61 @@ combina_dados_tempo <- function(dt1, dt2) {
 
   return(resultado[])
 }
+
+
+
+
+
+# Função usando distância euclidiana
+associa_NWP_Usina <- function(dt_usinas, dt_irrad_prev) {
+  
+  # Coordenadas únicas da previsão
+  coord_prev <- unique(dt_irrad_prev[, .(latitude, longitude)])
+  
+  # Lista para armazenar os resultados
+  lista_filtrados <- list()
+  
+  # Loop sobre cada usina
+  for (i in 1:nrow(dt_usinas)) {
+    usina <- dt_usinas[i]
+    
+    # Calcula a distância euclidiana entre a usina e todas as coordenadas da previsão
+    coord_prev[, distancia := sqrt((latitude - usina$latitude)^2 + (longitude - usina$longitude)^2)]
+    
+    # Pega a coordenada mais próxima
+    coord_mais_proxima <- coord_prev[which.min(distancia)]
+    
+    # Filtra os dados da previsão para essa coordenada
+    dt_filt <- dt_irrad_prev[latitude == coord_mais_proxima$latitude &
+                             longitude == coord_mais_proxima$longitude]
+    
+    # Adiciona o id_usina
+    dt_filt[, id_usina := usina$id_usina]
+    
+    # Adiciona à lista
+    lista_filtrados[[i]] <- dt_filt
+  }
+  
+  # Junta tudo
+  dt_irrad_prev_filt <- rbindlist(lista_filtrados)
+  
+   # Reorganiza para id_usina ser a 2ª coluna
+  setcolorder(dt_irrad_prev_filt, c("id_modelo_nwp", "id_usina", 
+                                    setdiff(names(dt_irrad_prev_filt), c("id_modelo_nwp", "id_usina"))))
+ 
+  return(dt_irrad_prev_filt)
+}
+
+
+
+adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
+  # Garante que as colunas são do tipo POSIXct
+  dt_irrad_prev_filt[, data_hora_rodada := as.POSIXct(data_hora_rodada)]
+  dt_irrad_prev_filt[, data_hora_previsao := as.POSIXct(data_hora_previsao)]
+  
+  # Calcula a diferença de dias entre as datas (ignorando horário)
+  dt_irrad_prev_filt[, passo_prev := paste0("D+", as.integer(as.Date(data_hora_previsao) - as.Date(data_hora_rodada)))]
+  
+  return(dt_irrad_prev_filt)
+}
+

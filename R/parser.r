@@ -19,13 +19,13 @@ get_parser <- function() {
 inner_parser_generic_args <- function(parser) {
     parser$add_argument("--mode",
         type = "character",
-        required = TRUE,
+        default = "train",
         help = "Modo de execucao do modelo: train | predict"
     )
 
     parser$add_argument("--input",
         type = "character",
-        default = ".",
+        default = "data",
         help = "Caminho para a leitura dos dados de entrada [default: %(default)s]"
     )
 
@@ -70,6 +70,14 @@ inner_parser_specific_args <- function(parser) {
         help = paste0(
             "Ids em ordem da prioridade das fontes de dados de geracao observada",
             ", separados por virgula ',' [default: PI,CCEE,CCEE1h]"
+        )
+    )
+    parser$add_argument("--ordem-prioridade-modelosNWP",
+        type = "character",
+        default = "GFS",
+        help = paste0(
+            "Ids em ordem da prioridade dos modelos numericos de tempo",
+            ", separados por virgula ',' [default: GFS]"
         )
     )
     parser$add_argument("--fator-tolerancia-limite-superior-geracao",
