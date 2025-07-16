@@ -50,3 +50,6 @@ rsconnect/
 
 # VSCode
 .vscode/*
+
+# Modelos em R
+**.rds
