@@ -19,7 +19,7 @@ get_parser <- function() {
 inner_parser_generic_args <- function(parser) {
     parser$add_argument("--mode",
         type = "character",
-        default = "train",
+        default = "predict",
         help = "Modo de execucao do modelo: train | predict"
     )
 
@@ -31,7 +31,7 @@ inner_parser_generic_args <- function(parser) {
 
     parser$add_argument("--output",
         type = "character",
-        default = ".",
+        default = "saida",
         help = "Caminho para a escrita dos dados de saida [default: %(default)s]"
     )
 

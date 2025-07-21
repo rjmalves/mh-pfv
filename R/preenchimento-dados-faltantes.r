@@ -1,4 +1,4 @@
-preenche_geracao_unit <- function(dados_usina, geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados, df_modelo) {
+preenche_geracao_unit <- function(dados_usina, geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados) {
   geracao_usina[valor == 999, valor := NA]
   irrad_prev[valor == 999, valor := NA]
 
@@ -13,18 +13,10 @@ preenche_geracao_unit <- function(dados_usina, geracao_usina, irrad_prev, mhg_pr
 
 
   # ajusta modelo de regressao linear
-  if (df_modelo$execucao == "train") {
-    regressoes <- ajusta_regressao_ger_irrad(
-      dty = copy(geracao_usina),
-      dtx = copy(irrad_prev),
-      arq_model = df_modelo$escrita
-    )
-  }
-
-  # carrega o modelo de regressao linear
-  if (df_modelo$execucao == "predict") {
-    regressoes <- readRDS(df_modelo$escrita)
-  }
+  regressoes <- ajusta_regressao_ger_irrad(
+    dty = copy(geracao_usina),
+    dtx = copy(irrad_prev),
+  )
 
   # preenche dados faltantes pela estimativa
   geracao_usina_completo <- substitui_por_estimativas(
@@ -61,7 +53,7 @@ preenche_geracao_unit <- function(dados_usina, geracao_usina, irrad_prev, mhg_pr
 # AUXILIARES ---------------------------------------------------------------------------------------
 
 
-ajusta_regressao_ger_irrad <- function(dty, dtx, arq_model, plotar = TRUE, save_rds = TRUE) {
+ajusta_regressao_ger_irrad <- function(dty, dtx, plotar = TRUE, save_rds = TRUE) {
   dty[valor == 0, valor := NA]
   dtx[valor == 0, valor := NA]
 
@@ -124,12 +116,6 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, arq_model, plotar = TRUE, save_
   }
 
   reg_par <- data.frame(a = angulares, b = lineares, row.names = nomes_linhas)
-
-  # Salvar se solicitado
-  if (save_rds) {
-    saveRDS(reg_par, file = arq_model)
-    message("Coeficientes salvos em: ", arq_model)
-  }
 
   return(reg_par)
 }
