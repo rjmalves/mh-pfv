@@ -2,53 +2,46 @@ predict_main <- function(args) {
     # Define a ordem de prioridade das fontes a partir do argumento
     fonte <- strsplit(args$ordem_prioridade_fontes, ",")[[1]]
 
-    # Carrega os dados de entrada
+    # Carrega os dados de entrada das usinas
     dt_usinas <- get_usinas(input_dir = args$input)
     v_usinas <- dt_usinas$id_usina
 
-    dt_ger_obs <- get_geracao_observada(v_usinas, fonte, input_dir = args$input)
-    dt_mhg <- get_melhor_historico_geracao(v_usinas, input_dir = args$input)
-    dt_mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(v_usinas, input_dir = args$input)
-    dt_irrad_prev <- get_irradiancia_prevista(modelo_nwp = args$ordem_prioridade_modelosNWP, input_dir = args$input)
-    dt_corte_obs <- get_corte_observado(v_usinas, input_dir = args$input)
+    # Carrega os dados historicos
+    resultados_leitura <- get_dados_historicos(
+        v_usinas = v_usinas,
+        fonte = fonte,
+        input_dir = args$input,
+        modelo_nwp = args$ordem_prioridade_modelosNWP
+    )
+
 
     # Aplica a funcao de processamento individual a cada usina usando lapply
     resultados <- lapply(v_usinas, processar_usina,
         dt_usinas = dt_usinas,
-        dt_ger_obs = dt_ger_obs,
-        dt_mhg = dt_mhg,
-        dt_mhg_sem_cortes = dt_mhg_sem_cortes,
-        dt_irrad_prev = dt_irrad_prev,
-        dt_corte_obs = dt_corte_obs,
+        dt_ger_obs = resultados_leitura$ger_obs,
+        dt_mhg = resultados_leitura$mhg,
+        dt_mhg_sem_cortes = resultados_leitura$mhg_sem_cortes,
+        dt_irrad_prev = resultados_leitura$irrad_prev,
+        dt_corte_obs = resultados_leitura$dcorte_obs,
         fonte = fonte,
         fator_tolerancia = args$fator_tolerancia_limite_superior_geracao
     )
 
-
-
-    # Adiciona coluna id_usina e empacota resultados em dois data.tables
-    dt_com_cortes <- data.table::rbindlist(lapply(seq_along(resultados), function(i) {
-        res <- resultados[[i]]$com_cortes
-        res[, id_usina := v_usinas[i]]
-        return(res)
-    }), fill = TRUE)
-
-    dt_sem_cortes <- data.table::rbindlist(lapply(seq_along(resultados), function(i) {
-        res <- resultados[[i]]$sem_cortes
-        res[, id_usina := v_usinas[i]]
-        return(res)
-    }), fill = TRUE)
-
+    # Organiza os resultados com e sem consideracao de cortes
+    resultados_organizados <- organiza_resultados(
+        resultados = resultados,
+        v_usinas = v_usinas
+    )
 
     # Escreve o MH sem considerar efeitos dos cortes
     write_melhor_historico_geracao(
-        dt = dt_com_cortes,
+        dt = resultados_organizados$com_cortes,
         output_dir = args$output
     )
 
     # Escreve o MH  considerarando efeitos dos cortes
     write_melhor_historico_geracao_sem_cortes(
-        dt = dt_sem_cortes,
+        dt = resultados_organizados$sem_cortes,
         output_dir = args$output
     )
 }
@@ -119,5 +112,28 @@ processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes
     return(list(
         com_cortes = geracao_usina_preenchida,
         sem_cortes = geracao_usina_preenchida_sem_cortes
+    ))
+}
+
+
+# Esta organiza os dois data.frames
+organiza_resultados <- function(resultados, v_usinas) {
+    # Adiciona coluna id_usina e empacota resultados em dois data.tables
+    dt_com_cortes <- data.table::rbindlist(lapply(seq_along(resultados), function(i) {
+        res <- resultados[[i]]$com_cortes
+        res[, id_usina := v_usinas[i]]
+        return(res)
+    }), fill = TRUE)
+
+    dt_sem_cortes <- data.table::rbindlist(lapply(seq_along(resultados), function(i) {
+        res <- resultados[[i]]$sem_cortes
+        res[, id_usina := v_usinas[i]]
+        return(res)
+    }), fill = TRUE)
+
+    # Retorna a lista com os resultados organizados
+    return(list(
+        com_cortes = dt_com_cortes,
+        sem_cortes = dt_sem_cortes
     ))
 }

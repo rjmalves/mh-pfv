@@ -25,13 +25,13 @@ inner_parser_generic_args <- function(parser) {
 
     parser$add_argument("--input",
         type = "character",
-        default = "data",
+        default = ".",
         help = "Caminho para a leitura dos dados de entrada [default: %(default)s]"
     )
 
     parser$add_argument("--output",
         type = "character",
-        default = "saida",
+        default = ".",
         help = "Caminho para a escrita dos dados de saida [default: %(default)s]"
     )
 
