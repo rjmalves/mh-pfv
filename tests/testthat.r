@@ -1,19 +1,12 @@
+# This file is part of the standard setup for testthat.
+# It is recommended that you do not modify it.
+#
+# Where should you do additional test configuration?
+# Learn more about the roles of various files in:
+# * https://r-pkgs.org/testing-design.html#sec-tests-files-overview
+# * https://testthat.r-lib.org/articles/special-files.html
+
 library(testthat)
-library(data.table)
-library(arrow)
-library(argparse)
-library(lubridate)
-library(lgr)
+library(melhor_historico_solar)
 
-source("../R/constantes.r")
-source("../R/logging.r")
-source("../R/utils.r")
-source("../R/parser.r")
-source("../R/validacao.r")
-source("../R/leitura.r")
-source("../R/escrita.r")
-source("../R/consistencia-dados.r")
-source("../R/preenchimento-dados-faltantes.r")
-source("../R/predict.r")
-
-test_file("testthat/test-consistencia-dados.r")
+test_check("melhor_historico_solar")
