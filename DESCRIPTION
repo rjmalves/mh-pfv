@@ -1,4 +1,4 @@
-Package: melhor_historico_solar
+Package: melhorhistoricosolar
 Title: Construcao do melhor historico de insumos observados para previsao de solar fotovoltaica
 Version: 1.8.0.9999
 Authors@R: 
@@ -16,7 +16,6 @@ Imports:
     data.table (>= 1.17.0),
     arrow (>= 19.0.1),
     argparse (>= 2.2.5),
-    lubridate (>= 1.9.4),
     lgr (>= 0.4.4)
 Suggests: 
     testthat (>= 3.0.0)
