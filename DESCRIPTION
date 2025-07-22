@@ -1,0 +1,27 @@
+Package: melhor_historico_solar
+Title: Construcao do melhor historico de insumos observados para previsao de solar fotovoltaica
+Version: 1.8.0.9999
+Authors@R: 
+    person("Paulo", "Nascimento", , "pnascimento@ons.org.br", role = c("aut", "cre"))
+Description: Este pacote contem as funcionalidades necessarias para tratamento de dados de geracao,
+    cortes, irradiancia e potencia disponivel observados e posterior construcao dos melhores
+    historicos de geracao e geracao sem cortes
+License: MIT + file LICENSE
+Depends:
+    R (>= 4.0),
+    stats (>= 4.0),
+    utils (>= 4.0),
+    methods (>= 4.0),
+Imports: 
+    data.table (>= 1.17.0),
+    arrow (>= 19.0.1),
+    argparse (>= 2.2.5),
+    lubridate (>= 1.9.4),
+    lgr (>= 0.4.4)
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
