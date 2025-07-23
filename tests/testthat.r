@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(melhor_historico_solar)
+library(melhorhistoricosolar)
 
-test_check("melhor_historico_solar")
+test_check("melhorhistoricosolar")

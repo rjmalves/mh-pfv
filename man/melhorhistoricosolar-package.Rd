@@ -4,7 +4,7 @@
 \name{melhorhistoricosolar-package}
 \alias{melhorhistoricosolar}
 \alias{melhorhistoricosolar-package}
-\title{\code{melhor_historico_solar}}
+\title{\code{melhorhistoricosolar}}
 \description{
 Construcao Do Melhor Historico De Insumos Observados Para Previsao De Solar Fotovoltaica
 }
