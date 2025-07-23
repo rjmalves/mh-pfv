@@ -53,3 +53,9 @@ rsconnect/
 
 # Modelos em R
 **.rds
+
+# Saidas em .csv na raiz
+*.csv
+
+# Saidas na pasta saida/
+saida/
