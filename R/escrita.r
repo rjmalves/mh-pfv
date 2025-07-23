@@ -7,7 +7,7 @@
 #'
 #' @return Caminho completo do arquivo salvo
 write_melhor_historico_geracao <- function(dt, output_dir = ".") {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao...")
 
     # valida_melhor_historico_geracao(dt)
@@ -28,7 +28,7 @@ write_melhor_historico_geracao <- function(dt, output_dir = ".") {
 #'
 #' @return Caminho completo do arquivo salvo
 write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao sem cortes...")
 
     # valida_melhor_historico_geracao_sem_cortes(dt)

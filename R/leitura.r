@@ -12,7 +12,7 @@
 #'     * `data_inicio_operacao_comercial`: POSIX UTC indicando inicio entrada em operacao
 
 get_usinas <- function(usina = NULL, input_dir = NULL) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Lendo dados das usinas...")
 
     dt <- inner_reader(usina, NULL, "usinas", input_dir)
@@ -72,7 +72,7 @@ get_dados_historicos <- function(v_usinas, fonte, input_dir, modelo_nwp) {
 #'     * `status`: vazio, nao existe para este dado
 
 get_geracao_observada <- function(usina = NULL, fonte = NULL, input_dir = NULL) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Lendo dados de geracao observada...")
 
     dt <- inner_reader(usina, fonte, "geracao_observada", input_dir)
@@ -97,7 +97,7 @@ get_geracao_observada <- function(usina = NULL, fonte = NULL, input_dir = NULL) 
 #'     * `status`: vazio, nao existe para este dado
 
 get_potencia_disponivel_observada <- function(usina = NULL, fonte = NULL, input_dir = NULL) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Lendo dados de potencia disponivel observada...")
 
     dt <- inner_reader(usina, fonte, "potencia_disponivel_observada", input_dir)
@@ -123,7 +123,7 @@ get_potencia_disponivel_observada <- function(usina = NULL, fonte = NULL, input_
 #'     * `status`: vazio, nao existe para este dado
 
 get_corte_observado <- function(usina = NULL, fonte = NULL, input_dir = NULL) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Lendo dados de corte observado...")
 
     dt <- inner_reader(usina, fonte, "corte_observado", input_dir)
@@ -148,7 +148,7 @@ get_corte_observado <- function(usina = NULL, fonte = NULL, input_dir = NULL) {
 #'     * `valor`: valor da irradiancia prevista
 
 get_irradiancia_prevista <- function(modelo_nwp = NULL, input_dir = NULL) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Lendo dados de irradiancia prevista...")
 
     dt <- inner_reader_nwp(modelo_nwp, "irradiancia_prevista", input_dir)
@@ -174,7 +174,7 @@ get_irradiancia_prevista <- function(modelo_nwp = NULL, input_dir = NULL) {
 #'     * `status`: vazio, nao existe para este dado
 
 get_melhor_historico_geracao <- function(usina = NULL, fonte = NULL, input_dir = NULL) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Lendo dados de melhor historico de geracao...")
 
     dt <- inner_reader(usina, fonte, "melhor_historico_geracao", input_dir)
@@ -199,7 +199,7 @@ get_melhor_historico_geracao <- function(usina = NULL, fonte = NULL, input_dir =
 #'     * `status`: vazio, nao existe para este dado
 
 get_melhor_historico_geracao_sem_cortes <- function(usina = NULL, fonte = NULL, input_dir = NULL) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Lendo dados de melhor historico de geracao sem cortes...")
 
     dt <- inner_reader(usina, fonte, "melhor_historico_geracao_sem_cortes", input_dir)

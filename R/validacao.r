@@ -4,7 +4,7 @@
 #'
 
 valida_usinas <- function(dados) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Validando dados das usinas...")
 
     valida_nomes_tipos(dados, schema_nomes_usinas, schema_tipos_dados_usinas)
@@ -19,7 +19,7 @@ valida_usinas <- function(dados) {
 #'
 
 valida_potencia_disponivel_observada <- function(dados) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Validando dados de potencia disponivel observada...")
 
     valida_nomes_tipos(
@@ -38,7 +38,7 @@ valida_potencia_disponivel_observada <- function(dados) {
 #'
 
 valida_geracao_observada <- function(dados) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Validando dados de geracao observada...")
 
     valida_nomes_tipos(
@@ -57,7 +57,7 @@ valida_geracao_observada <- function(dados) {
 #'
 
 valida_corte_observado <- function(dados) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Validando dados de corte observado...")
 
     valida_nomes_tipos(
@@ -76,7 +76,7 @@ valida_corte_observado <- function(dados) {
 #'
 
 valida_irradiancia_prevista <- function(dados) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Validando dados de irradiancia prevista...")
 
     valida_nomes_tipos(
@@ -95,7 +95,7 @@ valida_irradiancia_prevista <- function(dados) {
 #'
 
 valida_melhor_historico_geracao <- function(dados) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Validando dados de melhor historico de geracao...")
 
     valida_nomes_tipos(
@@ -114,7 +114,7 @@ valida_melhor_historico_geracao <- function(dados) {
 #'
 
 valida_melhor_historico_geracao_sem_cortes <- function(dados) {
-    lg <- get_logger()
+    lg <- get_pkg_logger()
     lg$debug("Validando dados de melhor historico de geracao sem cortes...")
 
     valida_nomes_tipos(
