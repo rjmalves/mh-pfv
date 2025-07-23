@@ -1,0 +1,8 @@
+^\.vscode$
+^.lintr$
+^LICENSE\.md$
+^README\.Rmd$
+^main.r$
+^data$
+^saida$
+^saida$
