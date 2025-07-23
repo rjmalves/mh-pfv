@@ -1,3 +1,4 @@
+
 logger_setup <- function() {
     lg <- get_logger()
     lg$set_threshold(nivel_logging)
@@ -5,4 +6,8 @@ logger_setup <- function() {
     lg$appenders$console$set_layout(layout)
 
     lg
+}
+
+get_pkg_logger <- function() {
+    get("lg", envir = asNamespace("melhorhistoricosolar"))
 }
