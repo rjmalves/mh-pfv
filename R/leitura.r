@@ -1,5 +1,3 @@
-
-
 #' Leitura De Dados Das Usinas
 #'
 #' Wrapper para leitura de dados das usinas e subset por usinas
@@ -41,15 +39,14 @@ get_usinas <- function(usina = NULL, input_dir = NULL) {
 #'     * `status`: vazio, nao existe para este dado
 
 get_dados_historicos <- function(v_usinas, fonte, input_dir, modelo_nwp) {
-   
     # Carrega os dados de entrada
-     dt_ger_obs <- get_geracao_observada(v_usinas, fonte, input_dir = args$input)
+    dt_ger_obs <- get_geracao_observada(v_usinas, fonte, input_dir = args$input)
     dt_mhg <- get_melhor_historico_geracao(v_usinas, input_dir = args$input)
     dt_mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(v_usinas, input_dir = args$input)
     dt_irrad_prev <- get_irradiancia_prevista(modelo_nwp = args$ordem_prioridade_modelosNWP, input_dir = args$input)
     dt_corte_obs <- get_corte_observado(v_usinas, input_dir = args$input)
 
-        # Retorna a lista com os resultados das leituras
+    # Retorna a lista com os resultados das leituras
     return(list(
         ger_obs = dt_ger_obs,
         mhg = dt_mhg,
@@ -57,7 +54,6 @@ get_dados_historicos <- function(v_usinas, fonte, input_dir, modelo_nwp) {
         irrad_prev = dt_irrad_prev,
         dcorte_obs = dt_corte_obs
     ))
-
 }
 
 
