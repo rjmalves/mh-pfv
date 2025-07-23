@@ -22,6 +22,41 @@ get_usinas <- function(usina = NULL, input_dir = NULL) {
     return(dt)
 }
 
+
+
+#' Leitura dos dados
+#'
+#' Wrapper para leitura dos dados
+#'
+#' @param usina vetor de codigos das usina que devem ser buscadas
+#' @param fonte vetor de fontes de dados a serem buscados
+#'
+#' @return `data.table` de geracao observada padronizado nas colunas:
+#'     * `id_fonte_observacao`: string indicando a fonte de dados
+#'     * `id_usina`: string indicando codigo da usina
+#'     * `data_hora_observacao`: POSIX em UTC indicando horario da observacao
+#'     * `valor`: valor da geracao observada
+#'     * `status`: vazio, nao existe para este dado
+
+get_dados_historicos <- function(v_usinas, fonte, input_dir, modelo_nwp) {
+    # Carrega os dados de entrada
+    dt_ger_obs <- get_geracao_observada(v_usinas, fonte, input_dir = args$input)
+    dt_mhg <- get_melhor_historico_geracao(v_usinas, input_dir = args$input)
+    dt_mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(v_usinas, input_dir = args$input)
+    dt_irrad_prev <- get_irradiancia_prevista(modelo_nwp = args$ordem_prioridade_modelosNWP, input_dir = args$input)
+    dt_corte_obs <- get_corte_observado(v_usinas, input_dir = args$input)
+
+    # Retorna a lista com os resultados das leituras
+    return(list(
+        ger_obs = dt_ger_obs,
+        mhg = dt_mhg,
+        mhg_sem_cortes = dt_mhg_sem_cortes,
+        irrad_prev = dt_irrad_prev,
+        dcorte_obs = dt_corte_obs
+    ))
+}
+
+
 #' Leitura De Geracao Observada
 #'
 #' Wrapper para leitura de geracao observada e subsets por usina ou fonte de dados
