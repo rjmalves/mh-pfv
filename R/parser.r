@@ -47,6 +47,8 @@ inner_parser_generic_args <- function(parser) {
 #' Auxiliar para adicionar argumentos especificos
 #'
 #' Funcao interna, nao deve ser chamada diretamente pelo usuario
+#' 
+#' @importFrom lubridate format_ISO8601 today ddays
 
 inner_parser_specific_args <- function(parser) {
     parser$add_argument("--data-inicio",
