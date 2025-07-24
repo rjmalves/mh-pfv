@@ -52,7 +52,10 @@ inner_parser_generic_args <- function(parser) {
 #' 
 #' @importFrom lubridate format_ISO8601 today ddays
 
-inner_parser_specific_args <- function(parser) {
+inner_parser_specific_args <- function(parser,
+    fuso_horario_padrao = Sys.getenv("TZINFO", unset = "America/Sao_Paulo"),
+    numero_dias_passados_padrao = 90) {
+
     parser$add_argument("--data-inicio",
         type = "character",
         default = format_ISO8601(today(tzone = fuso_horario_padrao) - ddays(numero_dias_passados_padrao + 1)),

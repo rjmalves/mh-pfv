@@ -1,8 +1,3 @@
-# Parametros default
-nivel_logging <- Sys.getenv("LOG_LEVEL", unset = "info")
-fuso_horario_padrao <- Sys.getenv("TZINFO", unset = "America/Sao_Paulo")
-numero_dias_passados_padrao <- 90L
-
 # Schemas para validacao das entradas
 
 # usinas.csv
