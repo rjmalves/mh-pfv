@@ -8,6 +8,14 @@ logger_setup <- function() {
     lg
 }
 
+#' Getter Do Objeto Logger
+#' 
+#' Funcao auxiliar para acesso do logger do pacote 
+#' 
+#' @return objeto `Logger` como retornado por `lgr::get_logger()`
+#' 
+#' @export
+
 get_pkg_logger <- function() {
     get("lg", envir = asNamespace("melhorhistoricosolar"))
 }

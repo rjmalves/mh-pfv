@@ -1,6 +1,8 @@
 #' Constroi o interpretador de argumentos de linha de comando
 #'
 #' @return `ArgumentParser` com os argumentos suportados pelo modelo
+#' 
+#' @export
 
 get_parser <- function() {
     parser <- ArgumentParser(description = "Modelo de Consistencia do Melhor Historico de Geracao Solar")

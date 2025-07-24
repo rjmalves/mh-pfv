@@ -1,3 +1,13 @@
+#' Previsao De Melhor Historico Solar
+#' 
+#' Funcao principal para realizacao dos melhores historicos de solar fotovoltaica
+#' 
+#' @param args lista de argumentos para execucao do melhor historico. Veja Detalhes
+#' 
+#' @return escreve no diretorio determinado em `args` os historicos produzidos
+#' 
+#' @export
+
 predict_main <- function(args) {
     # Define a ordem de prioridade das fontes a partir do argumento
     fonte <- strsplit(args$ordem_prioridade_fontes, ",")[[1]]
