@@ -40,11 +40,11 @@ get_usinas <- function(usina = NULL, input_dir = NULL) {
 
 get_dados_historicos <- function(v_usinas, fonte, input_dir, modelo_nwp) {
     # Carrega os dados de entrada
-    dt_ger_obs <- get_geracao_observada(v_usinas, fonte, input_dir = args$input)
-    dt_mhg <- get_melhor_historico_geracao(v_usinas, input_dir = args$input)
-    dt_mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(v_usinas, input_dir = args$input)
-    dt_irrad_prev <- get_irradiancia_prevista(modelo_nwp = args$ordem_prioridade_modelosNWP, input_dir = args$input)
-    dt_corte_obs <- get_corte_observado(v_usinas, input_dir = args$input)
+    dt_mhg <- get_melhor_historico_geracao(v_usinas, input_dir = input_dir)
+    dt_ger_obs <- get_geracao_observada(v_usinas, fonte, input_dir)
+    dt_corte_obs <- get_corte_observado(v_usinas, input_dir = input_dir)
+    dt_irrad_prev <- get_irradiancia_prevista(modelo_nwp, input_dir)
+    dt_mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(v_usinas, input_dir = input_dir)
 
     # Retorna a lista com os resultados das leituras
     return(list(
