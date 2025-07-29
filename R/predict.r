@@ -1,11 +1,11 @@
 #' Previsao De Melhor Historico Solar
-#' 
+#'
 #' Funcao principal para realizacao dos melhores historicos de solar fotovoltaica
-#' 
+#'
 #' @param args lista de argumentos para execucao do melhor historico. Veja Detalhes
-#' 
+#'
 #' @return escreve no diretorio determinado em `args` os historicos produzidos
-#' 
+#'
 #' @export
 
 predict_main <- function(args) {
@@ -59,18 +59,19 @@ predict_main <- function(args) {
 
 
 # Esta funcao processa uma unica usina individualmente
-processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
-                            dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia) {
+processar_usina <- function(
+    iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
+    dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia) {
     # Filtra os dados referentes a usina atual
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
     corte_obs <- dt_corte_obs[id_usina == iu]
     mhg <- dt_mhg[id_usina == iu]
     mhg_sc <- dt_mhg_sem_cortes[id_usina == iu]
-    Pinst <- dad_usi$capacidade_instalada_MW
+    potencia_instalada <- dad_usi$capacidade_instalada_MW
 
     # Associa os dados NWP a usina e adiciona o passo de previsao
-    dt_irrad_prev_filt <- associa_NWP_Usina(dt_usinas, dt_irrad_prev)
+    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dt_irrad_prev)
     dt_irrad_prev_filt_n <- adicionar_passo_previsao(dt_irrad_prev_filt)
     irrad_prev <- dt_irrad_prev_filt_n[id_usina == iu & passo_prev == "D+0"]
 
@@ -79,7 +80,7 @@ processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes
         dados_usina = dad_usi,
         geracao_usina = ger_usi,
         ordem_prioridade = fonte,
-        limite_dados = c(0, Pinst * fator_tolerancia)
+        limite_dados = c(0, potencia_instalada * fator_tolerancia)
     )
 
     # Preenche a serie de geracao usando dados previstos e MHG com cortes
@@ -89,7 +90,7 @@ processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes
         irrad_prev = irrad_prev,
         mhg_prev = mhg,
         cortes = NULL,
-        limite_dados = c(0, Pinst * fator_tolerancia)
+        limite_dados = c(0, potencia_instalada * fator_tolerancia)
     )
 
     # Determina o intervalo de datas valido
@@ -105,7 +106,7 @@ processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes
         irrad_prev = irrad_prev,
         mhg_prev = mhg_sc,
         cortes = corte_obs,
-        limite_dados = c(0, Pinst * fator_tolerancia)
+        limite_dados = c(0, potencia_instalada * fator_tolerancia)
     )
 
     # Identifica pontos onde o preenchimento com cortes resultou em valor menor

@@ -10,7 +10,7 @@ write_melhor_historico_geracao <- function(dt, output_dir = ".") {
     lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao...")
 
-    # valida_melhor_historico_geracao(dt)
+    valida_melhor_historico_geracao(dt)
 
     arq <- inner_writer(dt, "melhor_historico_geracao", output_dir)
 
@@ -31,7 +31,7 @@ write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
     lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao sem cortes...")
 
-    # valida_melhor_historico_geracao_sem_cortes(dt)
+    valida_melhor_historico_geracao_sem_cortes(dt)
 
     arq <- inner_writer(dt, "melhor_historico_geracao_sem_cortes", output_dir)
 
@@ -54,7 +54,6 @@ write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
 #' @return Caminho do arquivo salvo
 inner_writer <- function(dt, table = "", output_dir = ".") {
     arq <- file.path(output_dir, paste0(table, ".csv"))
-    
     # Escreve o arquivo CSV
     fwrite(dt, arq)
 
