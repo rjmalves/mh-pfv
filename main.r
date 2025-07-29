@@ -1,9 +1,5 @@
 library(melhorhistoricosolar)
 
-# setwd("C:/Users/pnascimento/Documents/GitHub/timeseries-mlops-container-examples")
-
-rm(list = ls())
-
 lg <- get_pkg_logger()
 
 tryCatch(
