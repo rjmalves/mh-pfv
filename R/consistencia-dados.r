@@ -57,7 +57,6 @@ checa_valores_congelados <- function(dt, v_n_valores = 10, v_limiar = 0.01) {
     setorder(dt, id_fonte_observacao, data_hora_observacao)
 
     # Aplica para cada fonte de observação
-    #  dt=dt[id_fonte_observacao == "PI"]
     dt[, valor := remove_congelados(valor, n_valores = v_n_valores[1], limiar = v_limiar[1]),
         by = id_fonte_observacao
     ]
@@ -82,10 +81,11 @@ remove_congelados <- function(v, n_valores, limiar) {
         janela <- v[i:(i + n_valores - 1)]
 
         # Verifica se todos os valores da janela estão suficientemente próximos do primeiro valor
-        if (all(abs(janela - janela[1]) <= limiar, na.rm = TRUE) && all(!is.na(janela), na.rm = TRUE) && all(janela != 0, na.rm = TRUE)) {
+        if (all(abs(janela - janela[1]) <= limiar, na.rm = TRUE) &&
+                all(!is.na(janela), na.rm = TRUE) &&
+                all(janela != 0, na.rm = TRUE)) {
             # Marca como congelados todos os elementos da janela, exceto o primeiro
             flag_na[(i + 1):(i + n_valores - 1)] <- TRUE
-
         }
     }
 
@@ -130,7 +130,7 @@ combina_fontes <- function(dt, grandeza, ordem) {
         model_reg <- ajusta_regressao_fontes_vento(dt, ordem)
 
         # Passo 2 - Remove as fontes que o ajuste não é bom
-        dt_dados_bom_ajuste <- elimina_dados_por_R2(
+        dt_dados_bom_ajuste <- elimina_dados_por_r2(
             dt = dt,
             ordem = ordem,
             model_reg = model_reg,
@@ -256,9 +256,9 @@ ajusta_regressao_fontes_vento <- function(dt, ordem) {
 
             a <- coef(modelo)[["valor_fonte"]]
             b <- coef(modelo)[["(Intercept)"]]
-            R2 <- summary(modelo)$r.squared
+            r2 <- summary(modelo)$r.squared
 
-            reg_par[[nome_reg]] <- c(a = a, b = b, R2 = R2)
+            reg_par[[nome_reg]] <- c(a = a, b = b, R2 = r2)
         } else {
             reg_par[[nome_reg]] <- rep(NA, 3)
         }
@@ -266,7 +266,7 @@ ajusta_regressao_fontes_vento <- function(dt, ordem) {
     return(reg_par)
 }
 
-elimina_dados_por_R2 <- function(dt, ordem, model_reg, tol) {
+elimina_dados_por_r2 <- function(dt, ordem, model_reg, tol) {
     # ---------------------------------------------------------
     # Funcao para eliminar dados de fontes com baixo ajuste,
     # baseado no R2 do modelo de regressao.
@@ -292,10 +292,10 @@ elimina_dados_por_R2 <- function(dt, ordem, model_reg, tol) {
         }
 
         # Extrai o valor de R2
-        R2 <- model_reg[[nome_modelo]][["R2"]]
+        r2 <- model_reg[[nome_modelo]][["R2"]]
 
         # Se o R2 for maior que o limite, substitui por NA
-        if (!is.na(R2) && R2 < tol) {
+        if (!is.na(r2) && r2 < tol) {
             dt_local[id_fonte_observacao == fonte, valor := NA]
         }
     }

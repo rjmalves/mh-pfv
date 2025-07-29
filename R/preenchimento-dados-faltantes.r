@@ -68,10 +68,10 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, plotar = TRUE, save_rds = TRUE)
         minuto <- ifelse((h - hora_inteira) == 0.5, 30, 0)
 
         dty_f <- dty[hour(data_hora_observacao) == hora_inteira &
-            minute(data_hora_observacao) == minuto]
+                minute(data_hora_observacao) == minuto]
 
         dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
-            minute(data_hora_previsao) == minuto]
+                minute(data_hora_previsao) == minuto]
 
         # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
         dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
@@ -93,19 +93,6 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, plotar = TRUE, save_rds = TRUE)
                 hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
                 nomes_linhas <- c(nomes_linhas, hora_txt)
 
-                # if (plotar) {
-                #   dados_plot <- data.frame(irradiacao = x, geracao = y)
-                #   p <- ggplot(dados_plot, aes(x = irradiacao, y = geracao)) +
-                #     geom_point(alpha = 0.6, color = "gray30") +
-                #     geom_abline(intercept = b, slope = a, color = "blue", linewidth = 1.2) +
-                #     labs(
-                #       title = paste("Regressão linear (forçada) -", hora_txt),
-                #       x = "Irradiação",
-                #       y = "Geração"
-                #     ) +
-                #     theme_minimal()
-                #   print(p)
-                # }
             } else {
                 angulares <- c(angulares, 0)
                 lineares <- c(lineares, 0)
