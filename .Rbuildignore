@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 ^\.vscode$
 ^.lintr$
 ^LICENSE\.md$
