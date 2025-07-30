@@ -1,4 +1,3 @@
-
 logger_setup <- function() {
     lg <- get_logger()
     lg$set_threshold(Sys.getenv("LOG_LEVEL", unset = "info"))
@@ -9,11 +8,11 @@ logger_setup <- function() {
 }
 
 #' Getter Do Objeto Logger
-#' 
-#' Funcao auxiliar para acesso do logger do pacote 
-#' 
+#'
+#' Funcao auxiliar para acesso do logger do pacote
+#'
 #' @return objeto `Logger` como retornado por `lgr::get_logger()`
-#' 
+#'
 #' @export
 
 get_pkg_logger <- function() {
