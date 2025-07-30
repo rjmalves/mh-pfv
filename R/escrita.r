@@ -3,7 +3,7 @@
 #' Salva os dados de melhor historico de geracao em disco, formatados e validados
 #'
 #' @param dt `data.table` com os dados a serem salvos
-#' @param output_dir diretorio de saída onde sera salvo o arquivo CSV
+#' @param output_dir diretorio de saida onde sera salvo o arquivo CSV
 #'
 #' @return Caminho completo do arquivo salvo
 write_melhor_historico_geracao <- function(dt, output_dir = ".") {
@@ -24,7 +24,7 @@ write_melhor_historico_geracao <- function(dt, output_dir = ".") {
 #' Salva os dados de melhor historico de geracao sem cortes em disco, formatados e validados
 #'
 #' @param dt `data.table` com os dados a serem salvos
-#' @param output_dir diretorio de saída onde sera salvo o arquivo CSV
+#' @param output_dir diretorio de saida onde sera salvo o arquivo CSV
 #'
 #' @return Caminho completo do arquivo salvo
 write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {

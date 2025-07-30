@@ -212,9 +212,15 @@ get_melhor_historico_geracao_sem_cortes <- function(usina = NULL, fonte = NULL, 
 
 # AUXILIARES ---------------------------------------------------------------------------------------
 
-#' Auxiliar Para Leitura De Dados
+#' Auxiliar Para Leitura de Dados Observados
 #'
-#' Funcao interna, nao deve ser chamada diretamente pelo usuario
+#' Funcao interna para ler data.tables em CSV. Nao deve ser chamada diretamente pelo usuario.
+#'
+#' @param dt `data.table` lido
+#' @param table nome-base da tabela (sem extensao .csv)
+#' @param output_dir diretorio onde o arquivo sera salvo
+#'
+#' @return data.table lido
 
 inner_reader <- function(usina = NULL, fonte = NULL, table = "", input_dir = ".") {
     arq <- file.path(input_dir, paste0(table, ".csv"))
@@ -224,6 +230,16 @@ inner_reader <- function(usina = NULL, fonte = NULL, table = "", input_dir = "."
 
     return(dt)
 }
+
+#' Auxiliar Para Leitura de Dados Previstos
+#'
+#' Funcao interna para ler data.tables em CSV. Nao deve ser chamada diretamente pelo usuario.
+#'
+#' @param dt `data.table` lido
+#' @param table nome-base da tabela (sem extensao .csv)
+#' @param output_dir diretorio onde o arquivo sera salvo
+#'
+#' @return data.table lido
 
 inner_reader_nwp <- function(modelo_nwp = NULL, table = "", input_dir = ".") {
     arq <- file.path(input_dir, paste0(table, ".csv"))

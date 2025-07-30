@@ -4,7 +4,11 @@
 \alias{inner_parser_specific_args}
 \title{Auxiliar para adicionar argumentos especificos}
 \usage{
-inner_parser_specific_args(parser)
+inner_parser_specific_args(
+  parser,
+  fuso_horario_padrao = Sys.getenv("TZINFO", unset = "America/Sao_Paulo"),
+  numero_dias_passados_padrao = 90
+)
 }
 \description{
 Funcao interna, nao deve ser chamada diretamente pelo usuario
