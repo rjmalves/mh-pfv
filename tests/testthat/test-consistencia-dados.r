@@ -172,3 +172,4 @@ test_that("combina_dados", {
     expect_true(is.na(resultado2$status))
     expect_true(is.na(resultado2$id_fonte_observacao))
 })
+
