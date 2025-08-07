@@ -43,34 +43,36 @@
 #' predict_main(args)
 #'
 #' @seealso processar_usina, get_dados_historicos, organiza_resultados, write_melhor_historico_geracao
-#'
+#' 
 #' @export
 
 predict_main <- function(args) {
     # Define a ordem de prioridade das fontes a partir do argumento
+    conn <- conectamock_pfv(args$input)
+
     fonte <- strsplit(args$ordem_prioridade_fontes, ",")[[1]]
 
     # Carrega os dados de entrada das usinas
-    dt_usinas <- get_usinas(input_dir = args$input)
+    dt_usinas <- get_usinas(conn)
     v_usinas <- dt_usinas$id_usina
 
-    # Carrega os dados historicos
-    resultados_leitura <- get_dados_historicos(
-        v_usinas = v_usinas,
-        fonte = fonte,
-        input_dir = args$input,
-        modelo_nwp = args$ordem_prioridade_modelosNWP
+    dataset <- list(
+        ger_obs = get_geracao_observada(conn, id_usina = v_usinas),
+        corte = get_corte_observado(conn, id_usina = v_usinas, id_fonte_observacao = fonte),
+        irrad_prev = get_irradiancia_prevista(conn, id_usina = v_usinas,
+            id_modelo_nwp = args$ordem_prioridade_modelosNWP),
+        mhg = get_melhor_historico_geracao(conn, id_usina = v_usinas),
+        mhg_sem_cortes = get_melhor_historico_geracao_sem_cortes(conn, id_usina = v_usinas)
     )
-
 
     # Aplica a funcao de processamento individual a cada usina usando lapply
     resultados <- lapply(v_usinas, processar_usina,
         dt_usinas = dt_usinas,
-        dt_ger_obs = resultados_leitura$ger_obs,
-        dt_mhg = resultados_leitura$mhg,
-        dt_mhg_sem_cortes = resultados_leitura$mhg_sem_cortes,
-        dt_irrad_prev = resultados_leitura$irrad_prev,
-        dt_corte_obs = resultados_leitura$dcorte_obs,
+        dt_ger_obs = dataset$ger_obs,
+        dt_mhg = dataset$mhg,
+        dt_mhg_sem_cortes = dataset$mhg_sem_cortes,
+        dt_irrad_prev = dataset$irrad_prev,
+        dt_corte_obs = dataset$corte,
         fonte = fonte,
         fator_tolerancia = args$fator_tolerancia_limite_superior_geracao
     )

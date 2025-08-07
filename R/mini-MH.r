@@ -7,7 +7,7 @@
 #' historicos de geracao e geracao sem cortes
 #' 
 #' @import utils stats
-#' @import data.table argparse lgr
+#' @import data.table argparse lgr pfvIO
 #' 
 #' @keywords internal
 "_PACKAGE"
