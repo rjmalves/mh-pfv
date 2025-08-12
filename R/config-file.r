@@ -4,6 +4,8 @@
 #' @param config lista nomeada de 
 #' 
 #' @return lista de argumentos interpretados
+#' 
+#' @export
 
 parse_config <- function(config) {
     valida_nomes_config(config)

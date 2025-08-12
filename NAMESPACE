@@ -2,6 +2,7 @@
 
 export(get_parser)
 export(get_pkg_logger)
+export(parse_config)
 export(predict_main)
 import(argparse)
 import(data.table)
