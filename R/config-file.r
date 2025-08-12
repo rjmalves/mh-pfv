@@ -6,10 +6,10 @@
 #' @return lista de argumentos interpretados
 
 parse_config <- function(config) {
-    # validar elementos da lista
-    # parse de 'janela'
-    #     gerar elementos 'data_inicio' e 'data_fim'
-    # retorna config pronto
+    valida_nomes_config(config)
+    valida_tipos_config(config)
+    config$janela <- parsearg_janela(config$janela)
+    return(config)
 }
 
 # VALIDACOES DE CONFIG -----------------------------------------------------------------------------
@@ -23,7 +23,7 @@ parse_config <- function(config) {
 #' @return NULL se config possui todas as chaves; levanta erro do contrario
 
 valida_nomes_config <- function(config) {
-    nomes <- c("mode", "input", "output", "artifact", "janela", "id_usinas",
+    nomes <- c("mode", "input", "output", "artifact", "janela", "ids_usinas",
         "ordem_prioridade_fontes", "ordem_prioridade_modelosNWP",
         "fator_tolerancia_limite_superior_geracao")
 
@@ -49,7 +49,18 @@ valida_nomes_config <- function(config) {
 
 valida_tipos_config <- function(config) {
     tipos <- list("character", "character", "character", "character", list("integer", "character"),
-        "character", "character", "character", "numeric")
+        list("character", "NULL"), "character", "character", "numeric")
+
+    valid     <- mapply(valid_tipos, config, tipos, SIMPLIFY = TRUE)
+    all_valid <- all(valid)
+
+    if (!all_valid) {
+        invalid <- names(config)[!valid]
+        invalid <- paste0(invalid, collapse = ",")
+        msg <- paste0("Chaves (", invalid, ") nao possuem os tipos corretos")
+    }
+
+    invisible(NULL)
 }
 
 #' Validacao Singular De Uma Chave
@@ -80,8 +91,20 @@ valid_tipos_unit <- function(x, tipos) Reduce("|", lapply(tipos, inherits, x = x
 
 # PARSERS ------------------------------------------------------------------------------------------
 
+#' Interpretador De Chave `janela`
+#' 
+#' Funcao interna de [`parse_config`] para interpretar o parametro `janela` da configuracao
+#' 
+#' @param x valor da chave `janela`; numerico ou vetor de duas strings de data
+#' 
+#' @return vetor `Date` de duas posicoes indicando inicio e fim da janela de melhor historico
+
 parsearg_janela <- function(x) UseMethod("parsearg_janela")
 
+#' @rdname parsearg_janela
+
 parsearg_janela.numeric <- function(x) Sys.Date() - c(x + 1, 1)
+
+#' @rdname parsearg_janela
 
 parsearg_janela.character <- function(x) as.Date(x)
