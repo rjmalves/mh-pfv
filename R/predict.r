@@ -50,7 +50,7 @@ predict_main <- function(args) {
     # Define a ordem de prioridade das fontes a partir do argumento
     conn <- conectamock_pfv(args$input)
 
-    fonte <- strsplit(args$ordem_prioridade_fontes, ",")[[1]]
+    fonte <- args$ordem_prioridade_fontes
 
     # Carrega os dados de entrada das usinas
     dt_usinas <- get_usinas(conn)
