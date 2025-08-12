@@ -23,9 +23,7 @@ parse_config <- function(config) {
 #' @return NULL se config possui todas as chaves; levanta erro do contrario
 
 valida_nomes_config <- function(config) {
-    nomes <- c("mode", "input", "output", "artifact", "janela", "ids_usinas",
-        "ordem_prioridade_fontes", "ordem_prioridade_modelosNWP",
-        "fator_tolerancia_limite_superior_geracao")
+    nomes <- config_names()
 
     has_all <- all(nomes %in% names(config))
 
@@ -39,6 +37,12 @@ valida_nomes_config <- function(config) {
     invisible(NULL)
 }
 
+config_names <- function() {
+    c("mode", "input", "output", "artifact", "janela", "ids_usinas",
+        "ordem_prioridade_fontes", "ordem_prioridade_modelosNWP",
+        "fator_tolerancia_limite_superior_geracao")
+}
+
 #' Valida Tipos Das Chaves Do Arquivo De Configuracao
 #' 
 #' Checa se valores das chaves no arquivo lido sao dos tipos corretos
@@ -48,9 +52,9 @@ valida_nomes_config <- function(config) {
 #' @return NULL se config possui todos os tipos corretos; levanta erro do contrario
 
 valida_tipos_config <- function(config) {
-    tipos <- list("character", "character", "character", "character", list("integer", "character"),
-        list("character", "NULL"), "character", "character", "numeric")
+    tipos <- config_types()
 
+    config <- config[names(tipos)]
     valid     <- mapply(valid_tipos, config, tipos, SIMPLIFY = TRUE)
     all_valid <- all(valid)
 
@@ -58,9 +62,17 @@ valida_tipos_config <- function(config) {
         invalid <- names(config)[!valid]
         invalid <- paste0(invalid, collapse = ",")
         msg <- paste0("Chaves (", invalid, ") nao possuem os tipos corretos")
+        stop(msg)
     }
 
     invisible(NULL)
+}
+
+config_types <- function() {
+    structure(
+        list("character", "character", "character", "character", list("integer", "numeric", "character"),
+            list("character", "NULL"), "character", "character", "numeric"),
+        names = config_names())
 }
 
 #' Validacao Singular De Uma Chave
