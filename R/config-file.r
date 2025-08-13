@@ -2,15 +2,17 @@
 #' Interpreta Arquivo De Configuracao
 #' 
 #' @param config lista nomeada de 
+#' @param conn objeto de conexao com um banco
 #' 
 #' @return lista de argumentos interpretados
 #' 
 #' @export
 
-parse_config <- function(config) {
+parse_config <- function(config, conn) {
     valida_nomes_config(config)
     valida_tipos_config(config)
     config$janela <- parsearg_janela(config$janela)
+    config$ids_usinas <- parsearg_ids_usinas(config$ids_usinas, conn)
     return(config)
 }
 
@@ -122,3 +124,18 @@ parsearg_janela.numeric <- function(x) Sys.Date() - c(x + 1, 1)
 #' @rdname parsearg_janela
 
 parsearg_janela.character <- function(x) as.Date(x)
+
+#' Interpretador De Chave `ids_usinas`
+#' 
+#' Funcao interna de [`parse_config`] para interpretar o parametro `ids_usinas` da configuracao
+#' 
+#' @param x valor da chave `ids_usinas`; lista vazia ou de codigos de usinas
+#' @param conn objeto de conexao com um banco
+#' 
+#' @return se `x` era uma lista vazia, retorna uma lista com todos os ids no banco `conn`; do 
+#'     contrario retorna `x` sem altera-lo
+
+parsearg_ids_usinas <- function(x, conn) {
+    if (length(x) == 0) x <- as.list(get_usinas(conn)$id_usina)
+    return(x)
+}

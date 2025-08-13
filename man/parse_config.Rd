@@ -4,10 +4,12 @@
 \alias{parse_config}
 \title{Interpreta Arquivo De Configuracao}
 \usage{
-parse_config(config)
+parse_config(config, conn)
 }
 \arguments{
 \item{config}{lista nomeada de}
+
+\item{conn}{objeto de conexao com um banco}
 }
 \value{
 lista de argumentos interpretados

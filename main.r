@@ -8,7 +8,7 @@ args <- parser$parse_args()
 
 conn <- conectamock_pfv(args$datadir)
 config <- get_config(conn)
-config <- parse_config(config)
+config <- parse_config(config, conn)
 
 tryCatch(
     {
