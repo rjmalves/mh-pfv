@@ -113,3 +113,16 @@ test_that("parsearg_janela", {
     expect_true(parsed[1] == Sys.Date() - janela - 1)
     expect_true(parsed[2] == Sys.Date() - 1)
 })
+
+test_that("parsearg_ids_usinas", {
+    conn <- conectamock_pfv(system.file("data", package = "melhorhistoricosolar"))
+
+    ids <- list("teste1", "teste2", "teste2")
+    ids_parsed <- parsearg_ids_usinas(ids, conn)
+    expect_identical(ids, ids_parsed)
+
+    ref <- as.list(get_usinas(conn)$id_usina)
+    ids <- list()
+    ids_parsed <- parsearg_ids_usinas(ids, conn)
+    expect_identical(ref, ids_parsed)
+})
