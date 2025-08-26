@@ -6,7 +6,7 @@
 \usage{
 inner_parser_specific_args(
   parser,
-  fuso_horario_padrao = Sys.getenv("TZINFO", unset = "America/Sao_Paulo"),
+  fuso_horario_padrao = Sys.getenv("TZINFO", unset = "UTC"),
   numero_dias_passados_padrao = 90
 )
 }

@@ -35,20 +35,20 @@ library(data.table)
 horas <- seq.POSIXt(as.POSIXct("2025-05-19 00:00"), by = "30 min", length.out = 3)
 
 resultado_exemplo <- lapply(
- list(
-   list(usina = "BAUFI1", valor = 0),
-   list(usina = "BAUFI2", valor = 1)
- ),
- function(x) {
-   dados <- data.table(
-     id_fonte_observacao = "Consis",
-     data_hora_observacao = horas,
-     id_usina = x$usina,
-     valor = x$valor,
-     status = 1
-   )
-   list(com_cortes = copy(dados), sem_cortes = copy(dados))
- }
+    list(
+        list(usina = "BAUFI1", valor = 0),
+        list(usina = "BAUFI2", valor = 1)
+    ),
+    function(x) {
+        dados <- data.table(
+            id_fonte_observacao = "Consis",
+            data_hora_observacao = horas,
+            id_usina = x$usina,
+            valor = x$valor,
+            status = 1
+        )
+        list(com_cortes = copy(dados), sem_cortes = copy(dados))
+    }
 )
 head(resultado_final$com_cortes)
 head(resultado_final$sem_cortes)

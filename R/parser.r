@@ -54,7 +54,7 @@ inner_parser_generic_args <- function(parser) {
 
 inner_parser_specific_args <- function(
     parser,
-    fuso_horario_padrao = Sys.getenv("TZINFO", unset = "America/Sao_Paulo"),
+    fuso_horario_padrao = Sys.getenv("TZINFO", unset = "UTC"),
     numero_dias_passados_padrao = 90) {
     parser$add_argument("--data-inicio",
         type = "character",
