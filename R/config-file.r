@@ -132,10 +132,10 @@ parsearg_janela.character <- function(x) as.Date(x)
 #' @param x valor da chave `ids_usinas`; lista vazia ou de codigos de usinas
 #' @param conn objeto de conexao com um banco
 #' 
-#' @return se `x` era uma lista vazia, retorna uma lista com todos os ids no banco `conn`; do 
-#'     contrario retorna `x` sem altera-lo
+#' @return se `x` era uma lista vazia, retorna um vetor com todos os ids no banco `conn`; do 
+#'     contrario retorna `x` vetorizado
 
 parsearg_ids_usinas <- function(x, conn) {
-    if (length(x) == 0) x <- as.list(get_usinas(conn)$id_usina)
+    if (length(x) == 0) x <- get_usinas(conn)$id_usina else x <- unlist(x)
     return(x)
 }
