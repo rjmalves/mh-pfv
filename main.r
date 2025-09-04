@@ -1,5 +1,5 @@
-library(melhorhistoricosolar)
-library(pfvIO)
+suppressPackageStartupMessages(library(pfvIO))
+suppressPackageStartupMessages(library(melhorhistoricosolar))
 
 lg <- get_pkg_logger()
 
