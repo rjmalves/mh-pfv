@@ -50,18 +50,10 @@ predict_main <- function(args) {
     # Define a ordem de prioridade das fontes a partir do argumento
     conn <- conectamock_pfv(args$input)
 
-    fonte <- args$ordem_prioridade_fontes
     v_usinas <- args$ids_usinas
     dt_usinas <- get_usinas(conn, id_usina = v_usinas)
 
-    dataset <- list(
-        ger_obs = get_geracao_observada(conn, id_usina = v_usinas),
-        corte = get_corte_observado(conn, id_usina = v_usinas, id_fonte_observacao = fonte),
-        irrad_prev = get_irradiancia_prevista(conn, id_usina = v_usinas,
-            id_modelo_nwp = args$ordem_prioridade_modelosNWP),
-        mhg = get_melhor_historico_geracao(conn, id_usina = v_usinas),
-        mhg_sem_cortes = get_melhor_historico_geracao_sem_cortes(conn, id_usina = v_usinas)
-    )
+    dataset <- get_dataset(args, conn)
 
     # Aplica a funcao de processamento individual a cada usina usando lapply
     resultados <- lapply(v_usinas, processar_usina,
@@ -71,7 +63,7 @@ predict_main <- function(args) {
         dt_mhg_sem_cortes = dataset$mhg_sem_cortes,
         dt_irrad_prev = dataset$irrad_prev,
         dt_corte_obs = dataset$corte,
-        fonte = fonte,
+        fonte = args$ordem_prioridade_fontes,
         fator_tolerancia = args$fator_tolerancia_limite_superior_geracao
     )
 
@@ -94,7 +86,24 @@ predict_main <- function(args) {
     )
 }
 
+get_dataset <- function(args, conn) {
 
+    janela <- paste0(args$janela[1], "/", args$janela[2])
+
+    ger_obs <- get_geracao_observada(conn, id_usina = args$ids_usinas,
+        data_hora_observacao = janela)
+    corte <- get_corte_observado(conn, id_usina = args$ids_usinas,
+        id_fonte_observacao = args$ordem_prioridade_fontes, data_hora_observacao = janela)
+    irrad_prev <- get_irradiancia_prevista(conn, id_usina = args$ids_usinas,
+        id_modelo_nwp = args$ordem_prioridade_modelosNWP, data_hora_previsao = janela)
+    mhg <- get_melhor_historico_geracao(conn, id_usina = args$ids_usinas)
+    mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(conn, id_usina = args$ids_usinas)
+
+    out <- list(ger_obs, corte, irrad_prev, mhg, mhg_sem_cortes)
+    names(out) <- c("ger_obs", "corte", "irrad_prev", "mhg", "mhg_sem_cortes")
+
+    return(out)
+}
 
 # Esta funcao processa uma unica usina individualmente
 processar_usina <- function(
@@ -229,121 +238,4 @@ organiza_resultados <- function(resultados, v_usinas) {
         com_cortes = dt_com_cortes,
         sem_cortes = dt_sem_cortes
     ))
-}
-
-
-
-
-#' Adequa dados observados e previstos
-#'
-#' Aplica filtros sobre listas de dados observados e previstos de usinas,
-#' retornando apenas os registros dentro das condicoes de interesse.
-#'
-#' @param resultados_leitura Lista de data.tables contendo os dados brutos,
-#'   incluindo observados, previstos e demais dados auxiliares.
-#' @param v_usinas Vetor de identificadores das usinas a serem mantidas.
-#' @param fonte Vetor de identificadores de fonte de observacao a serem filtrados.
-#' @param modelo_nwp Vetor de identificadores de modelos NWP a serem filtrados.
-#' @param data_inicio Data inicial no formato reconhecido por as.POSIXct.
-#' @param data_fim Data final no formato reconhecido por as.POSIXct.
-#'
-#' @return Uma lista com as mesmas estruturas de entrada, mas filtradas de acordo com
-#'   os parametros de usinas, fontes, modelos e intervalo de tempo.
-#'
-#' @details
-#' A funcao separa as listas de dados em tres grupos: observados, previstos
-#' e auxiliares. Aplica filtros especificos a cada grupo e depois junta novamente
-#' os resultados preservando os nomes originais.
-#'
-#' @examples
-#' library(data.table)
-#' horas <- seq.POSIXt(as.POSIXct("2025-05-26 00:00"), by = "1 hour", length.out = 4)
-#' obs <- data.table(
-#'     id_usina = c("U1", "U2"),
-#'     id_fonte_observacao = "Consis",
-#'     data_hora_observacao = rep(horas, each = 2),
-#'     valor = runif(8)
-#' )
-#' prev <- data.table(
-#'     id_modelo_nwp = "ModeloA",
-#'     data_hora_previsao = horas,
-#'     valor = runif(4)
-#' )
-#' resultados_leitura <- list(
-#'     ger_obs = obs,
-#'     dcorte_obs = obs,
-#'     mhg = obs,
-#'     mhg_sem_cortes = obs,
-#'     irrad_prev = prev
-#' )
-#' dados_filtrados <- adequa_dados(
-#'     resultados_leitura,
-#'     v_usinas = "U1",
-#'     fonte = "Consis",
-#'     modelo_nwp = "ModeloA",
-#'     data_inicio = "2025-05-26",
-#'     data_fim = "2025-05-26 02:00:00"
-#' )
-#' lapply(dados_filtrados, head)
-#'
-#' @seealso adequa_dados_observados, adequa_dados_previstos
-adequa_dados <- function(resultados_leitura, v_usinas, fonte, modelo_nwp, data_inicio, data_fim) {
-    # lista de nomes de observados e previstos
-    nomes_manter <- c("mhg", "mhg_sem_cortes")
-    nomes_obs <- c("ger_obs", "dcorte_obs")
-    nomes_prev <- c("irrad_prev")
-
-    # separa listas
-    lista_manter <- resultados_leitura[nomes_manter]
-    lista_obs <- resultados_leitura[nomes_obs]
-    lista_prev <- resultados_leitura[nomes_prev]
-
-    # Ajusta hora de inicio/fim se vier só a data (yyyy-mm-dd)
-    if (nchar(data_inicio) == 10) data_inicio <- paste0(data_inicio, " 00:00:00")
-    if (nchar(data_fim) == 10) data_fim <- paste0(data_fim, " 23:30:00")
-
-    # aplica filtros
-    lista_obs_f <- adequa_dados_observados(lista_obs, v_usinas, fonte, data_inicio, data_fim)
-    lista_prev_f <- adequa_dados_previstos(lista_prev, modelo_nwp, data_inicio, data_fim)
-
-    # junta de volta e preserva nomes
-    c(lista_obs_f, lista_manter, lista_prev_f)
-}
-
-#' Filtra lista de dados observados
-#'
-#' @param lista_obs Lista de data.tables com dados observados.
-#' @param v_usinas Vetor de identificadores de usinas.
-#' @param fonte Vetor de identificadores de fonte de observacao.
-#' @param data_inicio Data inicial no formato reconhecido por as.POSIXct.
-#' @param data_fim Data final no formato reconhecido por as.POSIXct.
-#'
-#' @return Lista de data.tables filtrados.
-adequa_dados_observados <- function(lista_obs, v_usinas, fonte, data_inicio, data_fim) {
-    lapply(lista_obs, function(dt) {
-        dt[
-            id_usina %in% v_usinas &
-                id_fonte_observacao %in% fonte &
-                data_hora_observacao >= as.POSIXct(data_inicio) &
-                data_hora_observacao <= as.POSIXct(data_fim) # , tz = "UTC")
-        ]
-    })
-}
-
-#' Filtra lista de dados previstos
-#'
-#' @param lista_prev Lista de data.tables com dados previstos.
-#' @param modelo_nwp Vetor de identificadores de modelos NWP.
-#' @param data_inicio Data inicial no formato reconhecido por as.POSIXct.
-#' @param data_fim Data final no formato reconhecido por as.POSIXct.
-#'
-#' @return Lista de data.tables filtrados.
-adequa_dados_previstos <- function(lista_prev, modelo_nwp, data_inicio, data_fim) {
-    lapply(lista_prev, function(dt) {
-        dt[
-            id_modelo_nwp %in% modelo_nwp &
-                data_hora_previsao >= as.POSIXct(data_inicio, tz = "UTC") &
-                data_hora_previsao <= as.POSIXct(data_fim, tz = "UTC")
-        ]
-    })
 }
