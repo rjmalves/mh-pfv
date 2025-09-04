@@ -13,6 +13,7 @@ parse_config <- function(config, conn) {
     valida_tipos_config(config)
     config$janela <- parsearg_janela(config$janela)
     config$ids_usinas <- parsearg_ids_usinas(config$ids_usinas, conn)
+    config$ordem_prioridade_fontes <- unlist(config$ordem_prioridade_fontes)
     return(config)
 }
 
