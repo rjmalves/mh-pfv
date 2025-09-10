@@ -2,16 +2,56 @@
 % Please edit documentation in R/predict.r
 \name{predict_main}
 \alias{predict_main}
-\title{Previsao De Melhor Historico Solar}
+\title{Funcao Principal de Previsao de Geracao}
 \usage{
 predict_main(args)
 }
 \arguments{
-\item{args}{lista de argumentos para execucao do melhor historico. Veja Detalhes}
+\item{args}{Lista de argumentos necessarios para o processamento. Os campos esperados sao:
+\itemize{
+\item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
+\item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd", indicando o inicio do periodo de analise.
+\item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
+\item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia aplicado ao limite superior de geracao observada.
+\item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas disponiveis serao utilizadas.
+\item \code{input}: caminho para a pasta onde estao localizados os dados de entrada (ex: dados de SCADA, modelos NWP, cortes, etc.).
+\item \code{mode}: string que define o modo de operacao. Deve ser "predict" para rodar o fluxo de previsao.
+\item \code{ordem_prioridade_fontes}: string com os nomes das fontes de dados separados por virgula, indicando a ordem de prioridade para uso dos dados historicos.
+\item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula, em ordem de prioridade.
+\item \code{output}: caminho para a pasta onde os arquivos de saida serao escritos.
+}}
 }
 \value{
-escreve no diretorio determinado em \code{args} os historicos produzidos
+Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos na pasta de saida especificada.
 }
 \description{
-Funcao principal para realizacao dos melhores historicos de solar fotovoltaica
+Executa o processamento completo de previsao de geracao observada para um conjunto de usinas, considerando diferentes fontes e modelos em ordem de prioridade.
+}
+\details{
+A funcao executa o fluxo completo para cada usina:
+\enumerate{
+\item Leitura da configuracao e dados de entrada (usinas, geracao observada, modelos NWP, cortes, etc).
+\item Aplicacao da funcao \code{processar_usina} para cada usina de forma individual.
+\item Organizacao dos resultados com e sem consideracao de cortes.
+\item Escrita dos melhores historicos de geracao observada nos formatos de saida esperados.
+}
+}
+\examples{
+args <- list(
+    artifact = ".",
+    data_fim = "2025-07-29",
+    data_inicio = "2025-04-30",
+    fator_tolerancia_limite_superior_geracao = 1.1,
+    ids_usinas = NULL,
+    input = "./data",
+    mode = "predict",
+    ordem_prioridade_fontes = "PI,CCEE,CCEE1h",
+    ordem_prioridade_modelosNWP = "GFS",
+    output = "./saida"
+)
+predict_main(args)
+
+}
+\seealso{
+processar_usina, get_dados_historicos, organiza_resultados, write_melhor_historico_geracao
 }

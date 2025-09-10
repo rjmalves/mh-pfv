@@ -1,13 +1,19 @@
-library(melhorhistoricosolar)
+suppressPackageStartupMessages(library(pfvIO))
+suppressPackageStartupMessages(library(melhorhistoricosolar))
 
 lg <- get_pkg_logger()
 
+parser <- get_parser()
+args <- parser$parse_args()
+
+conn <- conectamock_pfv(args$datadir)
+config <- get_config(conn)
+config <- parse_config(config, conn)
+
 tryCatch(
     {
-        parser <- get_parser()
-        args <- parser$parse_args()
-        if (args$mode == "predict") {
-            predict_main(args)
+        if (config$mode == "predict") {
+            predict_main(config)
         } else {
             stop("Modo invalido. Apenas o modo 'predict' esta disponivel para esse modelo.")
         }

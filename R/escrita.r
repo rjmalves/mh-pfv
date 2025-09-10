@@ -3,14 +3,18 @@
 #' Salva os dados de melhor historico de geracao em disco, formatados e validados
 #'
 #' @param dt `data.table` com os dados a serem salvos
-#' @param output_dir diretorio de saída onde sera salvo o arquivo CSV
+#' @param output_dir diretorio de saida onde sera salvo o arquivo CSV
 #'
 #' @return Caminho completo do arquivo salvo
 write_melhor_historico_geracao <- function(dt, output_dir = ".") {
     lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao...")
 
-    valida_melhor_historico_geracao(dt)
+    pfvIO:::valida_dado_singular_completo(dt,
+        pfvIO:::guess_col_names("melhor_historico_geracao"),
+        pfvIO:::guess_col_types("melhor_historico_geracao"),
+        pfvIO:::guess_col_limits("melhor_historico_geracao")
+    )
 
     arq <- inner_writer(dt, "melhor_historico_geracao", output_dir)
 
@@ -24,14 +28,18 @@ write_melhor_historico_geracao <- function(dt, output_dir = ".") {
 #' Salva os dados de melhor historico de geracao sem cortes em disco, formatados e validados
 #'
 #' @param dt `data.table` com os dados a serem salvos
-#' @param output_dir diretorio de saída onde sera salvo o arquivo CSV
+#' @param output_dir diretorio de saida onde sera salvo o arquivo CSV
 #'
 #' @return Caminho completo do arquivo salvo
 write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
     lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao sem cortes...")
 
-    valida_melhor_historico_geracao_sem_cortes(dt)
+    pfvIO:::valida_dado_singular_completo(dt,
+        pfvIO:::guess_col_names("melhor_historico_geracao_sem_cortes"),
+        pfvIO:::guess_col_types("melhor_historico_geracao_sem_cortes"),
+        pfvIO:::guess_col_limits("melhor_historico_geracao_sem_cortes")
+    )
 
     arq <- inner_writer(dt, "melhor_historico_geracao_sem_cortes", output_dir)
 
