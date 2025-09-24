@@ -16,7 +16,7 @@ Imports:
     argparse (>= 2.2.5),
     lgr (>= 0.4.4),
     lubridate (>= 1.9.4),
-    pfvIO (>= 0.2)
+    pfvIO (>= 0.2.1)
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
