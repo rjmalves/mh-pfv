@@ -29,11 +29,13 @@ da fonte usada segundo o vetor de prioridade fornecido.
 \examples{
 library(data.table)
 dt <- data.table(
-  id_fonte_observacao = c("A", "B", "A", "B"),
-  id_usina = c(1, 1, 2, 2),
-  data_hora_observacao = as.POSIXct(c("2020-01-01 00:00", "2020-01-01 00:00",
-                                      "2020-01-01 01:00", "2020-01-01 01:00")),
-  valor = c(NA, 10, 5, NA)
+    id_fonte_observacao = c("A", "B", "A", "B"),
+    id_usina = c(1, 1, 2, 2),
+    data_hora_observacao = as.POSIXct(c(
+        "2020-01-01 00:00", "2020-01-01 00:00",
+        "2020-01-01 01:00", "2020-01-01 01:00"
+    )),
+    valor = c(NA, 10, 5, NA)
 )
 ordem_prioridade <- c("A", "B")
 resultado <- combina_dados(dt, ordem_prioridade)

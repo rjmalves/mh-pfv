@@ -26,11 +26,13 @@ para selecionar, por usina e horario, os dados nao ausentes de maior prioridade.
 \examples{
 library(data.table)
 dt <- data.table(
-  id_fonte_observacao = c("A", "B", "A", "B"),
-  id_usina = c(1, 1, 2, 2),
-  data_hora_observacao = as.POSIXct(c("2020-01-01 00:00", "2020-01-01 00:00",
-                                      "2020-01-01 01:00", "2020-01-01 01:00")),
-  valor = c(NA, 10, 5, NA)
+    id_fonte_observacao = c("A", "B", "A", "B"),
+    id_usina = c(1, 1, 2, 2),
+    data_hora_observacao = as.POSIXct(c(
+        "2020-01-01 00:00", "2020-01-01 00:00",
+        "2020-01-01 01:00", "2020-01-01 01:00"
+    )),
+    valor = c(NA, 10, 5, NA)
 )
 ordem <- c("A", "B")
 resultado <- combina_fontes(dt, grandeza = "geracao_observada", ordem = ordem)

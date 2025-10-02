@@ -174,6 +174,7 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 #' @seealso substitui_por_estimativas
 
 ajusta_regressao_ger_irrad <- function(dty, dtx) {
+    
     dty[valor == 0, valor := NA]
     dtx[valor == 0, valor := NA]
 

@@ -126,6 +126,7 @@ processar_usina <- function(
     geracao_usina_consis <- consiste_geracao_unit(
         dados_usina = dad_usi,
         geracao_usina = ger_usi,
+        corte_obs = corte_obs,
         ordem_prioridade = fonte,
         limite_dados = c(0, potencia_instalada * fator_tolerancia)
     )

@@ -7,6 +7,7 @@
 consiste_geracao_unit(
   dados_usina,
   geracao_usina,
+  corte_obs,
   ordem_prioridade,
   limite_dados
 )
@@ -15,6 +16,8 @@ consiste_geracao_unit(
 \item{dados_usina}{\code{data.table} de dados das usinas com apenas a linha da usina a ser tratada}
 
 \item{geracao_usina}{\code{data.table} de geracao observada apenas da usina a ser tratada}
+
+\item{corte_obs}{\code{data.table} com os cortes observados, contendo coluna}
 }
 \value{
 \code{geracao_usina} consolidado em apenas uma fonte denominada \code{"Consis"}

@@ -4,10 +4,11 @@
 #'
 #' @param dados_usina `data.table` de dados das usinas com apenas a linha da usina a ser tratada
 #' @param geracao_usina `data.table` de geracao observada apenas da usina a ser tratada
+#' @param corte_obs `data.table` com os cortes observados, contendo coluna
 #'
 #' @return `geracao_usina` consolidado em apenas uma fonte denominada `"Consis"`
 
-consiste_geracao_unit <- function(dados_usina, geracao_usina, ordem_prioridade, limite_dados) {
+consiste_geracao_unit <- function(dados_usina, geracao_usina, corte_obs, ordem_prioridade, limite_dados) {
     # checa valores faltantes por fonte
     geracao_usina_preenchido <- checa_valores_faltantes(
         dt = geracao_usina
@@ -20,6 +21,13 @@ consiste_geracao_unit <- function(dados_usina, geracao_usina, ordem_prioridade, 
         v_limiar = c(0.01, 0.1)
     )
 
+    # retorna com a geracao verificada quando ha
+    geracao_usina_limpos <- manter_geracao_congelada_em_cortes(
+        geracao_usina_limpos,
+        geracao_usina,
+        corte_obs
+    )
+    
     # checa valores valores fora de limites fisicos
     geracao_usina_sem_overbound <- checa_valores_overbound(
         dt = copy(geracao_usina_limpos),
@@ -151,6 +159,42 @@ remove_congelados <- function(v, n_valores, limiar) {
 }
 
 
+#' Nao elimina valores congelados quando ha corte
+#'
+#' Atualiza os valores de geracao limpa (geracao_usina_limpos) com base nas
+#' posicoes de corte indicadas em corte_obs. Para cada posicao onde
+#' corte_obs$valor == 1, o valor correspondente de geracao_usina e retornado
+#' para geracao_usina_limpos.
+#'
+#' @param geracao_usina_limpos data.table com os dados de geracao tratados,
+#'   que sera atualizado conforme os cortes.
+#' @param geracao_usina data.table com os dados originais de geracao da usina.
+#' @param corte_obs data.table com os cortes observados, contendo coluna
+#'   valor que indica posicoes de corte (1 = corte, 0 = nao corte).
+#'
+#' @return data.table atualizado de geracao_usina_limpos, com os valores
+#'   substituidos em todas as posicoes de corte.
+#'
+#' @examples
+#' # geracao_usina_limpos <- manter_geracao_congelada_em_cortes(geracao_usina_limpos, geracao_usina, corte_obs)
+manter_geracao_congelada_em_cortes <- function(geracao_usina_limpos, geracao_usina, corte_obs) {
+    # junta apenas as posicoes de corte (valor == 1) com os valores de geracao_usina
+    cortes_valores <- merge(
+        corte_obs[valor == 1, .(id_usina, data_hora_observacao)],
+        geracao_usina[, .(id_usina, data_hora_observacao, valor)],
+        by = c("id_usina", "data_hora_observacao"),
+        all.x = TRUE
+    )
+
+    # atualiza os valores de geracao_usina_limpos nessas posicoes
+    geracao_usina_limpos[cortes_valores,
+        on = .(id_usina, data_hora_observacao),
+        valor := i.valor
+    ]
+
+    return(geracao_usina_limpos)
+}
+
 
 #' Remove Valores Fora de Limites Pre-Estabelecidos
 #'
@@ -205,11 +249,13 @@ checa_valores_overbound <- function(dt, limites = c(0, Inf)) {
 #' @examples
 #' library(data.table)
 #' dt <- data.table(
-#'   id_fonte_observacao = c("A", "B", "A", "B"),
-#'   id_usina = c(1, 1, 2, 2),
-#'   data_hora_observacao = as.POSIXct(c("2020-01-01 00:00", "2020-01-01 00:00",
-#'                                       "2020-01-01 01:00", "2020-01-01 01:00")),
-#'   valor = c(NA, 10, 5, NA)
+#'     id_fonte_observacao = c("A", "B", "A", "B"),
+#'     id_usina = c(1, 1, 2, 2),
+#'     data_hora_observacao = as.POSIXct(c(
+#'         "2020-01-01 00:00", "2020-01-01 00:00",
+#'         "2020-01-01 01:00", "2020-01-01 01:00"
+#'     )),
+#'     valor = c(NA, 10, 5, NA)
 #' )
 #' ordem <- c("A", "B")
 #' resultado <- combina_fontes(dt, grandeza = "geracao_observada", ordem = ordem)
@@ -253,18 +299,18 @@ combina_fontes <- function(dt, grandeza, ordem) {
 #' @examples
 #' library(data.table)
 #' dt <- data.table(
-#'   id_fonte_observacao = c("A", "B", "A", "B"),
-#'   id_usina = c(1, 1, 2, 2),
-#'   data_hora_observacao = as.POSIXct(c("2020-01-01 00:00", "2020-01-01 00:00",
-#'                                       "2020-01-01 01:00", "2020-01-01 01:00")),
-#'   valor = c(NA, 10, 5, NA)
+#'     id_fonte_observacao = c("A", "B", "A", "B"),
+#'     id_usina = c(1, 1, 2, 2),
+#'     data_hora_observacao = as.POSIXct(c(
+#'         "2020-01-01 00:00", "2020-01-01 00:00",
+#'         "2020-01-01 01:00", "2020-01-01 01:00"
+#'     )),
+#'     valor = c(NA, 10, 5, NA)
 #' )
 #' ordem_prioridade <- c("A", "B")
 #' resultado <- combina_dados(dt, ordem_prioridade)
 #'
-
 combina_dados <- function(dt, ordem) {
-
     # Cria uma copia local
     dt_local <- copy(dt)
 
@@ -310,4 +356,3 @@ combina_dados <- function(dt, ordem) {
 
     return(dt_resultado[])
 }
-
