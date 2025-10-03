@@ -122,14 +122,26 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
         usina <- dt_usinas[i]
 
         # Calcula a distância euclidiana entre a usina e todas as coordenadas da previsão
-        coord_prev[, distancia := sqrt((latitude - usina$latitude)^2 + (longitude - usina$longitude)^2)]
+        # coord_prev[, distancia := sqrt(
+        #   (( (latitude - usina$latitude) * 111.32 )^2) +
+        #   (( (longitude - usina$longitude) * 111.32 * cos((latitude + usina$latitude) * pi/360) )^2)
+        # )]
+
+        R <- 6371 # raio médio da Terra em km
+
+        # Calcula a distância Haversine entre a usina e todas as coordenadas da previsão
+        coord_prev[, distancia := 2 * R * asin(sqrt(
+            sin(((latitude - usina$latitude) * pi / 180) / 2)^2 +
+                cos(usina$latitude * pi / 180) * cos(latitude * pi / 180) *
+                    sin(((longitude - usina$longitude) * pi / 180) / 2)^2
+        ))]
 
         # Pega a coordenada mais próxima
         coord_mais_proxima <- coord_prev[which.min(distancia)]
 
         # Filtra os dados da previsão para essa coordenada
         dt_filt <- dt_irrad_prev[latitude == coord_mais_proxima$latitude &
-                longitude == coord_mais_proxima$longitude]
+            longitude == coord_mais_proxima$longitude]
 
         # Adiciona o id_usina
         dt_filt[, id_usina := usina$id_usina]
