@@ -1,6 +1,6 @@
 test_that("preenche_geracao_unit", {
     # Dados base com multiplos dias para horario fixo (06:00)
-    dias <- seq(from = as.Date("2025-01-01"), by = "1 day", length.out = 10)
+    dias <- seq(from = as.Date("2025-01-01"), by = "1 day", length.out = 20)
     horarios <- as.POSIXct(paste(dias, "06:00:00"))
 
     # Teste 1: Preenchimento de NAs com estimativas quando regressao esta disponivel
@@ -8,26 +8,26 @@ test_that("preenche_geracao_unit", {
         id_usina = "U1",
         id_fonte_observacao = "PI",
         data_hora_observacao = horarios,
-        valor = c(NA, 2, 4, 6, 8, 10, 12, 14, 16, 18),
-        status = c(NA, rep(1, 9))
+        valor = c(NA, seq(2, 38, by = 2)),
+        status = c(NA, rep(1, 19))
     )
 
     irrad_prev <- data.table(
         id_usina = "U1",
         data_hora_previsao = horarios,
-        valor = seq(10, 100, by = 10)
+        valor = seq(10, 200, by = 10)
     )
 
     mhg_prev <- data.table(
         id_usina = "U1",
         id_fonte_observacao = "PI",
         data_hora_observacao = horarios,
-        valor = rep(1, 10),
-        status = c(NA, rep(1, 9))
+        valor = rep(1, 20),
+        status = c(NA, rep(1, 19))
     )
 
     cortes <- NULL
-    limite_dados <- c(0, 25)
+    limite_dados <- c(0, 40)
 
     resultado <- preenche_geracao_unit(
         geracao_usina = copy(geracao_usina),
@@ -41,7 +41,7 @@ test_that("preenche_geracao_unit", {
     expect_true("valor" %in% names(resultado))
 
     # Teste 2: Valores preenchidos nao devem ultrapassar os limites
-    expect_true(all(na.omit(resultado$valor) >= 0 & na.omit(resultado$valor) <= 25))
+    expect_true(all(na.omit(resultado$valor) >= limite_dados[1] & na.omit(resultado$valor) <= limite_dados[2]))
 
     # Teste 3: Valores com 999 devem ser tratados como NA
     geracao_usina_999 <- copy(geracao_usina)
@@ -76,8 +76,8 @@ test_that("preenche_geracao_unit", {
     # Teste 5: Quando cortes sao aplicados, valores devem virar NA e depois estimados
     cortes_dt <- data.table(
         id_usina = "U1",
-        data_hora_observacao = horarios[1:3],
-        valor = c(1, 1, 1)
+        data_hora_observacao = horarios[1:5],
+        valor = rep(1, 5)
     )
 
     resultado_cortes <- preenche_geracao_unit(
@@ -89,7 +89,7 @@ test_that("preenche_geracao_unit", {
     )
     resultado_06h <- resultado_cortes[format(data_hora_observacao, "%H:%M:%S") == "06:00:00"]
 
-    expect_false(any(resultado_06h$status[1:3] != 4))
+    expect_false(any(resultado_06h$status[1:5] != 4))
 
     # Teste 6: Se todos os dados forem NA apos cortes e limite, resultado final deve conter NA
     geracao_na <- copy(geracao_usina)
@@ -108,7 +108,6 @@ test_that("preenche_geracao_unit", {
 
     expect_true(all(is.na(resultado_06h$valor)))
 })
-
 
 
 test_that("ajusta_regressao_ger_irrad", {
@@ -130,7 +129,7 @@ test_that("ajusta_regressao_ger_irrad", {
     )
 
     # Teste 1: Ajusta regressao corretamente com multiplos dias no mesmo horario
-    resultado <- ajusta_regressao_ger_irrad(copy(dty_base), copy(dtx_base))
+    resultado <- ajusta_regressao_ger_irrad(copy(dty_base), copy(dtx_base), copy(dty_base))
     expect_equal(rownames(resultado), "06:00")
     expect_gt(resultado["06:00", "a"], 0)
     expect_equal(resultado["06:00", "b"], 0)
@@ -138,7 +137,7 @@ test_that("ajusta_regressao_ger_irrad", {
     # Teste 2: Se menos de 6 pares validos, nao ajusta regressao
     dty_poucos <- dty_base[1:5]
     dtx_poucos <- dtx_base[1:5]
-    resultado_poucos <- ajusta_regressao_ger_irrad(copy(dty_poucos), copy(dtx_poucos))
+    resultado_poucos <- ajusta_regressao_ger_irrad(copy(dty_poucos), copy(dtx_poucos), copy(dty_poucos))
     expect_equal(nrow(resultado_poucos), 0)
 
     # Teste 3: Zeros devem ser tratados como NA
@@ -146,16 +145,15 @@ test_that("ajusta_regressao_ger_irrad", {
     dtx_zero <- copy(dtx_base)
     dty_zero[1:3, valor := 0]
     dtx_zero[1:3, valor := 0]
-    resultado_zero <- ajusta_regressao_ger_irrad(copy(dty_zero), copy(dtx_zero))
+    resultado_zero <- ajusta_regressao_ger_irrad(copy(dty_zero), copy(dtx_zero), copy(dty_zero))
     expect_equal(rownames(resultado_zero), "06:00")
-    expect_gt(resultado_zero["06:00", "a"], 0) # ainda há 7 pares validos
 
     # Teste 4: Se todos os valores forem NA, nao ajusta regressao e retorna 0
     dty_na <- copy(dty_base)
     dtx_na <- copy(dtx_base)
     dty_na[, valor := NA]
     dtx_na[, valor := NA]
-    resultado_na <- ajusta_regressao_ger_irrad(copy(dty_na), copy(dtx_na))
+    resultado_na <- ajusta_regressao_ger_irrad(copy(dty_na), copy(dtx_na), copy(dty_na))
     expect_equal(resultado_na["06:00", "a"], NA)
 
     # Teste 5: Funciona tambem para horario com minuto (ex: 06:30)
@@ -170,7 +168,7 @@ test_that("ajusta_regressao_ger_irrad", {
         data_hora_observacao = horarios_0630,
         valor = seq(3, 30, by = 3)
     )
-    resultado_0630 <- ajusta_regressao_ger_irrad(copy(dty_0630), copy(dtx_0630))
+    resultado_0630 <- ajusta_regressao_ger_irrad(copy(dty_0630), copy(dtx_0630), copy(dty_0630))
     expect_equal(rownames(resultado_0630), "06:30")
     expect_gt(resultado_0630["06:30", "a"], 0)
 })

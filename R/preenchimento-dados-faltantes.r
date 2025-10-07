@@ -23,13 +23,13 @@
 #'
 #' @examples
 #' # Exemplo simplificado - veja funcoes auxiliares para gerar dados simulados realistas
-#' 
+#'
 #' library(data.table)
-#' 
+#'
 #' # Dados base com multiplos dias para horario fixo (06:00)
 #' dias <- seq(from = as.Date("2025-01-01"), by = "1 day", length.out = 10)
 #' horarios <- as.POSIXct(paste(dias, "06:00:00"))
-#' 
+#'
 #' # Dados de geracao
 #' geracao_usina <- data.table(
 #'     id_usina = "U1",
@@ -38,14 +38,14 @@
 #'     valor = c(NA, 2, 4, 6, 8, 10, 12, 14, 16, 18),
 #'     status = c(NA, rep(1, 9))
 #' )
-#' 
+#'
 #' # Dados de irradiancia
 #' irrad_prev <- data.table(
 #'     id_usina = "U1",
 #'     data_hora_previsao = horarios,
 #'     valor = seq(10, 100, by = 10)
 #' )
-#' 
+#'
 #' # Dados do melhor historico de rodadas anteriores
 #' mhg_prev <- data.table(
 #'     id_usina = "U1",
@@ -54,10 +54,10 @@
 #'     valor = rep(1, 10),
 #'     status = c(NA, rep(1, 9))
 #' )
-#' 
+#'
 #' cortes <- NULL
 #' limite_dados <- c(0, 25)
-#' 
+#'
 #' resultado <- preenche_geracao_unit(
 #'     geracao_usina = copy(geracao_usina),
 #'     irrad_prev = copy(irrad_prev),
@@ -71,7 +71,7 @@
 preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados) {
     geracao_usina[valor == 999, valor := NA]
     irrad_prev[valor == 999, valor := NA]
-
+    geracao_usina_bruta <- copy(geracao_usina)
 
     # ajusta modelo de regressao linear
     if (!is.null(cortes)) {
@@ -81,11 +81,11 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
         )
     }
 
-
     # ajusta modelo de regressao linear
     regressoes <- ajusta_regressao_ger_irrad(
         dty = copy(geracao_usina),
-        dtx = copy(irrad_prev)
+        dtx = copy(irrad_prev),
+        dty_bruta = geracao_usina_bruta
     )
 
     # preenche dados faltantes pela estimativa
@@ -95,7 +95,6 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
         regressoes = regressoes,
         lim_dados = limite_dados
     )
-
 
     # checa valores faltantes do MHG
     mhg_prev <- checa_valores_faltantes(
@@ -107,8 +106,6 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
         dt1 = mhg_prev,
         dt2 = geracao_usina_completo
     )
-
-
 
     # zera posicoes de horarios sem geracao
     geracao_usina_completo_final <- zera_horarios_extremos(
@@ -137,6 +134,12 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 #'     \item \code{id_usina}: identificador da usina.
 #'     \item \code{data_hora_previsao}: data e hora da irradiacao (classe POSIXct).
 #'     \item \code{valor}: valor numerico da irradiacao.
+#'   }
+#' @param dty_bruta data.table com dados de geracao observada bruta. Deve conter as colunas:
+#'   \itemize{
+#'     \item \code{id_usina}: identificador da usina.
+#'     \item \code{data_hora_observacao}: data e hora da geracao (classe POSIXct).
+#'     \item \code{valor}: valor numerico da geracao.
 #'   }
 #'
 #' @return Um data.frame com os coeficientes de regressao por horario, com:
@@ -167,16 +170,18 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 #'     data_hora_previsao = rep(seq.POSIXt(as.POSIXct("2025-01-01 06:00"), by = "1 day", length.out = 10), each = 1),
 #'     valor = runif(10, 80, 120)
 #' )
+#' 
+#' dty_bruta <- dty
 #'
-#' coeficientes <- ajusta_regressao_ger_irrad(dty, dtx)
+#' coeficientes <- ajusta_regressao_ger_irrad(dty, dtx, dty_bruta)
 #' print(coeficientes)
 #'
 #' @seealso substitui_por_estimativas
 
-ajusta_regressao_ger_irrad <- function(dty, dtx) {
-    
+ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
     dty[valor == 0, valor := NA]
     dtx[valor == 0, valor := NA]
+    dty_bruta[valor == 0, valor := NA]
 
     horas_meia_hora <- seq(5.0, 18.5, by = 0.5)
 
@@ -196,6 +201,30 @@ ajusta_regressao_ger_irrad <- function(dty, dtx) {
 
         # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
         dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
+
+        # Mantém somente as datas de dty_f que existam em dtx_fn
+        dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
+
+
+        pos <- which(!is.na(dty_f$valor))
+        if (length(pos) < 10) {
+            dty_f <- dty_bruta[hour(data_hora_observacao) == hora_inteira &
+                minute(data_hora_observacao) == minuto]
+            # Calcular o quantil de 60% da coluna 'valor'
+            q60 <- quantile(dty_f$valor, probs = 0.7, na.rm = TRUE)
+
+            # Substituir por NA os valores menores que o quantil de 60%
+            dty_f[valor < q60, valor := NA]
+
+            dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
+                minute(data_hora_previsao) == minuto]
+
+            # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
+            dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
+
+            # Mantém somente as datas de dty_f que existam em dtx_fn
+            dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
+        }
 
 
 
@@ -365,7 +394,7 @@ zera_horarios_extremos <- function(df_ger_usi) {
     # Substituir por 0 as horas fora do intervalo
     df_ger_usi[hora_dec < min_hora | hora_dec > max_hora, valor := 0]
 
-    # Substituir por NA as horas que o status é NA
+    # Substituir por NA as horas que o status e NA
     df_ger_usi[is.na(status), valor := NA_real_]
 
 

@@ -160,3 +160,116 @@ test_that("associa_nwp_usina", {
                     "data_hora_rodada", "irradiancia") %in% names(res2)))
 
 })
+
+
+
+
+test_that("adicionar_passo_previsao", {
+  
+  # Teste 1: passo_prev deve ser D+0 quando previsao e rodada sao no mesmo dia
+  dt1 <- data.table(
+    data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
+    data_hora_previsao = as.POSIXct("2025-08-03 12:00:00")
+  )
+  res1 <- adicionar_passo_previsao(copy(dt1))
+  expect_equal(res1$passo_prev, "D+0")
+  
+  # Teste 2: passo_prev deve ser D+1 quando previsao e 1 dia apos a rodada
+  dt2 <- data.table(
+    data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
+    data_hora_previsao = as.POSIXct("2025-08-04 00:00:00")
+  )
+  res2 <- adicionar_passo_previsao(copy(dt2))
+  expect_equal(res2$passo_prev, "D+1")
+  
+  # Teste 3: deve funcionar para multiplas linhas com diferentes dias
+  dt3 <- data.table(
+    data_hora_rodada = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 00:00:00", "2025-08-03 00:00:00")),
+    data_hora_previsao = as.POSIXct(c("2025-08-03 03:00:00", "2025-08-04 03:00:00", "2025-08-05 03:00:00"))
+  )
+  res3 <- adicionar_passo_previsao(copy(dt3))
+  expect_equal(res3$passo_prev, c("D+0", "D+1", "D+2"))
+  
+  # Teste 4: deve converter corretamente colunas que nao estao em POSIXct
+  dt4 <- data.table(
+    data_hora_rodada = c("2025-08-03 00:00:00"),
+    data_hora_previsao = c("2025-08-05 00:00:00")
+  )
+  res4 <- adicionar_passo_previsao(copy(dt4))
+  expect_equal(res4$passo_prev, "D+2")
+  
+  # Teste 5: deve retornar as mesmas colunas da entrada mais passo_prev
+  dt5 <- data.table(
+    id = 1:2,
+    data_hora_rodada = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 00:00:00")),
+    data_hora_previsao = as.POSIXct(c("2025-08-03 01:00:00", "2025-08-04 01:00:00"))
+  )
+  res5 <- adicionar_passo_previsao(copy(dt5))
+  expect_true("passo_prev" %in% names(res5))
+  expect_equal(ncol(res5), ncol(dt5) + 1)
+})
+
+
+test_that("interpolar_30min", {
+
+  # Teste 1: verifica se a funcao retorna data.table
+  dt1 <- data.table(
+    id_modelo_nwp = rep("GFS", 2),
+    id_usina = rep("USINA_A", 2),
+    latitude = -25,
+    longitude = -48.5,
+    data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
+    data_hora_previsao = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 01:00:00")),
+    valor = c(10, 20),
+    passo_prev = rep("D+0", 2)
+  )
+  res1 <- interpolar_30min(copy(dt1))
+  expect_s3_class(res1, "data.table")
+
+  # Teste 2: verifica se a interpolacao cria ponto intermediario a cada 30 min
+  expect_equal(nrow(res1), 3) # 2 horas -> 1 intervalo -> 3 linhas
+
+  # Teste 3: verifica se os valores interpolados estao corretos
+  expect_equal(res1$valor[2], 15) # ponto intermediario entre 10 e 20
+
+  # Teste 4: verifica se as colunas permanecem na mesma ordem do original
+  expect_equal(names(res1), names(dt1))
+
+  # Teste 5: verifica se multipla linhas por grupo sao interpoladas corretamente
+  dt2 <- data.table(
+    id_modelo_nwp = rep("GFS", 3),
+    id_usina = rep("USINA_A", 3),
+    latitude = -25,
+    longitude = -48.5,
+    data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
+    data_hora_previsao = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 01:00:00", "2025-08-03 02:00:00")),
+    valor = c(10, 20, 30),
+    passo_prev = rep("D+0", 3)
+  )
+  res2 <- interpolar_30min(copy(dt2))
+  expect_equal(nrow(res2), 5) # 3 horas -> 2 intervalos -> 5 linhas
+  expect_equal(res2$valor[2], 15) # primeiro ponto intermediario
+  expect_equal(res2$valor[4], 25) # segundo ponto intermediario
+
+  # Teste 6: verifica se funcao funciona com multiplos grupos
+  dt3 <- rbind(
+    data.table(
+      id_modelo_nwp = "GFS", id_usina = "A", latitude = -25, longitude = -48,
+      data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
+      data_hora_previsao = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 01:00:00")),
+      valor = c(10, 20),
+      passo_prev = "D+0"
+    ),
+    data.table(
+      id_modelo_nwp = "GFS", id_usina = "B", latitude = -26, longitude = -49,
+      data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
+      data_hora_previsao = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 01:00:00")),
+      valor = c(30, 50),
+      passo_prev = "D+0"
+    )
+  )
+  res3 <- interpolar_30min(copy(dt3))
+  expect_equal(nrow(res3), 6) # 2 grupos -> 3 linhas cada
+  expect_equal(res3$valor[2], 15) # grupo A
+  expect_equal(res3$valor[5], 40) # grupo B
+})

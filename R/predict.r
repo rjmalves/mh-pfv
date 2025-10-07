@@ -122,6 +122,8 @@ processar_usina <- function(
     dt_irrad_prev_filt_n <- adicionar_passo_previsao(dt_irrad_prev_filt)
     irrad_prev <- dt_irrad_prev_filt_n[id_usina == iu & passo_prev == "D+0"]
 
+    irrad_prev <- interpolar_30min(irrad_prev)
+
     # Consistencia da geracao observada com base nos limites definidos
     geracao_usina_consis <- consiste_geracao_unit(
         dados_usina = dad_usi,

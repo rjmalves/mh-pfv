@@ -274,6 +274,32 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
 }
 
 
+#' Adiciona a coluna passo_prev com base na diferenca entre datas de rodada e previsao
+#'
+#' Esta funcao calcula o passo de previsao (em dias) entre as colunas 
+#' `data_hora_rodada` e `data_hora_previsao` e adiciona a coluna `passo_prev`
+#' no formato "D+N", onde N e o numero inteiro de dias de diferenca.
+#'
+#' @param dt_irrad_prev_filt Um data.table contendo pelo menos as colunas
+#'   `data_hora_rodada` e `data_hora_previsao`. As colunas podem estar em
+#'   qualquer formato que possa ser convertido para POSIXct.
+#'
+#' @return O mesmo data.table de entrada, com uma nova coluna `passo_prev`
+#'   indicando o passo de previsao em dias (exemplo: "D+0", "D+1", etc).
+#'
+#' @details
+#' A funcao converte as colunas `data_hora_rodada` e `data_hora_previsao` para
+#' o tipo POSIXct, garantindo consistencia no calculo de diferencas de datas.
+#' Em seguida, calcula a diferenca de dias inteiros entre as duas colunas e
+#' gera a string do passo de previsao.
+#'
+#' @examples
+#' library(data.table)
+#' dt <- data.table(
+#'   data_hora_rodada = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 00:00:00")),
+#'   data_hora_previsao = as.POSIXct(c("2025-08-03 01:00:00", "2025-08-04 01:00:00"))
+#' )
+#' dt <- adicionar_passo_previsao(dt)
 
 adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
     # Garante que as colunas sao do tipo POSIXct
@@ -287,4 +313,84 @@ adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
     )]
 
     return(dt_irrad_prev_filt)
+}
+
+
+#' Interpolar valores para intervalos de 30 minutos
+#'
+#' Esta funcao realiza a interpolacao linear de valores em uma tabela de previsao,
+#' gerando novas observacoes a cada 30 minutos dentro do intervalo de datas de cada grupo.
+#' O agrupamento e feito por `id_modelo_nwp`, `id_usina` e `passo_prev`.
+#'
+#' @param dt Um data.table contendo as colunas:
+#'   - `id_modelo_nwp` (character): identificador do modelo NWP
+#'   - `id_usina` (character): identificador da usina
+#'   - `latitude` (numeric): latitude da usina
+#'   - `longitude` (numeric): longitude da usina
+#'   - `data_hora_rodada` (POSIXct): data e hora da rodada do modelo
+#'   - `data_hora_previsao` (POSIXct): data e hora da previsao
+#'   - `valor` (numeric): valor previsto
+#'   - `passo_prev` (character): passo da previsao (ex: "D+1")
+#'
+#' @return Um `data.table` com os mesmos campos de entrada, porem com novos registros
+#'   interpolados em intervalos de 30 minutos. As colunas permanecem na mesma ordem do
+#'   objeto original.
+#'
+#' @details
+#' A funcao realiza a interpolacao linear com base na funcao `approx`, garantindo que
+#' o intervalo entre `min(data_hora_previsao)` e `max(data_hora_previsao)` de cada grupo
+#' seja preenchido com valores a cada 30 minutos. As colunas de identificacao e
+#' coordenadas sao mantidas fixas conforme o primeiro registro de cada grupo.
+#'
+#' @examples
+#' library(data.table)
+#'
+#' dt_exemplo <- data.table(
+#'   id_modelo_nwp = rep("GFS", 3),
+#'   id_usina = rep("USINA_A", 3),
+#'   latitude = -25,
+#'   longitude = -48.5,
+#'   data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
+#'   data_hora_previsao = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 01:00:00", "2025-08-03 02:00:00")),
+#'   valor = c(10, 20, 30),
+#'   passo_prev = rep("D+0", 3)
+#' )
+#'
+#' dt_interp <- interpolar_30min(dt_exemplo)
+#' print(dt_interp)
+
+interpolar_30min <- function(dt) {
+  # Garantir que e data.table
+  dt <- as.data.table(dt)
+  
+  # Guardar ordem original das colunas
+  col_order <- names(dt)
+  
+  # Ordenar
+  setorder(dt, id_modelo_nwp, id_usina, data_hora_previsao)
+  
+  # Aplicar interpolacao por grupo
+  dt_interp <- dt[, {
+    nova_seq <- seq(min(data_hora_previsao), max(data_hora_previsao), by = "30 min")
+    
+    valor_interp <- approx(
+      x = as.numeric(data_hora_previsao),
+      y = valor,
+      xout = as.numeric(nova_seq),
+      method = "linear"
+    )$y
+    
+    list(
+      latitude = first(latitude),
+      longitude = first(longitude),
+      data_hora_rodada = first(data_hora_rodada),
+      data_hora_previsao = nova_seq,
+      valor = valor_interp
+    )
+  }, by = .(id_modelo_nwp, id_usina, passo_prev)]
+  
+  # Reordenar colunas conforme o original
+  setcolorder(dt_interp, col_order)
+  
+  return(dt_interp[])
 }

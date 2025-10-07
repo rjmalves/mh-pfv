@@ -4,7 +4,7 @@
 \alias{ajusta_regressao_ger_irrad}
 \title{Ajusta Regressao Linear entre Geracao Observada e Irradiacao Prevista}
 \usage{
-ajusta_regressao_ger_irrad(dty, dtx)
+ajusta_regressao_ger_irrad(dty, dtx, dty_bruta)
 }
 \arguments{
 \item{dty}{data.table com dados de geracao observada. Deve conter as colunas:
@@ -19,6 +19,13 @@ ajusta_regressao_ger_irrad(dty, dtx)
 \item \code{id_usina}: identificador da usina.
 \item \code{data_hora_previsao}: data e hora da irradiacao (classe POSIXct).
 \item \code{valor}: valor numerico da irradiacao.
+}}
+
+\item{dty_bruta}{data.table com dados de geracao observada bruta. Deve conter as colunas:
+\itemize{
+\item \code{id_usina}: identificador da usina.
+\item \code{data_hora_observacao}: data e hora da geracao (classe POSIXct).
+\item \code{valor}: valor numerico da geracao.
 }}
 }
 \value{
@@ -54,7 +61,9 @@ dtx <- data.table(
     valor = runif(10, 80, 120)
 )
 
-coeficientes <- ajusta_regressao_ger_irrad(dty, dtx)
+dty_bruta <- dty
+
+coeficientes <- ajusta_regressao_ger_irrad(dty, dtx, dty_bruta)
 print(coeficientes)
 
 }
