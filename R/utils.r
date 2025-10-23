@@ -229,7 +229,7 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
     lista_filtrados <- list()
 
     # Loop sobre cada usina
-    for (i in seq_len(nrow(dt_usinas))) {
+      lista_filtrados <- lapply(seq_len(nrow(dt_usinas)), function(i) {
         usina <- dt_usinas[i]
 
         # Calcula a distancia euclidiana entre a usina e todas as coordenadas da previsao
@@ -256,10 +256,9 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
 
         # Adiciona o id_usina
         dt_filt[, id_usina := usina$id_usina]
-
-        # Adiciona a lista
-        lista_filtrados[[i]] <- dt_filt
-    }
+        
+        return(dt_filt)
+    })
 
     # Junta tudo
     dt_irrad_prev_filt <- rbindlist(lista_filtrados)
