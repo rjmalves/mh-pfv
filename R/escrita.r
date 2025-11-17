@@ -10,13 +10,18 @@ write_melhor_historico_geracao <- function(dt, output_dir = ".") {
     lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao...")
 
-    pfvIO:::valida_dado_singular_completo(dt,
+    pfvIO:::valida_dado_singular_completo(
+        dt,
         pfvIO:::guess_col_names("melhor_historico_geracao"),
         pfvIO:::guess_col_types("melhor_historico_geracao"),
         pfvIO:::guess_col_limits("melhor_historico_geracao")
     )
 
-    arq <- inner_writer(dt, "melhor_historico_geracao", output_dir)
+    arq <- inner_writer(dt,
+        "melhor_historico_geracao",
+        output_dir,
+        output_type = "parquet"
+    )
 
     lg$debug("Dados de melhor historico de geracao salvos com sucesso")
     return(arq)
@@ -35,13 +40,18 @@ write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
     lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao sem cortes...")
 
-    pfvIO:::valida_dado_singular_completo(dt,
+    pfvIO:::valida_dado_singular_completo(
+        dt,
         pfvIO:::guess_col_names("melhor_historico_geracao_sem_cortes"),
         pfvIO:::guess_col_types("melhor_historico_geracao_sem_cortes"),
         pfvIO:::guess_col_limits("melhor_historico_geracao_sem_cortes")
     )
 
-    arq <- inner_writer(dt, "melhor_historico_geracao_sem_cortes", output_dir)
+    arq <- inner_writer(dt,
+        "melhor_historico_geracao_sem_cortes",
+        output_dir,
+        output_type = "parquet"
+    )
 
     lg$debug("Dados de melhor historico de geracao sem cortes salvos com sucesso")
     return(arq)
@@ -60,10 +70,15 @@ write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
 #' @param output_dir diretorio onde o arquivo sera salvo
 #'
 #' @return Caminho do arquivo salvo
-inner_writer <- function(dt, table = "", output_dir = ".") {
-    arq <- file.path(output_dir, paste0(table, ".csv"))
-    # Escreve o arquivo CSV
-    fwrite(dt, arq)
-
+inner_writer <- function(dt, table = "", output_dir = ".", output_type = "csv") {
+    if (output_type == "csv") {
+        arq <- file.path(output_dir, paste0(table, ".csv"))
+        # Escreve o arquivo CSV
+        fwrite(dt, arq)
+    } else if (output_type == "parquet") {
+        arq <- file.path(output_dir, paste0(table, ".parquet"))
+        # Escreve o arquivo parquet
+        write_parquet(dt, arq)
+    }
     return(arq)
 }
