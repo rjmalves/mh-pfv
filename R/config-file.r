@@ -11,7 +11,7 @@
 parse_config <- function(config, conn) {
     valida_nomes_config(config)
     valida_tipos_config(config)
-    config$janela <- parsearg_janela(config$janela)
+    config$janelas <- parsearg_janelas(config$janelas)
     config$ids_usinas <- parsearg_ids_usinas(config$ids_usinas, conn)
     config$ordem_prioridade_fontes <- unlist(config$ordem_prioridade_fontes)
     return(config)
@@ -108,6 +108,19 @@ valid_tipos_unit <- function(x, tipos) Reduce("|", lapply(tipos, inherits, x = x
 
 # PARSERS ------------------------------------------------------------------------------------------
 
+#' Interpretador De Chave `janelas`
+#' 
+#' Funcao interna de [`parse_config`] para interpretar o parametro `janela` da configuracao
+#' 
+#' @param x valor da chave `janela`; numerico ou vetor de duas strings de data
+#' 
+#' @return vetor `Date` de duas posicoes indicando inicio e fim da janela de melhor historico
+
+parsearg_janelas <- function(x) {
+    l_janelas <- lapply(x, parsearg_janela)
+    return(l_janelas)
+}
+
 #' Interpretador De Chave `janela`
 #' 
 #' Funcao interna de [`parse_config`] para interpretar o parametro `janela` da configuracao
@@ -120,7 +133,7 @@ parsearg_janela <- function(x) UseMethod("parsearg_janela")
 
 #' @rdname parsearg_janela
 
-parsearg_janela.numeric <- function(x) Sys.Date() - c(x + 1, 1)
+parsearg_janela.numeric <- function(x) Sys.Date() - c(x + 1, 1)  
 
 #' @rdname parsearg_janela
 
@@ -138,5 +151,5 @@ parsearg_janela.character <- function(x) as.Date(x)
 
 parsearg_ids_usinas <- function(x, conn) {
     if (length(x) == 0) x <- get_usinas(conn)$id_usina else x <- unlist(x)
-    return(x)
+    return(unique(x))
 }

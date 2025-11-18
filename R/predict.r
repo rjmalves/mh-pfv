@@ -105,6 +105,20 @@ get_dataset <- function(args, conn) {
     return(out)
 }
 
+#' Leitura do artefato de modelo treinado para uso em previsao
+#'
+#' Le o conteudo do objeto do modelo de um arquivo RDS
+#'
+#' @param iu ID da usina, usado para montar o nome do arquivo
+#' @param artifact_dir diretorio de saida onde foi salvo o artefato
+#'
+#' @return Objeto em R representando o modelo treinado
+read_model_artifact <- function(iu, artifact_dir = ".") {
+    arq <- file.path(artifact_dir, paste0(iu, ".rds"))
+    model <- readRDS(arq)
+    return(model)
+}
+
 # Esta funcao processa uma unica usina individualmente
 processar_usina <- function(
     iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
@@ -132,6 +146,11 @@ processar_usina <- function(
         ordem_prioridade = fonte,
         limite_dados = c(0, potencia_instalada * fator_tolerancia)
     )
+
+    # TODO - chamar a função auxiliar read_model_artifact para carregar o modelo
+    
+    # TODO - adaptar para a função preenche_geracao_unit não precisar de ajusar
+    # nada e receber o modelo treinado.
 
     # Preenche a serie de geracao usando dados previstos e MHG com cortes
     geracao_usina_preenchida <- preenche_geracao_unit(

@@ -1,3 +1,23 @@
+#' Escrita do artefato de modelo treinado para uso em previsao
+#'
+#' Salva o conteudo do objeto do modelo em um arquivo RDS
+#'
+#' @param model objeto em R representando o modelo treinado
+#' @param iu ID da usina, usado para nomear o arquivo
+#' @param artifact_dir diretorio de saida onde sera salvo o artefato
+#'
+#' @return Caminho completo do arquivo salvo
+write_model_artifact <- function(model, iu, artifact_dir = ".") {
+    lg <- get_pkg_logger()
+    lg$debug("Escrevendo modelo treinado...")
+
+    arq <- file.path(artifact_dir, paste0(iu, ".rds"))
+    saveRDS(model, arq)
+
+    lg$debug("Modelo treinado salvo com sucesso")
+    return(arq)
+}
+
 #' Escrita de Melhor Historico de Geracao
 #'
 #' Salva os dados de melhor historico de geracao em disco, formatados e validados
