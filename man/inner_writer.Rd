@@ -4,7 +4,7 @@
 \alias{inner_writer}
 \title{Auxiliar Para Escrita de Dados}
 \usage{
-inner_writer(dt, table = "", output_dir = ".")
+inner_writer(dt, table = "", output_dir = ".", output_type = "csv")
 }
 \arguments{
 \item{dt}{\code{data.table} a ser salvo}

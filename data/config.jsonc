@@ -11,33 +11,14 @@
     // Caminho para obtencao do artefato do modelo treinado 
     "artifact": ".",
 
-    "janela": 90,
-    
-
-    // Janelas de datas para calculo do melhor historico. Podem ser informadas de duas formas:
+    // Janela de datas para calculo do melhor historico. Pode ser informada de duas formas:
     //     * um escalar inteiro, indicando numero de dias passados contados a partir da data de 
     //       execucao do programa
     //     * vetor de duas posicoes contendo datas como strings no padrao YYYY-MM-DD indicando data
     //       inicial e final da janela
-    //     * no caso de execucao em modo 'train' e passagem de escalar inteiro, a contagem e feita
-    //       a partir da data atual ate o passado, comecando pelo periodo de teste, depois validacao
-    //       e por fim treinamento
-    //     * no caso de execucao em modo 'predict' e passagem de escalar inteiro, a contagem e feita
-    //       a partir da data atual ate o passado, abrangendo o periodo de previsao
-    // "janelas": {
-    //     "train": ["2020-01-01", "2020-03-01"],
-    //     "val": ["2020-03-02", "2020-04-01"],
-    //     "test": ["2020-04-02", "2020-05-30"],
-    //     "predict": ["2020-04-02", "2020-05-30"]
-    // }
-
-    "janelas": {
-        "train": 30,
-        "val": 30,
-        "test": 30,
-        "predict": 90
-    },
-
+    // "janela": ["2020-01-01", "2020-02-01"],
+    "janela": 90,
+    
     // Vetor dos ids de usinas a serem consideradas no processo; vazio usa todas 
     "ids_usinas": [],
 

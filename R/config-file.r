@@ -11,7 +11,7 @@
 parse_config <- function(config, conn) {
     valida_nomes_config(config)
     valida_tipos_config(config)
-    config$janelas <- parsearg_janelas(config$janelas)
+    config$janela <- parsearg_janela(config$janela)
     config$ids_usinas <- parsearg_ids_usinas(config$ids_usinas, conn)
     config$ordem_prioridade_fontes <- unlist(config$ordem_prioridade_fontes)
     return(config)
@@ -107,19 +107,6 @@ valid_tipos <- function(l, tipos) do.call(all, list(sapply(l, valid_tipos_unit, 
 valid_tipos_unit <- function(x, tipos) Reduce("|", lapply(tipos, inherits, x = x))
 
 # PARSERS ------------------------------------------------------------------------------------------
-
-#' Interpretador De Chave `janelas`
-#' 
-#' Funcao interna de [`parse_config`] para interpretar o parametro `janela` da configuracao
-#' 
-#' @param x valor da chave `janela`; numerico ou vetor de duas strings de data
-#' 
-#' @return vetor `Date` de duas posicoes indicando inicio e fim da janela de melhor historico
-
-parsearg_janelas <- function(x) {
-    l_janelas <- lapply(x, parsearg_janela)
-    return(l_janelas)
-}
 
 #' Interpretador De Chave `janela`
 #' 

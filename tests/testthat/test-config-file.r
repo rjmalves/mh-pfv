@@ -119,7 +119,7 @@ test_that("parsearg_ids_usinas", {
 
     ids <- list("teste1", "teste2", "teste2")
     ids_parsed <- parsearg_ids_usinas(ids, conn)
-    expect_identical(unlist(ids), ids_parsed)
+    expect_identical(unique(unlist(ids)), ids_parsed)
 
     ref <- get_usinas(conn)$id_usina
     ids <- list()
