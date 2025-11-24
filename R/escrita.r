@@ -84,9 +84,12 @@ write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
 #'
 #' Funcao interna para salvar data.tables em CSV. Nao deve ser chamada diretamente pelo usuario.
 #'
+#' @importFrom arrow write_parquet 
+#' 
 #' @param dt `data.table` a ser salvo
 #' @param table nome-base da tabela (sem extensao .csv)
 #' @param output_dir diretorio onde o arquivo sera salvo
+#' @param output_type tipo de arquivo a ser salvo ("csv" ou "parquet")
 #'
 #' @return Caminho do arquivo salvo
 inner_writer <- function(dt, table = "", output_dir = ".", output_type = "csv") {

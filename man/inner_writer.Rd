@@ -12,6 +12,8 @@ inner_writer(dt, table = "", output_dir = ".", output_type = "csv")
 \item{table}{nome-base da tabela (sem extensao .csv)}
 
 \item{output_dir}{diretorio onde o arquivo sera salvo}
+
+\item{output_type}{tipo de arquivo a ser salvo ("csv" ou "parquet")}
 }
 \value{
 Caminho do arquivo salvo

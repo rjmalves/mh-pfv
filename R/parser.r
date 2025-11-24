@@ -14,6 +14,8 @@ get_parser <- function() {
 # AUXILIARES ---------------------------------------------------------------------------------------
 
 #' Auxiliar para adicionar argumentos genericos
+#' 
+#' @param parser `ArgumentParser` a ser modificado
 #'
 #' Funcao interna, nao deve ser chamada diretamente pelo usuario
 

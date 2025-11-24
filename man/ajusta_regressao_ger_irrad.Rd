@@ -51,13 +51,27 @@ library(data.table)
 
 dty <- data.table(
     id_usina = rep("U1", 10),
-    data_hora_observacao = rep(seq.POSIXt(as.POSIXct("2025-01-01 06:00"), by = "1 day", length.out = 10), each = 1),
+    data_hora_observacao = rep(
+        seq.POSIXt(
+            as.POSIXct("2025-01-01 06:00"),
+            by = "1 day",
+            length.out = 10
+        ),
+        each = 1
+    ),
     valor = runif(10, 5, 10)
 )
 
 dtx <- data.table(
     id_usina = rep("U1", 10),
-    data_hora_previsao = rep(seq.POSIXt(as.POSIXct("2025-01-01 06:00"), by = "1 day", length.out = 10), each = 1),
+    data_hora_previsao = rep(
+        seq.POSIXt(
+            as.POSIXct("2025-01-01 06:00"),
+            by = "1 day",
+            length.out = 10
+        ),
+        each = 1
+    ),
     valor = runif(10, 80, 120)
 )
 

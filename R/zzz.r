@@ -4,5 +4,8 @@
 }
 
 .onUnload <- function(libname, pkgname) {
-    rm(lg, envir = asNamespace("melhorhistoricosolar"))
+    ns <- asNamespace("melhorhistoricosolar")
+    if (exists("lg", envir = ns, inherits = FALSE)) {
+        try(rm(lg, envir = ns), silent = TRUE)
+    }
 }

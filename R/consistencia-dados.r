@@ -5,6 +5,8 @@
 #' @param dados_usina `data.table` de dados das usinas com apenas a linha da usina a ser tratada
 #' @param geracao_usina `data.table` de geracao observada apenas da usina a ser tratada
 #' @param corte_obs `data.table` com os cortes observados, contendo coluna
+#' @param ordem_prioridade lista de fontes em ordem de prioridade para combinacao
+#' @param limite_dados lista com limites fisicos para validacao dos dados (min, max)
 #'
 #' @return `geracao_usina` consolidado em apenas uma fonte denominada `"Consis"`
 
@@ -175,7 +177,11 @@ remove_congelados <- function(v, n_valores, limiar) {
 #'   substituidos em todas as posicoes de corte.
 #'
 #' @examples
-#' # geracao_usina_limpos <- manter_geracao_congelada_em_cortes(geracao_usina_limpos, geracao_usina, corte_obs)
+#' geracao_usina_limpos <- manter_geracao_congelada_em_cortes(
+#'     geracao_usina_limpos,
+#'     geracao_usina,
+#'     corte_obs
+#' )
 manter_geracao_congelada_em_cortes <- function(geracao_usina_limpos, geracao_usina, corte_obs) {
     # junta apenas as posicoes de corte (valor == 1) com os valores de geracao_usina
     cortes_valores <- merge(

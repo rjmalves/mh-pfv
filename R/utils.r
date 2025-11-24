@@ -352,7 +352,13 @@ adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
 #'     latitude = -25,
 #'     longitude = -48.5,
 #'     data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
-#'     data_hora_previsao = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 01:00:00", "2025-08-03 02:00:00")),
+#'     data_hora_previsao = as.POSIXct(
+#'         c(
+#'             "2025-08-03 00:00:00",
+#'             "2025-08-03 01:00:00",
+#'             "2025-08-03 02:00:00"
+#'         )
+#'     ),
 #'     valor = c(10, 20, 30),
 #'     passo_prev = rep("D+0", 3)
 #' )

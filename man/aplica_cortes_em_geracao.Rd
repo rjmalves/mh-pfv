@@ -26,7 +26,14 @@ Em seguida, esses registros sao usados para sobrescrever a geracao observada com
 library(data.table)
 dt_geracao <- data.table(
     id_usina = c("U1", "U1", "U1", "U2"),
-    data_hora_observacao = as.POSIXct(c("2025-01-01 00:00", "2025-01-01 00:30", "2025-01-01 01:00", "2025-01-01 00:00")),
+    data_hora_observacao = as.POSIXct(
+        c(
+            "2025-01-01 00:00",
+            "2025-01-01 00:30",
+            "2025-01-01 01:00",
+            "2025-01-01 00:00"
+        )
+    ),
     valor = c(10, 12, 11, 9)
 )
 
