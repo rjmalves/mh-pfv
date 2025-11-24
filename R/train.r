@@ -1,8 +1,7 @@
-
 train_main <- function(args) {
     # Define a ordem de prioridade das fontes a partir do argumento
     conn <- conectamock_pfv(args$input)
-    
+
     v_usinas <- args$ids_usinas
     dt_usinas <- get_usinas(conn, id_usina = v_usinas)
 

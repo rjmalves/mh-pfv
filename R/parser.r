@@ -18,8 +18,10 @@ get_parser <- function() {
 #' Funcao interna, nao deve ser chamada diretamente pelo usuario
 
 inner_parser_generic_args <- function(parser) {
-    help_msg <- paste0("Diretorio de dados para execucao do melhor historico -- Veja ",
-        "https://github.com/rjmalves/melhor-historico-solar para detalhes")
+    help_msg <- paste0(
+        "Diretorio de dados para execucao do melhor historico -- Veja ",
+        "https://github.com/rjmalves/melhor-historico-solar para detalhes"
+    )
     parser$add_argument("--datadir",
         type = "character",
         default = "./data",

@@ -23,10 +23,10 @@
 #' @examples
 #' library(data.table)
 #' d1 <- data.table(
-#'   id_fonte_observacao = rep("A", 5),
-#'   data_hora_observacao = as.POSIXct("2020-01-01 00:00:00") + c(0, 1800, 3600, 7200, 10800),
-#'   id_usina = 1,
-#'   valor = c(10, "NaN", 20, 999, 30)
+#'     id_fonte_observacao = rep("A", 5),
+#'     data_hora_observacao = as.POSIXct("2020-01-01 00:00:00") + c(0, 1800, 3600, 7200, 10800),
+#'     id_usina = 1,
+#'     valor = c(10, "NaN", 20, 999, 30)
 #' )
 #' checa_valores_faltantes(d1)
 checa_valores_faltantes <- function(dt) {
@@ -105,19 +105,18 @@ checa_valores_faltantes <- function(dt) {
 #' @examples
 #' library(data.table)
 #' dt1 <- data.table(
-#'   id_usina = c(1,1),
-#'   data_hora_observacao = as.POSIXct(c("2020-01-01 00:00:00", "2020-01-01 00:30:00")),
-#'   valor = c(10, 20),
-#'   status = c(1,1)
+#'     id_usina = c(1, 1),
+#'     data_hora_observacao = as.POSIXct(c("2020-01-01 00:00:00", "2020-01-01 00:30:00")),
+#'     valor = c(10, 20),
+#'     status = c(1, 1)
 #' )
 #' dt2 <- data.table(
-#'   id_usina = 1,
-#'   data_hora_observacao = as.POSIXct("2020-01-01 00:30:00"),
-#'   valor = 25,
-#'   status = 2
+#'     id_usina = 1,
+#'     data_hora_observacao = as.POSIXct("2020-01-01 00:30:00"),
+#'     valor = 25,
+#'     status = 2
 #' )
 #' combina_dados_tempo(dt1, dt2)
-
 combina_dados_tempo <- function(dt1, dt2) {
     # Garante que sao data.tables
     dt1 <- as.data.table(dt1)
@@ -134,8 +133,12 @@ combina_dados_tempo <- function(dt1, dt2) {
     usinas <- unique(c(dt1$id_usina, dt2$id_usina))
 
     # Define o intervalo de datas
-    data_min <- min(c(dt1$data_hora_observacao, dt2$data_hora_observacao), na.rm = TRUE)
-    data_max <- max(c(dt1$data_hora_observacao, dt2$data_hora_observacao), na.rm = TRUE)
+    datas <- c(
+        lubridate::as_datetime(dt1$data_hora_observacao, tz = "UTC"),
+        lubridate::as_datetime(dt2$data_hora_observacao, tz = "UTC")
+    )
+    data_min <- min(datas, na.rm = TRUE)
+    data_max <- max(datas, na.rm = TRUE)
 
     # Cria grade completa
     grade <- CJ(
@@ -207,20 +210,19 @@ combina_dados_tempo <- function(dt1, dt2) {
 #' @examples
 #' library(data.table)
 #' dt_usinas <- data.table(
-#'   id_usina = 1,
-#'   latitude = -20,
-#'   longitude = -45
+#'     id_usina = 1,
+#'     latitude = -20,
+#'     longitude = -45
 #' )
 #' dt_irrad_prev <- data.table(
-#'   id_modelo_nwp = "GFS",
-#'   latitude = c(-20.0, -19.9),
-#'   longitude = c(-45.0, -44.9),
-#'   data_hora_previsao = as.POSIXct(c("2025-10-03 00:00:00", "2025-10-03 00:00:00")),
-#'   data_hora_rodada = as.POSIXct(c("2025-10-02 12:00:00", "2025-10-02 12:00:00")),
-#'   irradiancia = c(100, 120)
+#'     id_modelo_nwp = "GFS",
+#'     latitude = c(-20.0, -19.9),
+#'     longitude = c(-45.0, -44.9),
+#'     data_hora_previsao = as.POSIXct(c("2025-10-03 00:00:00", "2025-10-03 00:00:00")),
+#'     data_hora_rodada = as.POSIXct(c("2025-10-02 12:00:00", "2025-10-02 12:00:00")),
+#'     irradiancia = c(100, 120)
 #' )
 #' associa_nwp_usina(dt_usinas, dt_irrad_prev)
-
 associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
     # Coordenadas unicas da previsao
     coord_prev <- unique(dt_irrad_prev[, .(latitude, longitude)])
@@ -276,7 +278,7 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
 
 #' Adiciona a coluna passo_prev com base na diferenca entre datas de rodada e previsao
 #'
-#' Esta funcao calcula o passo de previsao (em dias) entre as colunas 
+#' Esta funcao calcula o passo de previsao (em dias) entre as colunas
 #' `data_hora_rodada` e `data_hora_previsao` e adiciona a coluna `passo_prev`
 #' no formato "D+N", onde N e o numero inteiro de dias de diferenca.
 #'
@@ -296,11 +298,10 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
 #' @examples
 #' library(data.table)
 #' dt <- data.table(
-#'   data_hora_rodada = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 00:00:00")),
-#'   data_hora_previsao = as.POSIXct(c("2025-08-03 01:00:00", "2025-08-04 01:00:00"))
+#'     data_hora_rodada = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 00:00:00")),
+#'     data_hora_previsao = as.POSIXct(c("2025-08-03 01:00:00", "2025-08-04 01:00:00"))
 #' )
 #' dt <- adicionar_passo_previsao(dt)
-
 adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
     # Garante que as colunas sao do tipo POSIXct
     dt_irrad_prev_filt[, data_hora_rodada := as.POSIXct(data_hora_rodada)]
@@ -346,51 +347,53 @@ adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
 #' library(data.table)
 #'
 #' dt_exemplo <- data.table(
-#'   id_modelo_nwp = rep("GFS", 3),
-#'   id_usina = rep("USINA_A", 3),
-#'   latitude = -25,
-#'   longitude = -48.5,
-#'   data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
-#'   data_hora_previsao = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 01:00:00", "2025-08-03 02:00:00")),
-#'   valor = c(10, 20, 30),
-#'   passo_prev = rep("D+0", 3)
+#'     id_modelo_nwp = rep("GFS", 3),
+#'     id_usina = rep("USINA_A", 3),
+#'     latitude = -25,
+#'     longitude = -48.5,
+#'     data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
+#'     data_hora_previsao = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 01:00:00", "2025-08-03 02:00:00")),
+#'     valor = c(10, 20, 30),
+#'     passo_prev = rep("D+0", 3)
 #' )
 #'
 #' dt_interp <- interpolar_30min(dt_exemplo)
 #' print(dt_interp)
-
 interpolar_30min <- function(dt) {
-  # Garantir que e data.table
-  dt <- as.data.table(dt)
-  
-  # Guardar ordem original das colunas
-  col_order <- names(dt)
-  
-  # Ordenar
-  setorder(dt, id_modelo_nwp, id_usina, data_hora_previsao)
-  
-  # Aplicar interpolacao por grupo
-  dt_interp <- dt[, {
-    nova_seq <- seq(min(data_hora_previsao), max(data_hora_previsao), by = "30 min")
-    
-    valor_interp <- approx(
-      x = as.numeric(data_hora_previsao),
-      y = valor,
-      xout = as.numeric(nova_seq),
-      method = "linear"
-    )$y
-    
-    list(
-      latitude = first(latitude),
-      longitude = first(longitude),
-      data_hora_rodada = first(data_hora_rodada),
-      data_hora_previsao = nova_seq,
-      valor = valor_interp
-    )
-  }, by = .(id_modelo_nwp, id_usina, passo_prev)]
-  
-  # Reordenar colunas conforme o original
-  setcolorder(dt_interp, col_order)
-  
-  return(dt_interp[])
+    # Garantir que e data.table
+    dt <- as.data.table(dt)
+
+    # Guardar ordem original das colunas
+    col_order <- names(dt)
+
+    # Ordenar
+    setorder(dt, id_modelo_nwp, id_usina, data_hora_previsao)
+
+    # Aplicar interpolacao por grupo
+    dt_interp <- dt[,
+        {
+            nova_seq <- seq(min(data_hora_previsao), max(data_hora_previsao), by = "30 min")
+
+            valor_interp <- approx(
+                x = as.numeric(data_hora_previsao),
+                y = valor,
+                xout = as.numeric(nova_seq),
+                method = "linear"
+            )$y
+
+            list(
+                latitude = first(latitude),
+                longitude = first(longitude),
+                data_hora_rodada = first(data_hora_rodada),
+                data_hora_previsao = nova_seq,
+                valor = valor_interp
+            )
+        },
+        by = .(id_modelo_nwp, id_usina, passo_prev)
+    ]
+
+    # Reordenar colunas conforme o original
+    setcolorder(dt_interp, col_order)
+
+    return(dt_interp[])
 }

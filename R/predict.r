@@ -43,7 +43,7 @@
 #' predict_main(args)
 #'
 #' @seealso processar_usina, get_dados_historicos, organiza_resultados, write_melhor_historico_geracao
-#' 
+#'
 #' @export
 
 predict_main <- function(args) {
@@ -87,15 +87,20 @@ predict_main <- function(args) {
 }
 
 get_dataset <- function(args, conn) {
-
     janela <- paste0(args$janela[1], "/", args$janela[2])
 
-    ger_obs <- get_geracao_observada(conn, id_usina = args$ids_usinas,
-        data_hora_observacao = janela)
-    corte <- get_corte_observado(conn, id_usina = args$ids_usinas,
-        id_fonte_observacao = args$ordem_prioridade_fontes, data_hora_observacao = janela)
-    irrad_prev <- get_irradiancia_prevista(conn, id_usina = args$ids_usinas,
-        id_modelo_nwp = args$ordem_prioridade_modelosNWP, data_hora_previsao = janela)
+    ger_obs <- get_geracao_observada(conn,
+        id_usina = args$ids_usinas,
+        data_hora_observacao = janela
+    )
+    corte <- get_corte_observado(conn,
+        id_usina = args$ids_usinas,
+        id_fonte_observacao = args$ordem_prioridade_fontes, data_hora_observacao = janela
+    )
+    irrad_prev <- get_irradiancia_prevista(conn,
+        id_usina = args$ids_usinas,
+        id_modelo_nwp = args$ordem_prioridade_modelosNWP, data_hora_previsao = janela
+    )
     mhg <- get_melhor_historico_geracao(conn, id_usina = args$ids_usinas)
     mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(conn, id_usina = args$ids_usinas)
 
@@ -121,8 +126,9 @@ read_model_artifact <- function(iu, artifact_dir = ".") {
 
 # Esta funcao processa uma unica usina individualmente
 processar_usina <- function(
-    iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
-    dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia) {
+  iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
+  dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia
+) {
     # Filtra os dados referentes a usina atual
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
@@ -148,7 +154,7 @@ processar_usina <- function(
     )
 
     # TODO - chamar a função auxiliar read_model_artifact para carregar o modelo
-    
+
     # TODO - adaptar para a função preenche_geracao_unit não precisar de ajusar
     # nada e receber o modelo treinado.
 

@@ -29,8 +29,8 @@ gera a string do passo de previsao.
 \examples{
 library(data.table)
 dt <- data.table(
-  data_hora_rodada = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 00:00:00")),
-  data_hora_previsao = as.POSIXct(c("2025-08-03 01:00:00", "2025-08-04 01:00:00"))
+    data_hora_rodada = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 00:00:00")),
+    data_hora_previsao = as.POSIXct(c("2025-08-03 01:00:00", "2025-08-04 01:00:00"))
 )
 dt <- adicionar_passo_previsao(dt)
 }

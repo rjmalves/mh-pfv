@@ -116,7 +116,6 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 }
 
 
-
 # AUXILIARES ---------------------------------------------------------------------------------------
 
 #' Ajusta Regressao Linear entre Geracao Observada e Irradiacao Prevista
@@ -170,7 +169,7 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 #'     data_hora_previsao = rep(seq.POSIXt(as.POSIXct("2025-01-01 06:00"), by = "1 day", length.out = 10), each = 1),
 #'     valor = runif(10, 80, 120)
 #' )
-#' 
+#'
 #' dty_bruta <- dty
 #'
 #' coeficientes <- ajusta_regressao_ger_irrad(dty, dtx, dty_bruta)
@@ -225,7 +224,6 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
             # Mantém somente as datas de dty_f que existam em dtx_fn
             dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
         }
-
 
 
         if (nrow(dty_f) > 5 && nrow(dty_f) == nrow(dtx_f)) {

@@ -31,10 +31,10 @@ ele e replicado em todas as linhas.
 \examples{
 library(data.table)
 d1 <- data.table(
-  id_fonte_observacao = rep("A", 5),
-  data_hora_observacao = as.POSIXct("2020-01-01 00:00:00") + c(0, 1800, 3600, 7200, 10800),
-  id_usina = 1,
-  valor = c(10, "NaN", 20, 999, 30)
+    id_fonte_observacao = rep("A", 5),
+    data_hora_observacao = as.POSIXct("2020-01-01 00:00:00") + c(0, 1800, 3600, 7200, 10800),
+    id_usina = 1,
+    valor = c(10, "NaN", 20, 999, 30)
 )
 checa_valores_faltantes(d1)
 }

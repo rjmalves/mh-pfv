@@ -78,7 +78,6 @@ write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
 }
 
 
-
 # AUXILIARES ---------------------------------------------------------------------------------------
 
 #' Auxiliar Para Escrita de Dados

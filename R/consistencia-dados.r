@@ -27,7 +27,7 @@ consiste_geracao_unit <- function(dados_usina, geracao_usina, corte_obs, ordem_p
         geracao_usina,
         corte_obs
     )
-    
+
     # checa valores valores fora de limites fisicos
     geracao_usina_sem_overbound <- checa_valores_overbound(
         dt = copy(geracao_usina_limpos),
@@ -45,7 +45,6 @@ consiste_geracao_unit <- function(dados_usina, geracao_usina, corte_obs, ordem_p
 
     return(geracao_usina_combinada)
 }
-
 
 
 # AUXILIARES ---------------------------------------------------------------------------------------
