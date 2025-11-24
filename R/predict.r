@@ -226,7 +226,7 @@ processar_usina <- function(
 #' library(data.table)
 #' horas <- seq.POSIXt(as.POSIXct("2025-05-19 00:00"), by = "30 min", length.out = 3)
 #'
-#' resultado_exemplo <- lapply(
+#' resultado_final <- lapply(
 #'     list(
 #'         list(usina = "BAUFI1", valor = 0),
 #'         list(usina = "BAUFI2", valor = 1)

@@ -19,7 +19,6 @@
 #' Caso o campo `id_usina` tenha um unico valor no grupo,
 #' ele e replicado em todas as linhas.
 #'
-
 #' @examples
 #' library(data.table)
 #' d1 <- data.table(

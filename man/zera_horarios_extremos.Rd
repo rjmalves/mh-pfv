@@ -34,7 +34,8 @@ df <- data.table(
         "2025-01-01 00:00", "2025-01-01 06:30", "2025-01-01 07:00",
         "2025-01-01 18:00", "2025-01-01 23:30"
     )),
-    valor = c(NA, 10, 12, 11, NA)
+    valor = c(NA, 10, 12, 11, NA),
+    status = c(NA, 1, 1, 1, NA)
 )
 
 df_modificado <- zera_horarios_extremos(df)

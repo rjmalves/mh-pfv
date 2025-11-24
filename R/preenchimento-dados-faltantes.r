@@ -381,7 +381,8 @@ substitui_por_estimativas <- function(df_ger_usi, df_irrad_prev, regressoes, lim
 #'         "2025-01-01 00:00", "2025-01-01 06:30", "2025-01-01 07:00",
 #'         "2025-01-01 18:00", "2025-01-01 23:30"
 #'     )),
-#'     valor = c(NA, 10, 12, 11, NA)
+#'     valor = c(NA, 10, 12, 11, NA),
+#'     status = c(NA, 1, 1, 1, NA)
 #' )
 #'
 #' df_modificado <- zera_horarios_extremos(df)
@@ -430,7 +431,7 @@ zera_horarios_extremos <- function(df_ger_usi) {
 #' @details
 #' A funcao identifica os registros no data.table de cortes em que \code{valor == 1}, o que indica que ha corte ativo naquele instante.
 #' Em seguida, esses registros sao usados para sobrescrever a geracao observada com NA na tabela de entrada.
-#'
+#' 
 #' @examples
 #' library(data.table)
 #' dt_geracao <- data.table(
