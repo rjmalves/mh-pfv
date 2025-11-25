@@ -26,11 +26,3 @@ o tipo POSIXct, garantindo consistencia no calculo de diferencas de datas.
 Em seguida, calcula a diferenca de dias inteiros entre as duas colunas e
 gera a string do passo de previsao.
 }
-\examples{
-library(data.table)
-dt <- data.table(
-    data_hora_rodada = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 00:00:00")),
-    data_hora_previsao = as.POSIXct(c("2025-08-03 01:00:00", "2025-08-04 01:00:00"))
-)
-dt <- adicionar_passo_previsao(dt)
-}

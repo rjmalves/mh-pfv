@@ -26,22 +26,6 @@ Todos os valores fora desse intervalo de horario sao substituidos por zero.
 
 Se nenhum valor valido estiver presente, a funcao retorna o data.table original sem alteracoes.
 }
-\examples{
-library(data.table)
-
-df <- data.table(
-    data_hora_observacao = as.POSIXct(c(
-        "2025-01-01 00:00", "2025-01-01 06:30", "2025-01-01 07:00",
-        "2025-01-01 18:00", "2025-01-01 23:30"
-    )),
-    valor = c(NA, 10, 12, 11, NA),
-    status = c(NA, 1, 1, 1, NA)
-)
-
-df_modificado <- zera_horarios_extremos(df)
-print(df_modificado)
-
-}
 \seealso{
 aplica_cortes_em_geracao, combina_dados
 }

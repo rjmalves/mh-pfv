@@ -46,41 +46,6 @@ Apenas pares com mais de 5 observacoes validas sao considerados. Quando ha dados
 
 Valores iguais a zero sao tratados como ausentes (NA) antes do ajuste.
 }
-\examples{
-library(data.table)
-
-dty <- data.table(
-    id_usina = rep("U1", 10),
-    data_hora_observacao = rep(
-        seq.POSIXt(
-            as.POSIXct("2025-01-01 06:00"),
-            by = "1 day",
-            length.out = 10
-        ),
-        each = 1
-    ),
-    valor = runif(10, 5, 10)
-)
-
-dtx <- data.table(
-    id_usina = rep("U1", 10),
-    data_hora_previsao = rep(
-        seq.POSIXt(
-            as.POSIXct("2025-01-01 06:00"),
-            by = "1 day",
-            length.out = 10
-        ),
-        each = 1
-    ),
-    valor = runif(10, 80, 120)
-)
-
-dty_bruta <- dty
-
-coeficientes <- ajusta_regressao_ger_irrad(dty, dtx, dty_bruta)
-print(coeficientes)
-
-}
 \seealso{
 substitui_por_estimativas
 }

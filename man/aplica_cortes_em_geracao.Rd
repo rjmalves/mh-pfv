@@ -22,31 +22,6 @@ Define como NA os valores de geracao observada em datas e usinas onde ha cortes 
 A funcao identifica os registros no data.table de cortes em que \code{valor == 1}, o que indica que ha corte ativo naquele instante.
 Em seguida, esses registros sao usados para sobrescrever a geracao observada com NA na tabela de entrada.
 }
-\examples{
-library(data.table)
-dt_geracao <- data.table(
-    id_usina = c("U1", "U1", "U1", "U2"),
-    data_hora_observacao = as.POSIXct(
-        c(
-            "2025-01-01 00:00",
-            "2025-01-01 00:30",
-            "2025-01-01 01:00",
-            "2025-01-01 00:00"
-        )
-    ),
-    valor = c(10, 12, 11, 9)
-)
-
-dt_cortes <- data.table(
-    id_usina = c("U1", "U2"),
-    data_hora_observacao = as.POSIXct(c("2025-01-01 00:30", "2025-01-01 00:00")),
-    valor = c(1, 1)
-)
-
-dt_resultado <- aplica_cortes_em_geracao(dt_geracao, dt_cortes)
-print(dt_resultado)
-
-}
 \seealso{
 combina_dados, organiza_resultados
 }

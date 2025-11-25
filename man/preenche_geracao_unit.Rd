@@ -40,52 +40,6 @@ A funcao executa o seguinte fluxo:
 \item Zera valores em horarios fora do intervalo com geracao valida.
 }
 }
-\examples{
-# Exemplo simplificado - veja funcoes auxiliares para gerar dados simulados realistas
-
-library(data.table)
-
-# Dados base com multiplos dias para horario fixo (06:00)
-dias <- seq(from = as.Date("2025-01-01"), by = "1 day", length.out = 10)
-horarios <- as.POSIXct(paste(dias, "06:00:00"))
-
-# Dados de geracao
-geracao_usina <- data.table(
-    id_usina = "U1",
-    id_fonte_observacao = "PI",
-    data_hora_observacao = horarios,
-    valor = c(NA, 2, 4, 6, 8, 10, 12, 14, 16, 18),
-    status = c(NA, rep(1, 9))
-)
-
-# Dados de irradiancia
-irrad_prev <- data.table(
-    id_usina = "U1",
-    data_hora_previsao = horarios,
-    valor = seq(10, 100, by = 10)
-)
-
-# Dados do melhor historico de rodadas anteriores
-mhg_prev <- data.table(
-    id_usina = "U1",
-    id_fonte_observacao = "PI",
-    data_hora_observacao = horarios,
-    valor = rep(1, 10),
-    status = c(NA, rep(1, 9))
-)
-
-cortes <- NULL
-limite_dados <- c(0, 25)
-
-resultado <- preenche_geracao_unit(
-    geracao_usina = copy(geracao_usina),
-    irrad_prev = copy(irrad_prev),
-    mhg_prev = copy(mhg_prev),
-    cortes = cortes,
-    limite_dados = limite_dados
-)
-
-}
 \seealso{
 ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao, combina_dados_tempo, zera_horarios_extremos
 }

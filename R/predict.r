@@ -27,25 +27,10 @@
 #'   \item Escrita dos melhores historicos de geracao observada nos formatos de saida esperados.
 #' }
 #'
-#' @examples
-#' args <- list(
-#'     artifact = ".",
-#'     data_fim = "2025-07-29",
-#'     data_inicio = "2025-04-30",
-#'     fator_tolerancia_limite_superior_geracao = 1.1,
-#'     ids_usinas = NULL,
-#'     input = "./data",
-#'     mode = "predict",
-#'     ordem_prioridade_fontes = "PI,CCEE,CCEE1h",
-#'     ordem_prioridade_modelosNWP = "GFS",
-#'     output = "./saida"
-#' )
-#' predict_main(args)
-#'
 #' @seealso processar_usina, get_dados_historicos, organiza_resultados, write_melhor_historico_geracao
 #'
 #' @export
-
+#'
 predict_main <- function(args) {
     # Define a ordem de prioridade das fontes a partir do argumento
     conn <- conectamock_pfv(args$input)
@@ -222,31 +207,8 @@ processar_usina <- function(
 #' e empacota os dados finais em dois data.tables: um com cortes e outro sem. Util para consolidar os resultados
 #' apos o processamento individual de cada usina.
 #'
-#' @examples
-#' library(data.table)
-#' horas <- seq.POSIXt(as.POSIXct("2025-05-19 00:00"), by = "30 min", length.out = 3)
-#'
-#' resultado_final <- lapply(
-#'     list(
-#'         list(usina = "BAUFI1", valor = 0),
-#'         list(usina = "BAUFI2", valor = 1)
-#'     ),
-#'     function(x) {
-#'         dados <- data.table(
-#'             id_fonte_observacao = "Consis",
-#'             data_hora_observacao = horas,
-#'             id_usina = x$usina,
-#'             valor = x$valor,
-#'             status = 1
-#'         )
-#'         list(com_cortes = copy(dados), sem_cortes = copy(dados))
-#'     }
-#' )
-#' head(resultado_final$com_cortes)
-#' head(resultado_final$sem_cortes)
-#'
 #' @seealso processar_usina, predict_main
-
+#'
 organiza_resultados <- function(resultados, v_usinas) {
     # Adiciona coluna id_usina e empacota resultados em dois data.tables
     dt_com_cortes <- data.table::rbindlist(lapply(seq_along(resultados), function(i) {

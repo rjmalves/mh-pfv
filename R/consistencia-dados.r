@@ -72,15 +72,6 @@ consiste_geracao_unit <- function(dados_usina, geracao_usina, corte_obs, ordem_p
 #'
 #' @seealso [remove_congelados()]
 #'
-#' @examples
-#' library(data.table)
-#' d1 <- data.table(
-#'     id_fonte_observacao = rep(letters[1:2], each = 10),
-#'     data_hora_observacao = rep(as.Date("2020-01-01"), 20),
-#'     valor = rep(1:2, each = 10)
-#' )
-#' checa_valores_congelados(d1)
-#'
 checa_valores_congelados <- function(dt, v_n_valores = c(5, 8), v_limiar = c(0.01, 0.1)) {
     # Validacao: os vetores devem ter o mesmo comprimento
     if (length(v_n_valores) != length(v_limiar)) {
@@ -125,13 +116,8 @@ checa_valores_congelados <- function(dt, v_n_valores = c(5, 8), v_limiar = c(0.0
 #' Para cada janela, calcula-se a diferenca entre o valor maximo e o minimo.
 #' Se essa diferenca for menor ou igual ao limiar, os valores dentro da janela sao marcados como congelados e substituidos por NA.
 #'
-#' @examples
-#' v <- c(10, 10, 10, 10, 10, 15, 20, 25)
-#' remove_congelados(v, n_valores = 5, limiar = 0.01)
-#'
 #' @seealso checa_valores_congelados
-
-
+#' 
 remove_congelados <- function(v, n_valores, limiar) {
     # Vetor logico para marcar posicoes que serao substituidas por NA
     flag_na <- rep(FALSE, length(v))
@@ -176,12 +162,6 @@ remove_congelados <- function(v, n_valores, limiar) {
 #' @return data.table atualizado de geracao_usina_limpos, com os valores
 #'   substituidos em todas as posicoes de corte.
 #'
-#' @examples
-#' geracao_usina_limpos <- manter_geracao_congelada_em_cortes(
-#'     geracao_usina_limpos,
-#'     geracao_usina,
-#'     corte_obs
-#' )
 manter_geracao_congelada_em_cortes <- function(geracao_usina_limpos, geracao_usina, corte_obs) {
     # junta apenas as posicoes de corte (valor == 1) com os valores de geracao_usina
     cortes_valores <- merge(
@@ -215,13 +195,8 @@ manter_geracao_congelada_em_cortes <- function(geracao_usina_limpos, geracao_usi
 #' A funcao aplica uma verificacao simples nos dados numericos da coluna valor.
 #' Todo valor menor que o limite inferior ou maior que o limite superior definido no argumento limites e substituido por NA.
 #'
-#' @examples
-#' library(data.table)
-#' dt <- data.table(valor = c(-10, 5, 15, 30, 100))
-#' checa_valores_overbound(dt, limites = c(0, 50))
-#'
 #' @seealso remove_congelados, checa_valores_congelados
-
+#'
 checa_valores_overbound <- function(dt, limites = c(0, Inf)) {
     limite_inferior <- limites[1]
     limite_superior <- limites[2]
@@ -251,22 +226,8 @@ checa_valores_overbound <- function(dt, limites = c(0, Inf)) {
 #' Esta funcao atua como uma interface para combinacao de dados dependendo da grandeza. Para "geracao_observada", utiliza a funcao combina_dados
 #' para selecionar, por usina e horario, os dados nao ausentes de maior prioridade. Outros tipos de grandeza (ex. irradiancia) podem ser implementados no futuro.
 #'
-#' @examples
-#' library(data.table)
-#' dt <- data.table(
-#'     id_fonte_observacao = c("A", "B", "A", "B"),
-#'     id_usina = c(1, 1, 2, 2),
-#'     data_hora_observacao = as.POSIXct(c(
-#'         "2020-01-01 00:00", "2020-01-01 00:00",
-#'         "2020-01-01 01:00", "2020-01-01 01:00"
-#'     )),
-#'     valor = c(NA, 10, 5, NA)
-#' )
-#' ordem <- c("A", "B")
-#' resultado <- combina_fontes(dt, grandeza = "geracao_observada", ordem = ordem)
-#'
 #' @seealso combina_dados
-
+#'
 combina_fontes <- function(dt, grandeza, ordem) {
     # ---------------------------------------------------------
     # Funcao para combinar dados de diferentes fontes
@@ -300,20 +261,6 @@ combina_fontes <- function(dt, grandeza, ordem) {
 #' apenas o valor da fonte mais prioritaria. Em seguida, garante que todas as combinacoes de usina e horario estejam presentes
 #' no resultado final, mesmo que com valor NA. A coluna de origem e substituida por "Consis" e o status indica a posicao
 #' da fonte usada segundo o vetor de prioridade fornecido.
-#'
-#' @examples
-#' library(data.table)
-#' dt <- data.table(
-#'     id_fonte_observacao = c("A", "B", "A", "B"),
-#'     id_usina = c(1, 1, 2, 2),
-#'     data_hora_observacao = as.POSIXct(c(
-#'         "2020-01-01 00:00", "2020-01-01 00:00",
-#'         "2020-01-01 01:00", "2020-01-01 01:00"
-#'     )),
-#'     valor = c(NA, 10, 5, NA)
-#' )
-#' ordem_prioridade <- c("A", "B")
-#' resultado <- combina_dados(dt, ordem_prioridade)
 #'
 combina_dados <- function(dt, ordem) {
     # Cria uma copia local

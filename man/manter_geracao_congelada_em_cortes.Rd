@@ -29,10 +29,3 @@ posicoes de corte indicadas em corte_obs. Para cada posicao onde
 corte_obs$valor == 1, o valor correspondente de geracao_usina e retornado
 para geracao_usina_limpos.
 }
-\examples{
-geracao_usina_limpos <- manter_geracao_congelada_em_cortes(
-    geracao_usina_limpos,
-    geracao_usina,
-    corte_obs
-)
-}

@@ -27,11 +27,6 @@ A funcao percorre o vetor original com uma janela deslizante de tamanho n_valore
 Para cada janela, calcula-se a diferenca entre o valor maximo e o minimo.
 Se essa diferenca for menor ou igual ao limiar, os valores dentro da janela sao marcados como congelados e substituidos por NA.
 }
-\examples{
-v <- c(10, 10, 10, 10, 10, 15, 20, 25)
-remove_congelados(v, n_valores = 5, limiar = 0.01)
-
-}
 \seealso{
 checa_valores_congelados
 }

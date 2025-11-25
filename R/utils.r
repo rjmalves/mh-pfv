@@ -19,15 +19,6 @@
 #' Caso o campo `id_usina` tenha um unico valor no grupo,
 #' ele e replicado em todas as linhas.
 #'
-#' @examples
-#' library(data.table)
-#' d1 <- data.table(
-#'     id_fonte_observacao = rep("A", 5),
-#'     data_hora_observacao = as.POSIXct("2020-01-01 00:00:00") + c(0, 1800, 3600, 7200, 10800),
-#'     id_usina = 1,
-#'     valor = c(10, "NaN", 20, 999, 30)
-#' )
-#' checa_valores_faltantes(d1)
 checa_valores_faltantes <- function(dt) {
     if (!is.data.table(dt)) dt <- as.data.table(dt)
 
@@ -101,21 +92,6 @@ checa_valores_faltantes <- function(dt) {
 #' 2. Faz merge com `dt2` e aplica sobreposicao dos valores e status.
 #' 3. Adiciona a coluna `id_fonte_observacao` com valor "Consis".
 #'
-#' @examples
-#' library(data.table)
-#' dt1 <- data.table(
-#'     id_usina = c(1, 1),
-#'     data_hora_observacao = as.POSIXct(c("2020-01-01 00:00:00", "2020-01-01 00:30:00")),
-#'     valor = c(10, 20),
-#'     status = c(1, 1)
-#' )
-#' dt2 <- data.table(
-#'     id_usina = 1,
-#'     data_hora_observacao = as.POSIXct("2020-01-01 00:30:00"),
-#'     valor = 25,
-#'     status = 2
-#' )
-#' combina_dados_tempo(dt1, dt2)
 combina_dados_tempo <- function(dt1, dt2) {
     # Garante que sao data.tables
     dt1 <- as.data.table(dt1)
@@ -206,22 +182,6 @@ combina_dados_tempo <- function(dt1, dt2) {
 #' 3. Filtra os dados da previsao para essa coordenada.
 #' 4. Adiciona `id_usina` e reorganiza as colunas.
 #'
-#' @examples
-#' library(data.table)
-#' dt_usinas <- data.table(
-#'     id_usina = 1,
-#'     latitude = -20,
-#'     longitude = -45
-#' )
-#' dt_irrad_prev <- data.table(
-#'     id_modelo_nwp = "GFS",
-#'     latitude = c(-20.0, -19.9),
-#'     longitude = c(-45.0, -44.9),
-#'     data_hora_previsao = as.POSIXct(c("2025-10-03 00:00:00", "2025-10-03 00:00:00")),
-#'     data_hora_rodada = as.POSIXct(c("2025-10-02 12:00:00", "2025-10-02 12:00:00")),
-#'     irradiancia = c(100, 120)
-#' )
-#' associa_nwp_usina(dt_usinas, dt_irrad_prev)
 associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
     # Coordenadas unicas da previsao
     coord_prev <- unique(dt_irrad_prev[, .(latitude, longitude)])
@@ -232,12 +192,6 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
     # Loop sobre cada usina
     for (i in seq_len(nrow(dt_usinas))) {
         usina <- dt_usinas[i]
-
-        # Calcula a distancia euclidiana entre a usina e todas as coordenadas da previsao
-        # coord_prev[, distancia := sqrt(
-        #   (( (latitude - usina$latitude) * 111.32 )^2) +
-        #   (( (longitude - usina$longitude) * 111.32 * cos((latitude + usina$latitude) * pi/360) )^2)
-        # )]
 
         R <- 6371 # raio medio da Terra em km
 
@@ -294,13 +248,6 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
 #' Em seguida, calcula a diferenca de dias inteiros entre as duas colunas e
 #' gera a string do passo de previsao.
 #'
-#' @examples
-#' library(data.table)
-#' dt <- data.table(
-#'     data_hora_rodada = as.POSIXct(c("2025-08-03 00:00:00", "2025-08-03 00:00:00")),
-#'     data_hora_previsao = as.POSIXct(c("2025-08-03 01:00:00", "2025-08-04 01:00:00"))
-#' )
-#' dt <- adicionar_passo_previsao(dt)
 adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
     # Garante que as colunas sao do tipo POSIXct
     dt_irrad_prev_filt[, data_hora_rodada := as.POSIXct(data_hora_rodada)]
@@ -342,28 +289,6 @@ adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
 #' seja preenchido com valores a cada 30 minutos. As colunas de identificacao e
 #' coordenadas sao mantidas fixas conforme o primeiro registro de cada grupo.
 #'
-#' @examples
-#' library(data.table)
-#'
-#' dt_exemplo <- data.table(
-#'     id_modelo_nwp = rep("GFS", 3),
-#'     id_usina = rep("USINA_A", 3),
-#'     latitude = -25,
-#'     longitude = -48.5,
-#'     data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
-#'     data_hora_previsao = as.POSIXct(
-#'         c(
-#'             "2025-08-03 00:00:00",
-#'             "2025-08-03 01:00:00",
-#'             "2025-08-03 02:00:00"
-#'         )
-#'     ),
-#'     valor = c(10, 20, 30),
-#'     passo_prev = rep("D+0", 3)
-#' )
-#'
-#' dt_interp <- interpolar_30min(dt_exemplo)
-#' print(dt_interp)
 interpolar_30min <- function(dt) {
     # Garantir que e data.table
     dt <- as.data.table(dt)

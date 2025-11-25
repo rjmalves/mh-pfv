@@ -22,12 +22,6 @@ Verifica e substitui por NA os valores que estao fora de um intervalo definido d
 A funcao aplica uma verificacao simples nos dados numericos da coluna valor.
 Todo valor menor que o limite inferior ou maior que o limite superior definido no argumento limites e substituido por NA.
 }
-\examples{
-library(data.table)
-dt <- data.table(valor = c(-10, 5, 15, 30, 100))
-checa_valores_overbound(dt, limites = c(0, 50))
-
-}
 \seealso{
 remove_congelados, checa_valores_congelados
 }

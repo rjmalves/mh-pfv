@@ -32,31 +32,6 @@ A funcao realiza os seguintes passos:
 \item Aplica filtros finais para garantir que os valores estejam dentro dos limites definidos.
 }
 }
-\examples{
-library(data.table)
-
-df_ger <- data.table(
-    id_usina = "U1",
-    data_hora_observacao = as.POSIXct(c("2025-01-01 12:00", "2025-01-01 12:30")),
-    valor = c(NA, 5),
-    status = c(NA, 1)
-)
-
-df_irrad <- data.table(
-    id_usina = "U1",
-    data_hora_previsao = as.POSIXct(c("2025-01-01 12:00", "2025-01-01 12:30")),
-    valor = c(100, 120)
-)
-
-reg <- data.frame(a = c(0.05, 0.06))
-rownames(reg) <- c("12:00", "12:30")
-
-lim <- c(0, 10)
-
-df_result <- substitui_por_estimativas(df_ger, df_irrad, reg, lim)
-print(df_result)
-
-}
 \seealso{
 checa_valores_overbound, aplica_cortes_em_geracao
 }

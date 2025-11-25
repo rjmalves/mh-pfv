@@ -36,22 +36,6 @@ A funcao executa o fluxo completo para cada usina:
 \item Escrita dos melhores historicos de geracao observada nos formatos de saida esperados.
 }
 }
-\examples{
-args <- list(
-    artifact = ".",
-    data_fim = "2025-07-29",
-    data_inicio = "2025-04-30",
-    fator_tolerancia_limite_superior_geracao = 1.1,
-    ids_usinas = NULL,
-    input = "./data",
-    mode = "predict",
-    ordem_prioridade_fontes = "PI,CCEE,CCEE1h",
-    ordem_prioridade_modelosNWP = "GFS",
-    output = "./saida"
-)
-predict_main(args)
-
-}
 \seealso{
 processar_usina, get_dados_historicos, organiza_resultados, write_melhor_historico_geracao
 }

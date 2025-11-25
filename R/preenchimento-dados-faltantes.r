@@ -21,53 +21,8 @@
 #'   \item Zera valores em horarios fora do intervalo com geracao valida.
 #' }
 #'
-#' @examples
-#' # Exemplo simplificado - veja funcoes auxiliares para gerar dados simulados realistas
-#'
-#' library(data.table)
-#'
-#' # Dados base com multiplos dias para horario fixo (06:00)
-#' dias <- seq(from = as.Date("2025-01-01"), by = "1 day", length.out = 10)
-#' horarios <- as.POSIXct(paste(dias, "06:00:00"))
-#'
-#' # Dados de geracao
-#' geracao_usina <- data.table(
-#'     id_usina = "U1",
-#'     id_fonte_observacao = "PI",
-#'     data_hora_observacao = horarios,
-#'     valor = c(NA, 2, 4, 6, 8, 10, 12, 14, 16, 18),
-#'     status = c(NA, rep(1, 9))
-#' )
-#'
-#' # Dados de irradiancia
-#' irrad_prev <- data.table(
-#'     id_usina = "U1",
-#'     data_hora_previsao = horarios,
-#'     valor = seq(10, 100, by = 10)
-#' )
-#'
-#' # Dados do melhor historico de rodadas anteriores
-#' mhg_prev <- data.table(
-#'     id_usina = "U1",
-#'     id_fonte_observacao = "PI",
-#'     data_hora_observacao = horarios,
-#'     valor = rep(1, 10),
-#'     status = c(NA, rep(1, 9))
-#' )
-#'
-#' cortes <- NULL
-#' limite_dados <- c(0, 25)
-#'
-#' resultado <- preenche_geracao_unit(
-#'     geracao_usina = copy(geracao_usina),
-#'     irrad_prev = copy(irrad_prev),
-#'     mhg_prev = copy(mhg_prev),
-#'     cortes = cortes,
-#'     limite_dados = limite_dados
-#' )
-#'
 #' @seealso ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao, combina_dados_tempo, zera_horarios_extremos
-
+#'
 preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados) {
     geracao_usina[valor == 999, valor := NA]
     irrad_prev[valor == 999, valor := NA]
@@ -155,42 +110,8 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 #'
 #' Valores iguais a zero sao tratados como ausentes (NA) antes do ajuste.
 #'
-#' @examples
-#' library(data.table)
-#'
-#' dty <- data.table(
-#'     id_usina = rep("U1", 10),
-#'     data_hora_observacao = rep(
-#'         seq.POSIXt(
-#'             as.POSIXct("2025-01-01 06:00"),
-#'             by = "1 day",
-#'             length.out = 10
-#'         ),
-#'         each = 1
-#'     ),
-#'     valor = runif(10, 5, 10)
-#' )
-#'
-#' dtx <- data.table(
-#'     id_usina = rep("U1", 10),
-#'     data_hora_previsao = rep(
-#'         seq.POSIXt(
-#'             as.POSIXct("2025-01-01 06:00"),
-#'             by = "1 day",
-#'             length.out = 10
-#'         ),
-#'         each = 1
-#'     ),
-#'     valor = runif(10, 80, 120)
-#' )
-#'
-#' dty_bruta <- dty
-#'
-#' coeficientes <- ajusta_regressao_ger_irrad(dty, dtx, dty_bruta)
-#' print(coeficientes)
-#'
 #' @seealso substitui_por_estimativas
-
+#'
 ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
     dty[valor == 0, valor := NA]
     dtx[valor == 0, valor := NA]
@@ -291,32 +212,8 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
 #'   \item Aplica filtros finais para garantir que os valores estejam dentro dos limites definidos.
 #' }
 #'
-#' @examples
-#' library(data.table)
-#'
-#' df_ger <- data.table(
-#'     id_usina = "U1",
-#'     data_hora_observacao = as.POSIXct(c("2025-01-01 12:00", "2025-01-01 12:30")),
-#'     valor = c(NA, 5),
-#'     status = c(NA, 1)
-#' )
-#'
-#' df_irrad <- data.table(
-#'     id_usina = "U1",
-#'     data_hora_previsao = as.POSIXct(c("2025-01-01 12:00", "2025-01-01 12:30")),
-#'     valor = c(100, 120)
-#' )
-#'
-#' reg <- data.frame(a = c(0.05, 0.06))
-#' rownames(reg) <- c("12:00", "12:30")
-#'
-#' lim <- c(0, 10)
-#'
-#' df_result <- substitui_por_estimativas(df_ger, df_irrad, reg, lim)
-#' print(df_result)
-#'
 #' @seealso checa_valores_overbound, aplica_cortes_em_geracao
-
+#'
 substitui_por_estimativas <- function(df_ger_usi, df_irrad_prev, regressoes, lim_dados) {
     # Adicionar coluna hora:minuto
     df_irrad_prev[, hora_min := format(data_hora_previsao, "%H:%M")]
@@ -373,23 +270,8 @@ substitui_por_estimativas <- function(df_ger_usi, df_irrad_prev, regressoes, lim
 #'
 #' Se nenhum valor valido estiver presente, a funcao retorna o data.table original sem alteracoes.
 #'
-#' @examples
-#' library(data.table)
-#'
-#' df <- data.table(
-#'     data_hora_observacao = as.POSIXct(c(
-#'         "2025-01-01 00:00", "2025-01-01 06:30", "2025-01-01 07:00",
-#'         "2025-01-01 18:00", "2025-01-01 23:30"
-#'     )),
-#'     valor = c(NA, 10, 12, 11, NA),
-#'     status = c(NA, 1, 1, 1, NA)
-#' )
-#'
-#' df_modificado <- zera_horarios_extremos(df)
-#' print(df_modificado)
-#'
 #' @seealso aplica_cortes_em_geracao, combina_dados
-
+#'
 zera_horarios_extremos <- function(df_ger_usi) {
     # Extrair hora:minuto como decimal (ex: 6.5 = 06:30)
     df_ger_usi[, hora_dec := hour(data_hora_observacao) + minute(data_hora_observacao) / 60]
@@ -432,32 +314,8 @@ zera_horarios_extremos <- function(df_ger_usi) {
 #' A funcao identifica os registros no data.table de cortes em que \code{valor == 1}, o que indica que ha corte ativo naquele instante.
 #' Em seguida, esses registros sao usados para sobrescrever a geracao observada com NA na tabela de entrada.
 #' 
-#' @examples
-#' library(data.table)
-#' dt_geracao <- data.table(
-#'     id_usina = c("U1", "U1", "U1", "U2"),
-#'     data_hora_observacao = as.POSIXct(
-#'         c(
-#'             "2025-01-01 00:00",
-#'             "2025-01-01 00:30",
-#'             "2025-01-01 01:00",
-#'             "2025-01-01 00:00"
-#'         )
-#'     ),
-#'     valor = c(10, 12, 11, 9)
-#' )
-#'
-#' dt_cortes <- data.table(
-#'     id_usina = c("U1", "U2"),
-#'     data_hora_observacao = as.POSIXct(c("2025-01-01 00:30", "2025-01-01 00:00")),
-#'     valor = c(1, 1)
-#' )
-#'
-#' dt_resultado <- aplica_cortes_em_geracao(dt_geracao, dt_cortes)
-#' print(dt_resultado)
-#'
 #' @seealso combina_dados, organiza_resultados
-
+#'
 aplica_cortes_em_geracao <- function(dt_geracao_usina, dt_cortes) {
     # Filtrar apenas onde valor == 1 (cortes ativos)
     dt_cortes_filtrado <- dt_cortes[valor == 1, .(id_usina, data_hora_observacao)]

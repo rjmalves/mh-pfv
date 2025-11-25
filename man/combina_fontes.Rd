@@ -23,21 +23,6 @@ Aplica combinacao de dados a partir de diferentes fontes, com base na grandeza i
 Esta funcao atua como uma interface para combinacao de dados dependendo da grandeza. Para "geracao_observada", utiliza a funcao combina_dados
 para selecionar, por usina e horario, os dados nao ausentes de maior prioridade. Outros tipos de grandeza (ex. irradiancia) podem ser implementados no futuro.
 }
-\examples{
-library(data.table)
-dt <- data.table(
-    id_fonte_observacao = c("A", "B", "A", "B"),
-    id_usina = c(1, 1, 2, 2),
-    data_hora_observacao = as.POSIXct(c(
-        "2020-01-01 00:00", "2020-01-01 00:00",
-        "2020-01-01 01:00", "2020-01-01 01:00"
-    )),
-    valor = c(NA, 10, 5, NA)
-)
-ordem <- c("A", "B")
-resultado <- combina_fontes(dt, grandeza = "geracao_observada", ordem = ordem)
-
-}
 \seealso{
 combina_dados
 }

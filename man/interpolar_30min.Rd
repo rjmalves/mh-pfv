@@ -35,26 +35,3 @@ o intervalo entre \code{min(data_hora_previsao)} e \code{max(data_hora_previsao)
 seja preenchido com valores a cada 30 minutos. As colunas de identificacao e
 coordenadas sao mantidas fixas conforme o primeiro registro de cada grupo.
 }
-\examples{
-library(data.table)
-
-dt_exemplo <- data.table(
-    id_modelo_nwp = rep("GFS", 3),
-    id_usina = rep("USINA_A", 3),
-    latitude = -25,
-    longitude = -48.5,
-    data_hora_rodada = as.POSIXct("2025-08-03 00:00:00"),
-    data_hora_previsao = as.POSIXct(
-        c(
-            "2025-08-03 00:00:00",
-            "2025-08-03 01:00:00",
-            "2025-08-03 02:00:00"
-        )
-    ),
-    valor = c(10, 20, 30),
-    passo_prev = rep("D+0", 3)
-)
-
-dt_interp <- interpolar_30min(dt_exemplo)
-print(dt_interp)
-}

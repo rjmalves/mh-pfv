@@ -28,16 +28,6 @@ aplicando filtros sequenciais para cada fonte de observacao com base em limiares
 A funcao aplica a funcao \code{remove_congelados()} duas vezes por grupo (\code{id_fonte_observacao}),
 com diferentes parametros de janela e limiar, permitindo uma filtragem mais robusta de dados suspeitos de congelamento.
 }
-\examples{
-library(data.table)
-d1 <- data.table(
-    id_fonte_observacao = rep(letters[1:2], each = 10),
-    data_hora_observacao = rep(as.Date("2020-01-01"), 20),
-    valor = rep(1:2, each = 10)
-)
-checa_valores_congelados(d1)
-
-}
 \seealso{
 \code{\link[=remove_congelados]{remove_congelados()}}
 }
