@@ -14,23 +14,30 @@ preenche_geracao_unit(
 )
 }
 \arguments{
-\item{geracao_usina}{data.table com os dados de geracao observada da usina. Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.}
+\item{geracao_usina}{data.table com os dados de geracao observada da usina. Deve conter colunas
+\code{id_usina}, \code{data_hora_observacao} e \code{valor}.}
 
-\item{irrad_prev}{data.table com previsao de irradiancia. Deve conter colunas \code{id_usina}, \code{data_hora_previsao} e \code{valor}.}
+\item{irrad_prev}{data.table com previsao de irradiancia. Deve conter colunas \code{id_usina},
+\code{data_hora_previsao} e \code{valor}.}
 
-\item{mhg_prev}{data.table com melhores historicos de geracao anteriores. Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.}
+\item{mhg_prev}{data.table com melhores historicos de geracao anteriores. Deve conter colunas
+\code{id_usina}, \code{data_hora_observacao} e \code{valor}.}
 
-\item{cortes}{data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor} (1 para corte).}
+\item{cortes}{data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina},
+\code{data_hora_observacao} e \code{valor} (1 para corte).}
 
-\item{limite_dados}{Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para valores de geracao.}
+\item{limite_dados}{Vetor numerico de comprimento 2 com os limites inferior e superior permitidos
+para valores de geracao.}
 
 \item{model}{Lista contendo os modelos de regressao linear por horario.}
 }
 \value{
-Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados, e horarios extremos zerados onde nao ha geracao valida.
+Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados,
+e horarios extremos zerados onde nao ha geracao valida.
 }
 \description{
-Realiza o preenchimento de valores ausentes na geracao observada de uma usina, utilizando irradiacao prevista corrigida por regressao linear.
+Realiza o preenchimento de valores ausentes na geracao observada de uma usina,
+utilizando irradiacao prevista corrigida por regressao linear.
 }
 \details{
 A funcao executa o seguinte fluxo:
@@ -44,5 +51,6 @@ A funcao executa o seguinte fluxo:
 }
 }
 \seealso{
-ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao, combina_dados_tempo, zera_horarios_extremos
+ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao,
+combina_dados_tempo, zera_horarios_extremos
 }

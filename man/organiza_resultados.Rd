@@ -23,7 +23,8 @@ Uma lista com dois data.tables:
 }
 }
 \description{
-Agrupa os resultados processados individualmente por usina em dois data.tables: um com consideracao de cortes e outro sem.
+Agrupa os resultados processados individualmente por usina em dois data.tables:
+um com consideracao de cortes e outro sem.
 }
 \details{
 A funcao percorre os elementos da lista \code{resultados}, adiciona a identificacao da usina correspondente,

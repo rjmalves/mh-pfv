@@ -6,7 +6,6 @@
 #' @return lista de argumentos interpretados
 #'
 #' @export
-
 parse_config <- function(config, conn) {
     valida_nomes_config(config)
     valida_tipos_config(config)
@@ -25,7 +24,6 @@ parse_config <- function(config, conn) {
 #' @param config lista de configuracoes
 #'
 #' @return NULL se config possui todas as chaves; levanta erro do contrario
-
 valida_nomes_config <- function(config) {
     nomes <- config_names()
 
@@ -56,7 +54,6 @@ config_names <- function() {
 #' @param config lista de configuracoes
 #'
 #' @return NULL se config possui todos os tipos corretos; levanta erro do contrario
-
 valida_tipos_config <- function(config) {
     tipos <- config_types()
 
@@ -96,7 +93,6 @@ config_types <- function() {
 #' @param tipos tipos esperados de `l`, escalar ou lista
 #'
 #' @return booleano indicando se validacao encerrou com sucesso ou nao
-
 valid_tipos <- function(l, tipos) do.call(all, list(sapply(l, valid_tipos_unit, tipos = tipos)))
 
 #' Auxiliar De `valid_tipos`
@@ -107,7 +103,6 @@ valid_tipos <- function(l, tipos) do.call(all, list(sapply(l, valid_tipos_unit, 
 #' @param tipos tipos esperados de `x`, escalar ou lista
 #'
 #' @return booleano indicando se validacao encerrou com sucesso ou nao
-
 valid_tipos_unit <- function(x, tipos) Reduce("|", lapply(tipos, inherits, x = x))
 
 # PARSERS ------------------------------------------------------------------------------------------
@@ -119,15 +114,12 @@ valid_tipos_unit <- function(x, tipos) Reduce("|", lapply(tipos, inherits, x = x
 #' @param x valor da chave `janela`; numerico ou vetor de duas strings de data
 #'
 #' @return vetor `Date` de duas posicoes indicando inicio e fim da janela de melhor historico
-
 parsearg_janela <- function(x) UseMethod("parsearg_janela")
 
 #' @rdname parsearg_janela
-
 parsearg_janela.numeric <- function(x) Sys.Date() - c(x + 1, 1)
 
 #' @rdname parsearg_janela
-
 parsearg_janela.character <- function(x) as.Date(x)
 
 #' Interpretador De Chave `ids_usinas`
@@ -139,7 +131,6 @@ parsearg_janela.character <- function(x) as.Date(x)
 #'
 #' @return se `x` era uma lista vazia, retorna um vetor com todos os ids no banco `conn`; do
 #'     contrario retorna `x` vetorizado
-
 parsearg_ids_usinas <- function(x, conn) {
     if (length(x) == 0) x <- get_usinas(conn)$id_usina else x <- unlist(x)
     return(unique(x))

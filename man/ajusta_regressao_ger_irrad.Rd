@@ -37,12 +37,14 @@ Um data.frame com os coeficientes de regressao por horario, com:
 }
 }
 \description{
-Estima coeficientes de regressao linear para cada horario de meia em meia hora, usando dados de geracao observada e irradiacao prevista.
+Estima coeficientes de regressao linear para cada horario de meia em meia hora,
+usando dados de geracao observada e irradiacao prevista.
 }
 \details{
 A funcao percorre os horarios do dia entre 05:00 e 18:30 com passos de 30 minutos.
-Para cada horario, filtra os dados de geracao e irradiacao correspondentes e realiza um ajuste linear sem intercepto (\code{lm(y ~ x + 0)}).
-Apenas pares com mais de 5 observacoes validas sao considerados. Quando ha dados insuficientes, o coeficiente angular e definido como zero.
+Para cada horario, filtra os dados de geracao e irradiacao correspondentes e realiza um
+ajuste linear sem intercepto (\code{lm(y ~ x + 0)}). Apenas pares com mais de 5 observacoes validas
+sao considerados. Quando ha dados insuficientes, o coeficiente angular e definido como zero.
 
 Valores iguais a zero sao tratados como ausentes (NA) antes do ajuste.
 }

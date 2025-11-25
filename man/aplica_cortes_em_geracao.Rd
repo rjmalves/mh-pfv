@@ -7,20 +7,24 @@
 aplica_cortes_em_geracao(dt_geracao_usina, dt_cortes)
 }
 \arguments{
-\item{dt_geracao_usina}{data.table contendo a serie de geracao observada, com colunas obrigatorias: \code{id_usina}, \code{data_hora_observacao}, \code{valor}.}
+\item{dt_geracao_usina}{data.table contendo a serie de geracao observada, com colunas obrigatorias:
+\code{id_usina}, \code{data_hora_observacao}, \code{valor}.}
 
-\item{dt_cortes}{data.table com informacoes de cortes, contendo colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor},
+\item{dt_cortes}{data.table com informacoes de cortes, contendo colunas \code{id_usina},
+\code{data_hora_observacao} e \code{valor},
 onde \code{valor == 1} indica a presenca de corte ativo.}
 }
 \value{
-O mesmo data.table de entrada \code{dt_geracao_usina}, com os valores substituidos por NA nas datas e usinas onde ha cortes.
+O mesmo data.table de entrada \code{dt_geracao_usina}, com os valores substituidos
+por NA nas datas e usinas onde ha cortes.
 }
 \description{
 Define como NA os valores de geracao observada em datas e usinas onde ha cortes ativos.
 }
 \details{
-A funcao identifica os registros no data.table de cortes em que \code{valor == 1}, o que indica que ha corte ativo naquele instante.
-Em seguida, esses registros sao usados para sobrescrever a geracao observada com NA na tabela de entrada.
+A funcao identifica os registros no data.table de cortes em que \code{valor == 1}, o que indica
+que ha corte ativo naquele instante. Em seguida, esses registros sao usados para sobrescrever a
+geracao observada com NA na tabela de entrada.
 }
 \seealso{
 combina_dados, organiza_resultados

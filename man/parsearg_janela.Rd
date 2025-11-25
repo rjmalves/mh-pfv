@@ -2,15 +2,9 @@
 % Please edit documentation in R/config-file.r
 \name{parsearg_janela}
 \alias{parsearg_janela}
-\alias{parsearg_janela.numeric}
-\alias{parsearg_janela.character}
 \title{Interpretador De Chave \code{janela}}
 \usage{
 parsearg_janela(x)
-
-\method{parsearg_janela}{numeric}(x)
-
-\method{parsearg_janela}{character}(x)
 }
 \arguments{
 \item{x}{valor da chave \code{janela}; numerico ou vetor de duas strings de data}

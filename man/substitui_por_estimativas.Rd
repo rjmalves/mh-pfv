@@ -7,19 +7,25 @@
 substitui_por_estimativas(df_ger_usi, df_irrad_prev, regressoes, lim_dados)
 }
 \arguments{
-\item{df_ger_usi}{data.table com a geracao observada da usina. Deve conter as colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.}
+\item{df_ger_usi}{data.table com a geracao observada da usina. Deve conter as colunas \code{id_usina},
+\code{data_hora_observacao} e \code{valor}.}
 
-\item{df_irrad_prev}{data.table com a irradiacao prevista. Deve conter as colunas \code{id_usina}, \code{data_hora_previsao} e \code{valor}.}
+\item{df_irrad_prev}{data.table com a irradiacao prevista. Deve conter as colunas \code{id_usina},
+\code{data_hora_previsao} e \code{valor}.}
 
-\item{regressoes}{Data frame ou data.table com os coeficientes de regressao para cada horario. Deve conter uma coluna \code{a} e nomes das linhas como \code{HH:MM}.}
+\item{regressoes}{Data frame ou data.table com os coeficientes de regressao para cada horario. Deve conter
+uma coluna \code{a} e nomes das linhas como \code{HH:MM}.}
 
-\item{lim_dados}{Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para os valores de geracao. Valores fora desse intervalo serao substituidos por NA.}
+\item{lim_dados}{Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para os
+valores de geracao. Valores fora desse intervalo serao substituidos por NA.}
 }
 \value{
-O mesmo data.table \code{df_ger_usi}, com os valores originalmente ausentes preenchidos pelas estimativas, e a coluna \code{status} atualizada para 4 nos casos de substituicao.
+O mesmo data.table \code{df_ger_usi}, com os valores originalmente ausentes preenchidos pelas
+estimativas, e a coluna \code{status} atualizada para 4 nos casos de substituicao.
 }
 \description{
-Preenche valores ausentes na geracao observada utilizando estimativas calculadas a partir de previsoes de irradiacao e coeficientes de regressao.
+Preenche valores ausentes na geracao observada utilizando estimativas calculadas a partir de previsoes
+de irradiacao e coeficientes de regressao.
 }
 \details{
 A funcao realiza os seguintes passos:

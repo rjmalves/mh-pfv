@@ -193,10 +193,10 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
     for (i in seq_len(nrow(dt_usinas))) {
         usina <- dt_usinas[i]
 
-        R <- 6371 # raio medio da Terra em km
+        raio_km <- 6371 # raio medio da Terra em km
 
         # Calcula a distancia Haversine entre a usina e todas as coordenadas da previsao
-        coord_prev[, distancia := 2 * R * asin(sqrt(
+        coord_prev[, distancia := 2 * raio_km * asin(sqrt(
             sin(((latitude - usina$latitude) * pi / 180) / 2)^2 +
                 cos(usina$latitude * pi / 180) * cos(latitude * pi / 180) *
                     sin(((longitude - usina$longitude) * pi / 180) / 2)^2
@@ -207,7 +207,7 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
 
         # Filtra os dados da previsao para essa coordenada
         dt_filt <- dt_irrad_prev[latitude == coord_mais_proxima$latitude &
-            longitude == coord_mais_proxima$longitude]
+                longitude == coord_mais_proxima$longitude]
 
         # Adiciona o id_usina
         dt_filt[, id_usina := usina$id_usina]

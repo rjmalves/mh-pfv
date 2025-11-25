@@ -1,15 +1,22 @@
 #' Preenche Serie de Geracao para com Estimativas
 #'
-#' Realiza o preenchimento de valores ausentes na geracao observada de uma usina, utilizando irradiacao prevista corrigida por regressao linear.
+#' Realiza o preenchimento de valores ausentes na geracao observada de uma usina,
+#' utilizando irradiacao prevista corrigida por regressao linear.
 #'
-#' @param geracao_usina data.table com os dados de geracao observada da usina. Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
-#' @param irrad_prev data.table com previsao de irradiancia. Deve conter colunas \code{id_usina}, \code{data_hora_previsao} e \code{valor}.
-#' @param mhg_prev data.table com melhores historicos de geracao anteriores. Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
-#' @param cortes data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor} (1 para corte).
-#' @param limite_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para valores de geracao.
+#' @param geracao_usina data.table com os dados de geracao observada da usina. Deve conter colunas
+#'                      \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
+#' @param irrad_prev data.table com previsao de irradiancia. Deve conter colunas \code{id_usina},
+#'                   \code{data_hora_previsao} e \code{valor}.
+#' @param mhg_prev data.table com melhores historicos de geracao anteriores. Deve conter colunas
+#'                 \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
+#' @param cortes data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina},
+#'               \code{data_hora_observacao} e \code{valor} (1 para corte).
+#' @param limite_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos
+#'                     para valores de geracao.
 #' @param model Lista contendo os modelos de regressao linear por horario.
 #'
-#' @return Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados, e horarios extremos zerados onde nao ha geracao valida.
+#' @return Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados,
+#'         e horarios extremos zerados onde nao ha geracao valida.
 #'
 #' @details
 #' A funcao executa o seguinte fluxo:
@@ -22,7 +29,8 @@
 #'   \item Zera valores em horarios fora do intervalo com geracao valida.
 #' }
 #'
-#' @seealso ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao, combina_dados_tempo, zera_horarios_extremos
+#' @seealso ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao,
+#'          combina_dados_tempo, zera_horarios_extremos
 #'
 preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados, model) {
     geracao_usina[valor == 999, valor := NA]
@@ -70,14 +78,20 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 
 #' Substitui Valores Ausentes por Estimativas com Base em Irradiacao Prevista
 #'
-#' Preenche valores ausentes na geracao observada utilizando estimativas calculadas a partir de previsoes de irradiacao e coeficientes de regressao.
+#' Preenche valores ausentes na geracao observada utilizando estimativas calculadas a partir de previsoes
+#' de irradiacao e coeficientes de regressao.
 #'
-#' @param df_ger_usi data.table com a geracao observada da usina. Deve conter as colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
-#' @param df_irrad_prev data.table com a irradiacao prevista. Deve conter as colunas \code{id_usina}, \code{data_hora_previsao} e \code{valor}.
-#' @param regressoes Data frame ou data.table com os coeficientes de regressao para cada horario. Deve conter uma coluna \code{a} e nomes das linhas como \code{HH:MM}.
-#' @param lim_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para os valores de geracao. Valores fora desse intervalo serao substituidos por NA.
+#' @param df_ger_usi data.table com a geracao observada da usina. Deve conter as colunas \code{id_usina},
+#'                   \code{data_hora_observacao} e \code{valor}.
+#' @param df_irrad_prev data.table com a irradiacao prevista. Deve conter as colunas \code{id_usina},
+#'                      \code{data_hora_previsao} e \code{valor}.
+#' @param regressoes Data frame ou data.table com os coeficientes de regressao para cada horario. Deve conter
+#'                   uma coluna \code{a} e nomes das linhas como \code{HH:MM}.
+#' @param lim_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para os
+#'                  valores de geracao. Valores fora desse intervalo serao substituidos por NA.
 #'
-#' @return O mesmo data.table \code{df_ger_usi}, com os valores originalmente ausentes preenchidos pelas estimativas, e a coluna \code{status} atualizada para 4 nos casos de substituicao.
+#' @return O mesmo data.table \code{df_ger_usi}, com os valores originalmente ausentes preenchidos pelas
+#'         estimativas, e a coluna \code{status} atualizada para 4 nos casos de substituicao.
 #'
 #' @details
 #' A funcao realiza os seguintes passos:
@@ -182,16 +196,20 @@ zera_horarios_extremos <- function(df_ger_usi) {
 #'
 #' Define como NA os valores de geracao observada em datas e usinas onde ha cortes ativos.
 #'
-#' @param dt_geracao_usina data.table contendo a serie de geracao observada, com colunas obrigatorias: \code{id_usina}, \code{data_hora_observacao}, \code{valor}.
-#' @param dt_cortes data.table com informacoes de cortes, contendo colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor},
+#' @param dt_geracao_usina data.table contendo a serie de geracao observada, com colunas obrigatorias:
+#'                         \code{id_usina}, \code{data_hora_observacao}, \code{valor}.
+#' @param dt_cortes data.table com informacoes de cortes, contendo colunas \code{id_usina},
+#'                  \code{data_hora_observacao} e \code{valor},
 #'                  onde \code{valor == 1} indica a presenca de corte ativo.
 #'
-#' @return O mesmo data.table de entrada \code{dt_geracao_usina}, com os valores substituidos por NA nas datas e usinas onde ha cortes.
+#' @return O mesmo data.table de entrada \code{dt_geracao_usina}, com os valores substituidos
+#'         por NA nas datas e usinas onde ha cortes.
 #'
 #' @details
-#' A funcao identifica os registros no data.table de cortes em que \code{valor == 1}, o que indica que ha corte ativo naquele instante.
-#' Em seguida, esses registros sao usados para sobrescrever a geracao observada com NA na tabela de entrada.
-#' 
+#' A funcao identifica os registros no data.table de cortes em que \code{valor == 1}, o que indica
+#' que ha corte ativo naquele instante. Em seguida, esses registros sao usados para sobrescrever a
+#' geracao observada com NA na tabela de entrada.
+#'
 #' @seealso combina_dados, organiza_resultados
 #'
 aplica_cortes_em_geracao <- function(dt_geracao_usina, dt_cortes) {

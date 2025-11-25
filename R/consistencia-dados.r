@@ -64,11 +64,12 @@ consiste_geracao_unit <- function(dados_usina, geracao_usina, corte_obs, ordem_p
 #' @param v_limiar Vetor numerico de tamanho `n` indicando os limiares maximos de variacao dentro da janela.
 #'                 Valor defaut: `c(0.01, 0.1)`.
 #'
-#' @return O mesmo `data.table`, com a coluna `valor` ajustada: valores considerados congelados sao substituidos por `NA`.
+#' @return O mesmo `data.table`, com a coluna `valor` ajustada: valores considerados congelados
+#'         sao substituidos por `NA`.
 #'
-#' @details
-#' A funcao aplica a funcao `remove_congelados()` duas vezes por grupo (`id_fonte_observacao`),
-#' com diferentes parametros de janela e limiar, permitindo uma filtragem mais robusta de dados suspeitos de congelamento.
+#' @details A funcao aplica a funcao `remove_congelados()` duas vezes por grupo (`id_fonte_observacao`),
+#'          com diferentes parametros de janela e limiar, permitindo uma filtragem mais robusta de dados
+#'          suspeitos de congelamento.
 #'
 #' @seealso [remove_congelados()]
 #'
@@ -109,15 +110,17 @@ checa_valores_congelados <- function(dt, v_n_valores = c(5, 8), v_limiar = c(0.0
 #' @param limiar Variacao maxima permitida entre os valores dentro da janela.
 #'               Se a variacao dentro da janela for menor ou igual a esse valor, ela sera considerada congelada.
 #'
-#' @return Vetor numerico com os mesmos valores de entrada, mas com os trechos identificados como congelados substituidos por NA.
+#' @return Vetor numerico com os mesmos valores de entrada, mas com os trechos identificados como
+#'         congelados substituidos por NA.
 #'
 #' @details
 #' A funcao percorre o vetor original com uma janela deslizante de tamanho n_valores.
 #' Para cada janela, calcula-se a diferenca entre o valor maximo e o minimo.
-#' Se essa diferenca for menor ou igual ao limiar, os valores dentro da janela sao marcados como congelados e substituidos por NA.
+#' Se essa diferenca for menor ou igual ao limiar, os valores dentro da janela sao marcados como
+#' congelados e substituidos por NA.
 #'
 #' @seealso checa_valores_congelados
-#' 
+#'
 remove_congelados <- function(v, n_valores, limiar) {
     # Vetor logico para marcar posicoes que serao substituidas por NA
     flag_na <- rep(FALSE, length(v))
@@ -193,7 +196,8 @@ manter_geracao_congelada_em_cortes <- function(geracao_usina_limpos, geracao_usi
 #'
 #' @details
 #' A funcao aplica uma verificacao simples nos dados numericos da coluna valor.
-#' Todo valor menor que o limite inferior ou maior que o limite superior definido no argumento limites e substituido por NA.
+#' Todo valor menor que o limite inferior ou maior que o limite superior definido no argumento limites
+#' e substituido por NA.
 #'
 #' @seealso remove_congelados, checa_valores_congelados
 #'
@@ -214,25 +218,27 @@ checa_valores_overbound <- function(dt, limites = c(0, Inf)) {
 
 #' Combina Dados de Diferentes Fontes com Base na Grandeza
 #'
-#' Aplica combinacao de dados a partir de diferentes fontes, com base na grandeza informada. Atualmente, trata apenas o caso de geracao observada.
+#' Aplica combinacao de dados a partir de diferentes fontes, com base na grandeza informada.
+#' Atualmente, trata apenas o caso de geracao observada.
 #'
-#' @param dt Um data.table contendo os dados a serem combinados. Deve conter colunas como id_fonte_observacao, id_usina, data_hora_observacao e valor.
-#' @param grandeza String que indica qual tipo de dado sera processado. Atualmente, apenas "geracao_observada" esta implementado.
-#' @param ordem Vetor de caracteres indicando a ordem de prioridade das fontes (valores da coluna id_fonte_observacao). Fontes mais prioritarias devem vir primeiro.
+#' @param dt Um data.table contendo os dados a serem combinados. Deve conter colunas como id_fonte_observacao,
+#'           id_usina, data_hora_observacao e valor.
+#' @param grandeza String que indica qual tipo de dado sera processado. Atualmente, apenas "geracao_observada"
+#'                 esta implementado.
+#' @param ordem Vetor de caracteres indicando a ordem de prioridade das fontes (valores da coluna id_fonte_observacao).
+#'              Fontes mais prioritarias devem vir primeiro.
 #'
-#' @return Um data.table com os dados combinados de acordo com a grandeza especificada e a ordem de prioridade das fontes.
+#' @return Um data.table com os dados combinados de acordo com a grandeza especificada e a
+#'         ordem de prioridade das fontes.
 #'
 #' @details
-#' Esta funcao atua como uma interface para combinacao de dados dependendo da grandeza. Para "geracao_observada", utiliza a funcao combina_dados
-#' para selecionar, por usina e horario, os dados nao ausentes de maior prioridade. Outros tipos de grandeza (ex. irradiancia) podem ser implementados no futuro.
+#' Esta funcao atua como uma interface para combinacao de dados dependendo da grandeza. Para "geracao_observada",
+#' utiliza a funcao combina_dados para selecionar, por usina e horario, os dados nao ausentes de maior prioridade.
+#' Outros tipos de grandeza (ex. irradiancia) podem ser implementados no futuro.
 #'
 #' @seealso combina_dados
 #'
 combina_fontes <- function(dt, grandeza, ordem) {
-    # ---------------------------------------------------------
-    # Funcao para combinar dados de diferentes fontes
-    # dependendo da grandeza informada
-
     # Se a grandeza for geracao_observada, apenas combina os dados
     if (grandeza == "geracao_observada") {
         geracao_combinada <- combina_dados(dt, ordem)
@@ -246,21 +252,23 @@ combina_fontes <- function(dt, grandeza, ordem) {
 
 #' Combina Dados de Diferentes Fontes com Prioridade
 #'
-#' Seleciona valores nao ausentes a partir de multiplas fontes de dados, com base em uma ordem de prioridade definida pelo usuario.
+#' Seleciona valores nao ausentes a partir de multiplas fontes de dados,
+#' com base em uma ordem de prioridade definida pelo usuario.
 #'
 #' @param dt Um data.table contendo colunas obrigatorias: id_fonte_observacao, id_usina, data_hora_observacao e valor.
 #' @param ordem Vetor de caracteres indicando a ordem de prioridade das fontes (valores da coluna id_fonte_observacao).
 #'              Fontes mais prioritarias devem aparecer antes no vetor.
 #'
-#' @return Um data.table com as mesmas colunas do objeto de entrada, contendo apenas um valor por combinacao de id_usina e data_hora_observacao,
-#'         escolhido de acordo com a prioridade definida. Fontes com valor NA sao descartadas. A coluna id_fonte_observacao e substituida por "Consis"
-#'         para indicar dado combinado, e a coluna status recebe o indice de prioridade.
+#' @return Um data.table com as mesmas colunas do objeto de entrada, contendo apenas um valor por combinacao de id_usina
+#'         e data_hora_observacao, escolhido de acordo com a prioridade definida. Fontes com valor NA sao descartadas.
+#'         A coluna id_fonte_observacao e substituida por "Consis" para indicar dado combinado, e a coluna status recebe
+#'         o indice de prioridade.
 #'
 #' @details
-#' A funcao filtra os dados validos (valores nao NA) e seleciona, para cada combinacao de id_usina e data_hora_observacao,
-#' apenas o valor da fonte mais prioritaria. Em seguida, garante que todas as combinacoes de usina e horario estejam presentes
-#' no resultado final, mesmo que com valor NA. A coluna de origem e substituida por "Consis" e o status indica a posicao
-#' da fonte usada segundo o vetor de prioridade fornecido.
+#' A funcao filtra os dados validos (valores nao NA) e seleciona, para cada combinacao de id_usina e
+#' data_hora_observacao, apenas o valor da fonte mais prioritaria. Em seguida, garante que todas as combinacoes de
+#' usina e horario estejam presentes no resultado final, mesmo que com valor NA. A coluna de origem e substituida por
+#' "Consis" e o status indica a posicao da fonte usada segundo o vetor de prioridade fornecido.
 #'
 combina_dados <- function(dt, ordem) {
     # Cria uma copia local

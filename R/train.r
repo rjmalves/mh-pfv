@@ -5,16 +5,22 @@
 #' @param args Lista de argumentos necessarios para o processamento. Os campos esperados sao:
 #' \itemize{
 #'   \item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-#'   \item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd", indicando o inicio do periodo de analise.
+#'   \item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd",
+#'                             indicando o inicio do periodo de analise.
 #'   \item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
-#'   \item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia aplicado ao limite superior de geracao observada.
-#'   \item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas disponiveis serao utilizadas.
-#'   \item \code{input}: caminho para a pasta onde estao localizados os dados de entrada (ex: dados de SCADA, modelos NWP, cortes, etc.).
+#'   \item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia aplicado
+#'                                                          ao limite superior de geracao observada.
+#'   \item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as
+#'                            usinas disponiveis serao utilizadas.
+#'   \item \code{input}: caminho para a pasta onde estao localizados os dados de entrada
+#'                       (ex: dados de SCADA, modelos NWP, cortes, etc.).
 #'   \item \code{mode}: string que define o modo de operacao. Deve ser "train" para rodar o treinamento dos modelos.
-#'   \item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula, em ordem de prioridade.
+#'   \item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados
+#'                                             por virgula, em ordem de prioridade.
 #' }
 #'
-#' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos na pasta de saida especificada.
+#' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente
+#'         em arquivos na pasta de saida especificada.
 #'
 #' @details
 #' A funcao executa o treinamento do modelo para cada usina:
@@ -58,8 +64,8 @@ train_main <- function(args) {
 }
 
 ajustar_usina <- function(
-  iu, dt_usinas, dt_ger_obs,
-  dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia
+    iu, dt_usinas, dt_ger_obs,
+    dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia
 ) {
     # Filtra os dados referentes a usina atual
     dad_usi <- dt_usinas[id_usina == iu]
@@ -113,7 +119,8 @@ ajustar_usina <- function(
 
 #' Ajusta Regressao Linear entre Geracao Observada e Irradiacao Prevista
 #'
-#' Estima coeficientes de regressao linear para cada horario de meia em meia hora, usando dados de geracao observada e irradiacao prevista.
+#' Estima coeficientes de regressao linear para cada horario de meia em meia hora,
+#' usando dados de geracao observada e irradiacao prevista.
 #'
 #' @param dty data.table com dados de geracao observada. Deve conter as colunas:
 #'   \itemize{
@@ -143,8 +150,9 @@ ajustar_usina <- function(
 #'
 #' @details
 #' A funcao percorre os horarios do dia entre 05:00 e 18:30 com passos de 30 minutos.
-#' Para cada horario, filtra os dados de geracao e irradiacao correspondentes e realiza um ajuste linear sem intercepto (\code{lm(y ~ x + 0)}).
-#' Apenas pares com mais de 5 observacoes validas sao considerados. Quando ha dados insuficientes, o coeficiente angular e definido como zero.
+#' Para cada horario, filtra os dados de geracao e irradiacao correspondentes e realiza um
+#' ajuste linear sem intercepto (\code{lm(y ~ x + 0)}). Apenas pares com mais de 5 observacoes validas
+#' sao considerados. Quando ha dados insuficientes, o coeficiente angular e definido como zero.
 #'
 #' Valores iguais a zero sao tratados como ausentes (NA) antes do ajuste.
 #'
@@ -166,10 +174,10 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
         minuto <- ifelse((h - hora_inteira) == 0.5, 30, 0)
 
         dty_f <- dty[hour(data_hora_observacao) == hora_inteira &
-            minute(data_hora_observacao) == minuto]
+                minute(data_hora_observacao) == minuto]
 
         dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
-            minute(data_hora_previsao) == minuto]
+                minute(data_hora_previsao) == minuto]
 
         # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
         dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
@@ -181,7 +189,7 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
         dados_validos <- complete.cases(dty_f$valor, dtx_f$valor)
         if (sum(dados_validos) < 10) {
             dty_f <- dty_bruta[hour(data_hora_observacao) == hora_inteira &
-                minute(data_hora_observacao) == minuto]
+                    minute(data_hora_observacao) == minuto]
             # Calcular o quantil de 60% da coluna 'valor'
             q60 <- quantile(dty_f$valor, probs = 0.7, na.rm = TRUE)
 
@@ -189,7 +197,7 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
             dty_f[valor < q60, valor := NA]
 
             dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
-                minute(data_hora_previsao) == minuto]
+                    minute(data_hora_previsao) == minuto]
 
             # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
             dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]

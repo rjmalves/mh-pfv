@@ -60,4 +60,3 @@ test_that("ajusta_regressao_ger_irrad", {
     expect_equal(rownames(resultado_0630), "06:30")
     expect_gt(resultado_0630["06:30", "a"], 0)
 })
-

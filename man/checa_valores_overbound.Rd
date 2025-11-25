@@ -20,7 +20,8 @@ Verifica e substitui por NA os valores que estao fora de um intervalo definido d
 }
 \details{
 A funcao aplica uma verificacao simples nos dados numericos da coluna valor.
-Todo valor menor que o limite inferior ou maior que o limite superior definido no argumento limites e substituido por NA.
+Todo valor menor que o limite inferior ou maior que o limite superior definido no argumento limites
+e substituido por NA.
 }
 \seealso{
 remove_congelados, checa_valores_congelados

@@ -1,22 +1,30 @@
 #' Funcao Principal de Consolidacao dos dados
 #'
-#' Executa o processamento completo de consistencia dos dados observados para um conjunto de usinas, considerando diferentes fontes e modelos em ordem de prioridade.
+#' Executa o processamento completo de consistencia dos dados observados para um conjunto de usinas,
+#' considerando diferentes fontes e modelos em ordem de prioridade.
 #'
 #' @param args Lista de argumentos necessarios para o processamento. Os campos esperados sao:
 #' \itemize{
 #'   \item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-#'   \item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd", indicando o inicio do periodo de analise.
+#'   \item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd",
+#'                             indicando o inicio do periodo de analise.
 #'   \item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
-#'   \item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia aplicado ao limite superior de geracao observada.
-#'   \item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas disponiveis serao utilizadas.
-#'   \item \code{input}: caminho para a pasta onde estao localizados os dados de entrada (ex: dados de SCADA, modelos NWP, cortes, etc.).
+#'   \item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia
+#'                                                          aplicado ao limite superior de geracao observada.
+#'   \item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas
+#'                            disponiveis serao utilizadas.
+#'   \item \code{input}: caminho para a pasta onde estao localizados os dados de entrada
+#'                       (ex: dados de SCADA, modelos NWP, cortes, etc.).
 #'   \item \code{mode}: string que define o modo de operacao. Deve ser "predict" para rodar o fluxo de consistencia.
-#'   \item \code{ordem_prioridade_fontes}: string com os nomes das fontes de dados separados por virgula, indicando a ordem de prioridade para uso dos dados historicos.
-#'   \item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula, em ordem de prioridade.
+#'   \item \code{ordem_prioridade_fontes}: string com os nomes das fontes de dados separados por virgula,
+#'                                         indicando a ordem de prioridade para uso dos dados historicos.
+#'   \item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula,
+#'                                             em ordem de prioridade.
 #'   \item \code{output}: caminho para a pasta onde os arquivos de saida serao escritos.
 #' }
 #'
-#' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos na pasta de saida especificada.
+#' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos
+#'         na pasta de saida especificada.
 #'
 #' @details
 #' A funcao executa o fluxo completo para cada usina:
@@ -167,7 +175,7 @@ processar_usina <- function(
         irrad_prev = irrad_prev,
         mhg_prev = mhg_sc,
         cortes = corte_obs,
-        limite_dados = c(0, potencia_instalada * fator_tolerancia), 
+        limite_dados = c(0, potencia_instalada * fator_tolerancia),
         model = model
     )
 
@@ -191,7 +199,8 @@ processar_usina <- function(
 
 #' Organiza Resultados de Previsao por Usina
 #'
-#' Agrupa os resultados processados individualmente por usina em dois data.tables: um com consideracao de cortes e outro sem.
+#' Agrupa os resultados processados individualmente por usina em dois data.tables:
+#' um com consideracao de cortes e outro sem.
 #'
 #' @param resultados Lista contendo, para cada usina, um sub-lista com dois elementos:
 #'   \itemize{
