@@ -18,7 +18,8 @@ Pode ser de qualquer dimensao, porem "limiar" deve ter a mesma dimensao.}
 Valor defaut: \code{c(0.01, 0.1)}.}
 }
 \value{
-O mesmo \code{data.table}, com a coluna \code{valor} ajustada: valores considerados congelados sao substituidos por \code{NA}.
+O mesmo \code{data.table}, com a coluna \code{valor} ajustada: valores considerados congelados
+sao substituidos por \code{NA}.
 }
 \description{
 Detecta e trata valores "congelados" (sem variacao) nos dados de geracao observada,
@@ -26,17 +27,8 @@ aplicando filtros sequenciais para cada fonte de observacao com base em limiares
 }
 \details{
 A funcao aplica a funcao \code{remove_congelados()} duas vezes por grupo (\code{id_fonte_observacao}),
-com diferentes parametros de janela e limiar, permitindo uma filtragem mais robusta de dados suspeitos de congelamento.
-}
-\examples{
-library(data.table)
-d1 <- data.table(
-    id_fonte_observacao = rep(letters[1:2], each = 10),
-    data_hora_observacao = rep(as.Date("2020-01-01"), 20),
-    valor = rep(1:2, each = 10)
-)
-checa_valores_congelados(d1)
-
+com diferentes parametros de janela e limiar, permitindo uma filtragem mais robusta de dados
+suspeitos de congelamento.
 }
 \seealso{
 \code{\link[=remove_congelados]{remove_congelados()}}

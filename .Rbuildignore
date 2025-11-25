@@ -6,5 +6,6 @@
 ^README\.Rmd$
 ^main.r$
 ^data$
+^docs$
 ^saida$
 ^saida$

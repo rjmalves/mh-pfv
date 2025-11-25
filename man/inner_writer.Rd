@@ -4,7 +4,7 @@
 \alias{inner_writer}
 \title{Auxiliar Para Escrita de Dados}
 \usage{
-inner_writer(dt, table = "", output_dir = ".")
+inner_writer(dt, table = "", output_dir = ".", output_type = "csv")
 }
 \arguments{
 \item{dt}{\code{data.table} a ser salvo}
@@ -12,6 +12,8 @@ inner_writer(dt, table = "", output_dir = ".")
 \item{table}{nome-base da tabela (sem extensao .csv)}
 
 \item{output_dir}{diretorio onde o arquivo sera salvo}
+
+\item{output_type}{tipo de arquivo a ser salvo ("csv" ou "parquet")}
 }
 \value{
 Caminho do arquivo salvo

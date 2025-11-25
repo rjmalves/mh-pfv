@@ -16,7 +16,8 @@ Define o tamanho da sequencia minima a ser avaliada como "congelada".}
 Se a variacao dentro da janela for menor ou igual a esse valor, ela sera considerada congelada.}
 }
 \value{
-Vetor numerico com os mesmos valores de entrada, mas com os trechos identificados como congelados substituidos por NA.
+Vetor numerico com os mesmos valores de entrada, mas com os trechos identificados como
+congelados substituidos por NA.
 }
 \description{
 Identifica e substitui por NA os trechos de dados considerados "congelados",
@@ -25,12 +26,8 @@ ou seja, sequencias de valores com variacao insignificante dentro de uma janela 
 \details{
 A funcao percorre o vetor original com uma janela deslizante de tamanho n_valores.
 Para cada janela, calcula-se a diferenca entre o valor maximo e o minimo.
-Se essa diferenca for menor ou igual ao limiar, os valores dentro da janela sao marcados como congelados e substituidos por NA.
-}
-\examples{
-v <- c(10, 10, 10, 10, 10, 15, 20, 25)
-remove_congelados(v, n_valores = 5, limiar = 0.01)
-
+Se essa diferenca for menor ou igual ao limiar, os valores dentro da janela sao marcados como
+congelados e substituidos por NA.
 }
 \seealso{
 checa_valores_congelados

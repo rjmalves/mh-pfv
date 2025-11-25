@@ -73,6 +73,45 @@ test_that("checa_valores_congelados", {
 })
 
 
+test_that("manter_geracao_congelada_em_cortes", {
+    # Teste 1: dados de exemplo
+    geracao_usina_limpos <- data.table(
+        id_usina = c("A", "A", "A"),
+        data_hora_observacao = as.POSIXct(c("2025-06-28 00:00:00", "2025-06-28 00:30:00", "2025-06-28 01:00:00")),
+        valor = c(10, 20, 30)
+    )
+
+    geracao_usina <- data.table(
+        id_usina = c("A", "A", "A"),
+        data_hora_observacao = as.POSIXct(c("2025-06-28 00:00:00", "2025-06-28 00:30:00", "2025-06-28 01:00:00")),
+        valor = c(100, 200, 300)
+    )
+
+    corte_obs <- data.table(
+        id_usina = c("A", "A", "A"),
+        data_hora_observacao = as.POSIXct(c("2025-06-28 00:00:00", "2025-06-28 00:30:00", "2025-06-28 01:00:00")),
+        valor = c(1, 0, 1)
+    )
+
+    # Aplicar cortes
+    resultado <- manter_geracao_congelada_em_cortes(geracao_usina_limpos, geracao_usina, corte_obs)
+
+    # Teste 2: valores onde corte == 1 sao atualizados
+    expect_equal(resultado$valor[1], 100)
+    expect_equal(resultado$valor[3], 300)
+
+    # Teste 3: valores onde corte == 0 nao sao alterados
+    expect_equal(resultado$valor[2], 20)
+
+    # Teste 4: tamanho do data.table nao muda
+    expect_equal(nrow(resultado), 3)
+
+    # Teste 5: id_usina e datas nao mudam
+    expect_equal(resultado$id_usina, geracao_usina_limpos$id_usina)
+    expect_equal(resultado$data_hora_observacao, geracao_usina_limpos$data_hora_observacao)
+})
+
+
 test_that("checa_valores_overbound", {
     # Teste 1: Remove valores abaixo e acima dos limites
     dt1 <- data.table(valor = c(-10, 0, 5, 10, 100))
@@ -101,7 +140,6 @@ test_that("checa_valores_overbound", {
 })
 
 
-
 test_that("combina_fontes", {
     # Dados de exemplo
     dt_geracao <- data.table(
@@ -118,7 +156,6 @@ test_that("combina_fontes", {
     resultado_geracao <- combina_fontes(dt_geracao, "geracao_observada", ordem = c("A", "B"))
     expect_equal(length(unique(resultado_geracao$data_hora_observacao)), nrow(resultado_geracao))
 })
-
 
 
 test_that("combina_dados", {
@@ -172,4 +209,3 @@ test_that("combina_dados", {
     expect_true(is.na(resultado2$status))
     expect_true(is.na(resultado2$id_fonte_observacao))
 })
-

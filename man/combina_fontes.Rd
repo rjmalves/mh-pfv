@@ -7,34 +7,27 @@
 combina_fontes(dt, grandeza, ordem)
 }
 \arguments{
-\item{dt}{Um data.table contendo os dados a serem combinados. Deve conter colunas como id_fonte_observacao, id_usina, data_hora_observacao e valor.}
+\item{dt}{Um data.table contendo os dados a serem combinados. Deve conter colunas como id_fonte_observacao,
+id_usina, data_hora_observacao e valor.}
 
-\item{grandeza}{String que indica qual tipo de dado sera processado. Atualmente, apenas "geracao_observada" esta implementado.}
+\item{grandeza}{String que indica qual tipo de dado sera processado. Atualmente, apenas "geracao_observada"
+esta implementado.}
 
-\item{ordem}{Vetor de caracteres indicando a ordem de prioridade das fontes (valores da coluna id_fonte_observacao). Fontes mais prioritarias devem vir primeiro.}
+\item{ordem}{Vetor de caracteres indicando a ordem de prioridade das fontes (valores da coluna id_fonte_observacao).
+Fontes mais prioritarias devem vir primeiro.}
 }
 \value{
-Um data.table com os dados combinados de acordo com a grandeza especificada e a ordem de prioridade das fontes.
+Um data.table com os dados combinados de acordo com a grandeza especificada e a
+ordem de prioridade das fontes.
 }
 \description{
-Aplica combinacao de dados a partir de diferentes fontes, com base na grandeza informada. Atualmente, trata apenas o caso de geracao observada.
+Aplica combinacao de dados a partir de diferentes fontes, com base na grandeza informada.
+Atualmente, trata apenas o caso de geracao observada.
 }
 \details{
-Esta funcao atua como uma interface para combinacao de dados dependendo da grandeza. Para "geracao_observada", utiliza a funcao combina_dados
-para selecionar, por usina e horario, os dados nao ausentes de maior prioridade. Outros tipos de grandeza (ex. irradiancia) podem ser implementados no futuro.
-}
-\examples{
-library(data.table)
-dt <- data.table(
-  id_fonte_observacao = c("A", "B", "A", "B"),
-  id_usina = c(1, 1, 2, 2),
-  data_hora_observacao = as.POSIXct(c("2020-01-01 00:00", "2020-01-01 00:00",
-                                      "2020-01-01 01:00", "2020-01-01 01:00")),
-  valor = c(NA, 10, 5, NA)
-)
-ordem <- c("A", "B")
-resultado <- combina_fontes(dt, grandeza = "geracao_observada", ordem = ordem)
-
+Esta funcao atua como uma interface para combinacao de dados dependendo da grandeza. Para "geracao_observada",
+utiliza a funcao combina_dados para selecionar, por usina e horario, os dados nao ausentes de maior prioridade.
+Outros tipos de grandeza (ex. irradiancia) podem ser implementados no futuro.
 }
 \seealso{
 combina_dados

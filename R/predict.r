@@ -1,22 +1,30 @@
-#' Funcao Principal de Previsao de Geracao
+#' Funcao Principal de Consolidacao dos dados
 #'
-#' Executa o processamento completo de previsao de geracao observada para um conjunto de usinas, considerando diferentes fontes e modelos em ordem de prioridade.
+#' Executa o processamento completo de consistencia dos dados observados para um conjunto de usinas,
+#' considerando diferentes fontes e modelos em ordem de prioridade.
 #'
 #' @param args Lista de argumentos necessarios para o processamento. Os campos esperados sao:
 #' \itemize{
 #'   \item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-#'   \item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd", indicando o inicio do periodo de analise.
+#'   \item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd",
+#'                             indicando o inicio do periodo de analise.
 #'   \item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
-#'   \item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia aplicado ao limite superior de geracao observada.
-#'   \item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas disponiveis serao utilizadas.
-#'   \item \code{input}: caminho para a pasta onde estao localizados os dados de entrada (ex: dados de SCADA, modelos NWP, cortes, etc.).
-#'   \item \code{mode}: string que define o modo de operacao. Deve ser "predict" para rodar o fluxo de previsao.
-#'   \item \code{ordem_prioridade_fontes}: string com os nomes das fontes de dados separados por virgula, indicando a ordem de prioridade para uso dos dados historicos.
-#'   \item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula, em ordem de prioridade.
+#'   \item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia
+#'                                                          aplicado ao limite superior de geracao observada.
+#'   \item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas
+#'                            disponiveis serao utilizadas.
+#'   \item \code{input}: caminho para a pasta onde estao localizados os dados de entrada
+#'                       (ex: dados de SCADA, modelos NWP, cortes, etc.).
+#'   \item \code{mode}: string que define o modo de operacao. Deve ser "predict" para rodar o fluxo de consistencia.
+#'   \item \code{ordem_prioridade_fontes}: string com os nomes das fontes de dados separados por virgula,
+#'                                         indicando a ordem de prioridade para uso dos dados historicos.
+#'   \item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula,
+#'                                             em ordem de prioridade.
 #'   \item \code{output}: caminho para a pasta onde os arquivos de saida serao escritos.
 #' }
 #'
-#' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos na pasta de saida especificada.
+#' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos
+#'         na pasta de saida especificada.
 #'
 #' @details
 #' A funcao executa o fluxo completo para cada usina:
@@ -27,43 +35,18 @@
 #'   \item Escrita dos melhores historicos de geracao observada nos formatos de saida esperados.
 #' }
 #'
-#' @examples
-#' args <- list(
-#'   artifact = ".",
-#'   data_fim = "2025-07-29",
-#'   data_inicio = "2025-04-30",
-#'   fator_tolerancia_limite_superior_geracao = 1.1,
-#'   ids_usinas = NULL,
-#'   input = "./data",
-#'   mode = "predict",
-#'   ordem_prioridade_fontes = "PI,CCEE,CCEE1h",
-#'   ordem_prioridade_modelosNWP = "GFS",
-#'   output = "./saida"
-#' )
-#' predict_main(args)
-#'
 #' @seealso processar_usina, get_dados_historicos, organiza_resultados, write_melhor_historico_geracao
-#' 
+#'
 #' @export
-
+#'
 predict_main <- function(args) {
     # Define a ordem de prioridade das fontes a partir do argumento
     conn <- conectamock_pfv(args$input)
 
-    fonte <- strsplit(args$ordem_prioridade_fontes, ",")[[1]]
+    v_usinas <- args$ids_usinas
+    dt_usinas <- get_usinas(conn, id_usina = v_usinas)
 
-    # Carrega os dados de entrada das usinas
-    dt_usinas <- get_usinas(conn)
-    v_usinas <- dt_usinas$id_usina
-
-    dataset <- list(
-        ger_obs = get_geracao_observada(conn, id_usina = v_usinas),
-        corte = get_corte_observado(conn, id_usina = v_usinas, id_fonte_observacao = fonte),
-        irrad_prev = get_irradiancia_prevista(conn, id_usina = v_usinas,
-            id_modelo_nwp = args$ordem_prioridade_modelosNWP),
-        mhg = get_melhor_historico_geracao(conn, id_usina = v_usinas),
-        mhg_sem_cortes = get_melhor_historico_geracao_sem_cortes(conn, id_usina = v_usinas)
-    )
+    dataset <- get_dataset(args, conn)
 
     # Aplica a funcao de processamento individual a cada usina usando lapply
     resultados <- lapply(v_usinas, processar_usina,
@@ -73,8 +56,9 @@ predict_main <- function(args) {
         dt_mhg_sem_cortes = dataset$mhg_sem_cortes,
         dt_irrad_prev = dataset$irrad_prev,
         dt_corte_obs = dataset$corte,
-        fonte = fonte,
-        fator_tolerancia = args$fator_tolerancia_limite_superior_geracao
+        fonte = args$ordem_prioridade_fontes,
+        fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+        artifact_dir = args$artifact
     )
 
     # Organiza os resultados com e sem consideracao de cortes
@@ -96,12 +80,50 @@ predict_main <- function(args) {
     )
 }
 
+get_dataset <- function(args, conn) {
+    janela <- paste0(args$janela[1], "/", args$janela[2])
 
+    ger_obs <- get_geracao_observada(conn,
+        id_usina = args$ids_usinas,
+        data_hora_observacao = janela
+    )
+    corte <- get_corte_observado(conn,
+        id_usina = args$ids_usinas,
+        id_fonte_observacao = args$ordem_prioridade_fontes, data_hora_observacao = janela
+    )
+    irrad_prev <- get_irradiancia_prevista(conn,
+        id_usina = args$ids_usinas,
+        id_modelo_nwp = args$ordem_prioridade_modelosNWP, data_hora_previsao = janela
+    )
+    mhg <- get_melhor_historico_geracao(conn, id_usina = args$ids_usinas)
+    mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(conn, id_usina = args$ids_usinas)
+
+    out <- list(ger_obs, corte, irrad_prev, mhg, mhg_sem_cortes)
+    names(out) <- c("ger_obs", "corte", "irrad_prev", "mhg", "mhg_sem_cortes")
+
+    return(out)
+}
+
+#' Leitura do artefato de modelo treinado para uso em previsao
+#'
+#' Le o conteudo do objeto do modelo de um arquivo RDS
+#'
+#' @param iu ID da usina, usado para montar o nome do arquivo
+#' @param artifact_dir diretorio de saida onde foi salvo o artefato
+#'
+#' @return Objeto em R representando o modelo treinado
+read_model_artifact <- function(iu, artifact_dir = ".") {
+    arq <- file.path(artifact_dir, paste0(iu, ".rds"))
+    model <- readRDS(arq)
+    return(model)
+}
 
 # Esta funcao processa uma unica usina individualmente
 processar_usina <- function(
     iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
-    dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia) {
+    dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia,
+    artifact_dir
+) {
     # Filtra os dados referentes a usina atual
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
@@ -115,13 +137,19 @@ processar_usina <- function(
     dt_irrad_prev_filt_n <- adicionar_passo_previsao(dt_irrad_prev_filt)
     irrad_prev <- dt_irrad_prev_filt_n[id_usina == iu & passo_prev == "D+0"]
 
+    irrad_prev <- interpolar_30min(irrad_prev)
+
     # Consistencia da geracao observada com base nos limites definidos
     geracao_usina_consis <- consiste_geracao_unit(
         dados_usina = dad_usi,
         geracao_usina = ger_usi,
+        corte_obs = corte_obs,
         ordem_prioridade = fonte,
         limite_dados = c(0, potencia_instalada * fator_tolerancia)
     )
+
+    # Leitura dos modelos de estimacao
+    model <- read_model_artifact(iu, artifact_dir = artifact_dir)
 
     # Preenche a serie de geracao usando dados previstos e MHG com cortes
     geracao_usina_preenchida <- preenche_geracao_unit(
@@ -129,12 +157,15 @@ processar_usina <- function(
         irrad_prev = irrad_prev,
         mhg_prev = mhg,
         cortes = NULL,
-        limite_dados = c(0, potencia_instalada * fator_tolerancia)
+        limite_dados = c(0, potencia_instalada * fator_tolerancia),
+        model = model
     )
 
-    # Determina o intervalo de datas valido
-    dat_min <- min(geracao_usina_consis$data_hora_observacao)
-    dat_max <- max(geracao_usina_consis$data_hora_observacao)
+    # Define o intervalo de datas
+    datas <- lubridate::as_datetime(geracao_usina_consis$data_hora_observacao, tz = "UTC")
+
+    dat_min <- min(datas, na.rm = TRUE)
+    dat_max <- max(datas, na.rm = TRUE)
 
     # Preenche novamente com cortes e MHG sem cortes
     geracao_usina_preenchida_sem_cortes <- preenche_geracao_unit(
@@ -144,7 +175,8 @@ processar_usina <- function(
         irrad_prev = irrad_prev,
         mhg_prev = mhg_sc,
         cortes = corte_obs,
-        limite_dados = c(0, potencia_instalada * fator_tolerancia)
+        limite_dados = c(0, potencia_instalada * fator_tolerancia),
+        model = model
     )
 
     # Identifica pontos onde o preenchimento com cortes resultou em valor menor
@@ -167,7 +199,8 @@ processar_usina <- function(
 
 #' Organiza Resultados de Previsao por Usina
 #'
-#' Agrupa os resultados processados individualmente por usina em dois data.tables: um com consideracao de cortes e outro sem.
+#' Agrupa os resultados processados individualmente por usina em dois data.tables:
+#' um com consideracao de cortes e outro sem.
 #'
 #' @param resultados Lista contendo, para cada usina, um sub-lista com dois elementos:
 #'   \itemize{
@@ -187,31 +220,8 @@ processar_usina <- function(
 #' e empacota os dados finais em dois data.tables: um com cortes e outro sem. Util para consolidar os resultados
 #' apos o processamento individual de cada usina.
 #'
-#' @examples
-#' library(data.table)
-#'horas <- seq.POSIXt(as.POSIXct("2025-05-19 00:00"), by = "30 min", length.out = 3)
-#'
-#'resultado_exemplo <- lapply(
-#'  list(
-#'    list(usina = "BAUFI1", valor = 0),
-#'    list(usina = "BAUFI2", valor = 1)
-#'  ),
-#'  function(x) {
-#'    dados <- data.table(
-#'      id_fonte_observacao = "Consis",
-#'      data_hora_observacao = horas,
-#'      id_usina = x$usina,
-#'      valor = x$valor,
-#'      status = 1
-#'    )
-#'    list(com_cortes = copy(dados), sem_cortes = copy(dados))
-#'  }
-#')
-#'head(resultado_final$com_cortes)
-#'head(resultado_final$sem_cortes)
-#'
 #' @seealso processar_usina, predict_main
-
+#'
 organiza_resultados <- function(resultados, v_usinas) {
     # Adiciona coluna id_usina e empacota resultados em dois data.tables
     dt_com_cortes <- data.table::rbindlist(lapply(seq_along(resultados), function(i) {
