@@ -1,6 +1,6 @@
-#' Funcao Principal de Previsao de Geracao
+#' Funcao Principal de Consolidacao dos dados
 #'
-#' Executa o processamento completo de previsao de geracao observada para um conjunto de usinas, considerando diferentes fontes e modelos em ordem de prioridade.
+#' Executa o processamento completo de consistencia dos dados observados para um conjunto de usinas, considerando diferentes fontes e modelos em ordem de prioridade.
 #'
 #' @param args Lista de argumentos necessarios para o processamento. Os campos esperados sao:
 #' \itemize{
@@ -10,7 +10,7 @@
 #'   \item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia aplicado ao limite superior de geracao observada.
 #'   \item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas disponiveis serao utilizadas.
 #'   \item \code{input}: caminho para a pasta onde estao localizados os dados de entrada (ex: dados de SCADA, modelos NWP, cortes, etc.).
-#'   \item \code{mode}: string que define o modo de operacao. Deve ser "predict" para rodar o fluxo de previsao.
+#'   \item \code{mode}: string que define o modo de operacao. Deve ser "predict" para rodar o fluxo de consistencia.
 #'   \item \code{ordem_prioridade_fontes}: string com os nomes das fontes de dados separados por virgula, indicando a ordem de prioridade para uso dos dados historicos.
 #'   \item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula, em ordem de prioridade.
 #'   \item \code{output}: caminho para a pasta onde os arquivos de saida serao escritos.
@@ -49,7 +49,8 @@ predict_main <- function(args) {
         dt_irrad_prev = dataset$irrad_prev,
         dt_corte_obs = dataset$corte,
         fonte = args$ordem_prioridade_fontes,
-        fator_tolerancia = args$fator_tolerancia_limite_superior_geracao
+        fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+        artifact_dir = args$artifact
     )
 
     # Organiza os resultados com e sem consideracao de cortes
@@ -111,9 +112,9 @@ read_model_artifact <- function(iu, artifact_dir = ".") {
 
 # Esta funcao processa uma unica usina individualmente
 processar_usina <- function(
-  iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
-  dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia
-) {
+    iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
+    dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia,
+    artifact_dir) {
     # Filtra os dados referentes a usina atual
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
@@ -138,10 +139,8 @@ processar_usina <- function(
         limite_dados = c(0, potencia_instalada * fator_tolerancia)
     )
 
-    # TODO - chamar a função auxiliar read_model_artifact para carregar o modelo
-
-    # TODO - adaptar para a função preenche_geracao_unit não precisar de ajusar
-    # nada e receber o modelo treinado.
+    # Leitura dos modelos de estimacao
+    model <- read_model_artifact(iu, artifact_dir = artifact_dir)
 
     # Preenche a serie de geracao usando dados previstos e MHG com cortes
     geracao_usina_preenchida <- preenche_geracao_unit(
@@ -149,12 +148,14 @@ processar_usina <- function(
         irrad_prev = irrad_prev,
         mhg_prev = mhg,
         cortes = NULL,
-        limite_dados = c(0, potencia_instalada * fator_tolerancia)
+        limite_dados = c(0, potencia_instalada * fator_tolerancia),
+        model = model
     )
 
     # Determina o intervalo de datas valido
     dat_min <- min(geracao_usina_consis$data_hora_observacao)
     dat_max <- max(geracao_usina_consis$data_hora_observacao)
+
 
     # Preenche novamente com cortes e MHG sem cortes
     geracao_usina_preenchida_sem_cortes <- preenche_geracao_unit(
@@ -164,7 +165,8 @@ processar_usina <- function(
         irrad_prev = irrad_prev,
         mhg_prev = mhg_sc,
         cortes = corte_obs,
-        limite_dados = c(0, potencia_instalada * fator_tolerancia)
+        limite_dados = c(0, potencia_instalada * fator_tolerancia),
+        model = model
     )
 
     # Identifica pontos onde o preenchimento com cortes resultou em valor menor

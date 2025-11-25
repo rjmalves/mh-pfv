@@ -9,7 +9,7 @@
     "output": "./out",
 
     // Caminho para obtencao do artefato do modelo treinado 
-    "artifact": ".",
+    "artifact": "./artifact",
 
     // Janela de datas para calculo do melhor historico. Pode ser informada de duas formas:
     //     * um escalar inteiro, indicando numero de dias passados contados a partir da data de 

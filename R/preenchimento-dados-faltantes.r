@@ -36,18 +36,18 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
         )
     }
 
-    # ajusta modelo de regressao linear
-    regressoes <- ajusta_regressao_ger_irrad(
-        dty = copy(geracao_usina),
-        dtx = copy(irrad_prev),
-        dty_bruta = geracao_usina_bruta
-    )
+    # # ajusta modelo de regressao linear
+    # regressoes <- ajusta_regressao_ger_irrad(
+    #     dty = copy(geracao_usina),
+    #     dtx = copy(irrad_prev),
+    #     dty_bruta = geracao_usina_bruta
+    # )
 
     # preenche dados faltantes pela estimativa
     geracao_usina_completo <- substitui_por_estimativas(
         df_ger_usi = copy(geracao_usina),
         df_irrad_prev = copy(irrad_prev),
-        regressoes = regressoes,
+        regressoes = model[[2]],
         lim_dados = limite_dados
     )
 
@@ -73,121 +73,6 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 
 # AUXILIARES ---------------------------------------------------------------------------------------
 
-#' Ajusta Regressao Linear entre Geracao Observada e Irradiacao Prevista
-#'
-#' Estima coeficientes de regressao linear para cada horario de meia em meia hora, usando dados de geracao observada e irradiacao prevista.
-#'
-#' @param dty data.table com dados de geracao observada. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_observacao}: data e hora da geracao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da geracao.
-#'   }
-#' @param dtx data.table com dados de irradiacao prevista. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_previsao}: data e hora da irradiacao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da irradiacao.
-#'   }
-#' @param dty_bruta data.table com dados de geracao observada bruta. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_observacao}: data e hora da geracao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da geracao.
-#'   }
-#'
-#' @return Um data.frame com os coeficientes de regressao por horario, com:
-#'   \itemize{
-#'     \item \code{a}: coeficiente angular da regressao (inclinacao da reta).
-#'     \item \code{b}: coeficiente linear, sempre zero neste ajuste.
-#'     \item Nomes das linhas indicando o horario no formato "HH:MM".
-#'   }
-#'
-#' @details
-#' A funcao percorre os horarios do dia entre 05:00 e 18:30 com passos de 30 minutos.
-#' Para cada horario, filtra os dados de geracao e irradiacao correspondentes e realiza um ajuste linear sem intercepto (\code{lm(y ~ x + 0)}).
-#' Apenas pares com mais de 5 observacoes validas sao considerados. Quando ha dados insuficientes, o coeficiente angular e definido como zero.
-#'
-#' Valores iguais a zero sao tratados como ausentes (NA) antes do ajuste.
-#'
-#' @seealso substitui_por_estimativas
-#'
-ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
-    dty[valor == 0, valor := NA]
-    dtx[valor == 0, valor := NA]
-    dty_bruta[valor == 0, valor := NA]
-
-    horas_meia_hora <- seq(5.0, 18.5, by = 0.5)
-
-    angulares <- c() # a (inclinação)
-    lineares <- c() # b (sempre zero)
-    nomes_linhas <- c()
-
-    for (h in horas_meia_hora) {
-        hora_inteira <- floor(h)
-        minuto <- ifelse((h - hora_inteira) == 0.5, 30, 0)
-
-        dty_f <- dty[hour(data_hora_observacao) == hora_inteira &
-            minute(data_hora_observacao) == minuto]
-
-        dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
-            minute(data_hora_previsao) == minuto]
-
-        # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
-        dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
-
-        # Mantém somente as datas de dty_f que existam em dtx_fn
-        dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
-
-
-        pos <- which(!is.na(dty_f$valor))
-        if (length(pos) < 10) {
-            dty_f <- dty_bruta[hour(data_hora_observacao) == hora_inteira &
-                minute(data_hora_observacao) == minuto]
-            # Calcular o quantil de 60% da coluna 'valor'
-            q60 <- quantile(dty_f$valor, probs = 0.7, na.rm = TRUE)
-
-            # Substituir por NA os valores menores que o quantil de 60%
-            dty_f[valor < q60, valor := NA]
-
-            dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
-                minute(data_hora_previsao) == minuto]
-
-            # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
-            dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
-
-            # Mantém somente as datas de dty_f que existam em dtx_fn
-            dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
-        }
-
-
-        if (nrow(dty_f) > 5 && nrow(dty_f) == nrow(dtx_f)) {
-            dados_validos <- complete.cases(dty_f$valor, dtx_f$valor)
-            if (sum(dados_validos) > 5) {
-                y <- dty_f$valor[dados_validos]
-                x <- dtx_f$valor[dados_validos]
-
-                mod <- lm(y ~ x + 0)
-                a <- coef(mod)[1]
-                b <- 0
-
-                angulares <- c(angulares, a)
-                lineares <- c(lineares, b)
-                hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
-                nomes_linhas <- c(nomes_linhas, hora_txt)
-            } else {
-                angulares <- c(angulares, NA)
-                lineares <- c(lineares, NA)
-                hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
-                nomes_linhas <- c(nomes_linhas, hora_txt)
-            }
-        }
-    }
-
-    reg_par <- data.frame(a = angulares, b = lineares, row.names = nomes_linhas)
-
-    return(reg_par)
-}
 
 
 #' Substitui Valores Ausentes por Estimativas com Base em Irradiacao Prevista
