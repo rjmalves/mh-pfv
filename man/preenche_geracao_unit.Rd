@@ -9,7 +9,8 @@ preenche_geracao_unit(
   irrad_prev,
   mhg_prev,
   cortes,
-  limite_dados
+  limite_dados,
+  model
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ preenche_geracao_unit(
 \item{cortes}{data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor} (1 para corte).}
 
 \item{limite_dados}{Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para valores de geracao.}
+
+\item{model}{Lista contendo os modelos de regressao linear por horario.}
 }
 \value{
 Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados, e horarios extremos zerados onde nao ha geracao valida.

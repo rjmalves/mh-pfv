@@ -44,7 +44,7 @@ test_that("preenche_geracao_unit", {
         mhg_prev = copy(mhg_prev),
         cortes = cortes,
         limite_dados = limite_dados,
-        model=model
+        model = model
     )
 
     expect_true(is.data.table(resultado))
@@ -65,7 +65,7 @@ test_that("preenche_geracao_unit", {
         mhg_prev = mhg_prev,
         cortes = cortes,
         limite_dados = limite_dados,
-        model=model
+        model = model
     )
 
     expect_false(any(na.omit(resultado_999$valor) == 999))
@@ -79,7 +79,7 @@ test_that("preenche_geracao_unit", {
         mhg_prev = mhg_prev,
         cortes = NULL,
         limite_dados = limite_dados,
-        model=model
+        model = model
     )
     resultado_06h <- resultado_completo[format(data_hora_observacao, "%H:%M:%S") == "06:00:00"]
 
@@ -98,7 +98,7 @@ test_that("preenche_geracao_unit", {
         mhg_prev = mhg_prev,
         cortes = cortes_dt,
         limite_dados = limite_dados,
-        model=model
+        model = model
     )
     resultado_06h <- resultado_cortes[format(data_hora_observacao, "%H:%M:%S") == "06:00:00"]
 
@@ -116,7 +116,7 @@ test_that("preenche_geracao_unit", {
         mhg_prev = mhg_prev,
         cortes = NULL,
         limite_dados = c(0, 20),
-        model=model
+        model = model
     )
     resultado_06h <- resultado_limite[format(data_hora_observacao, "%H:%M:%S") == "06:00:00"]
 

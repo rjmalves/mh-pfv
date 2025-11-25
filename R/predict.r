@@ -114,7 +114,8 @@ read_model_artifact <- function(iu, artifact_dir = ".") {
 processar_usina <- function(
     iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
     dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia,
-    artifact_dir) {
+    artifact_dir
+) {
     # Filtra os dados referentes a usina atual
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
@@ -152,10 +153,11 @@ processar_usina <- function(
         model = model
     )
 
-    # Determina o intervalo de datas valido
-    dat_min <- min(geracao_usina_consis$data_hora_observacao)
-    dat_max <- max(geracao_usina_consis$data_hora_observacao)
+    # Define o intervalo de datas
+    datas <- lubridate::as_datetime(geracao_usina_consis$data_hora_observacao, tz = "UTC")
 
+    dat_min <- min(datas, na.rm = TRUE)
+    dat_max <- max(datas, na.rm = TRUE)
 
     # Preenche novamente com cortes e MHG sem cortes
     geracao_usina_preenchida_sem_cortes <- preenche_geracao_unit(
@@ -165,7 +167,7 @@ processar_usina <- function(
         irrad_prev = irrad_prev,
         mhg_prev = mhg_sc,
         cortes = corte_obs,
-        limite_dados = c(0, potencia_instalada * fator_tolerancia),
+        limite_dados = c(0, potencia_instalada * fator_tolerancia), 
         model = model
     )
 

@@ -24,22 +24,8 @@
 #'   \item Retorno dos modelos ajustados.
 #' }
 #'
-#' @examples
-#' args <- list(
-#'     artifact = ".",
-#'     janela = c("2025-02-01","2025-10-31"),
-#'     fator_tolerancia_limite_superior_geracao = 1.1,
-#'     ids_usinas = c("CEFMT1","RNDUN2"),
-#'     input = "./data",
-#'     mode = "train",
-#'     ordem_prioridade_fontes = "PI,CCEE,CCEE1h",
-#'     ordem_prioridade_modelosNWP = "GFS",
-#'     output = "./saida"
-#' )
-#' train_main(args)
-#'
 #' @seealso ajustar_usina, ajusta_regressao_ger_irrad
-#' 
+#'
 #' @export
 
 
@@ -72,8 +58,9 @@ train_main <- function(args) {
 }
 
 ajustar_usina <- function(
-    iu, dt_usinas, dt_ger_obs,
-    dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia) {
+  iu, dt_usinas, dt_ger_obs,
+  dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia
+) {
     # Filtra os dados referentes a usina atual
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
@@ -124,7 +111,6 @@ ajustar_usina <- function(
 }
 
 
-
 #' Ajusta Regressao Linear entre Geracao Observada e Irradiacao Prevista
 #'
 #' Estima coeficientes de regressao linear para cada horario de meia em meia hora, usando dados de geracao observada e irradiacao prevista.
@@ -161,26 +147,6 @@ ajustar_usina <- function(
 #' Apenas pares com mais de 5 observacoes validas sao considerados. Quando ha dados insuficientes, o coeficiente angular e definido como zero.
 #'
 #' Valores iguais a zero sao tratados como ausentes (NA) antes do ajuste.
-#'
-#' @examples
-#' library(data.table)
-#'
-#' dty <- data.table(
-#'     id_usina = rep("U1", 10),
-#'     data_hora_observacao = rep(seq.POSIXt(as.POSIXct("2025-01-01 06:00"), by = "1 day", length.out = 10), each = 1),
-#'     valor = runif(10, 5, 10)
-#' )
-#'
-#' dtx <- data.table(
-#'     id_usina = rep("U1", 10),
-#'     data_hora_previsao = rep(seq.POSIXt(as.POSIXct("2025-01-01 06:00"), by = "1 day", length.out = 10), each = 1),
-#'     valor = runif(10, 80, 120)
-#' )
-#' 
-#' dty_bruta <- dty
-#'
-#' coeficientes <- ajusta_regressao_ger_irrad(dty, dtx, dty_bruta)
-#' print(coeficientes)
 #'
 #' @seealso substitui_por_estimativas
 
@@ -231,7 +197,6 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
             # Mantém somente as datas de dty_f que existam em dtx_fn
             dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
         }
-
 
 
         if (nrow(dty_f) > 5 && nrow(dty_f) == nrow(dtx_f)) {

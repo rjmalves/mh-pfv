@@ -7,6 +7,7 @@
 #' @param mhg_prev data.table com melhores historicos de geracao anteriores. Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
 #' @param cortes data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor} (1 para corte).
 #' @param limite_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para valores de geracao.
+#' @param model Lista contendo os modelos de regressao linear por horario.
 #'
 #' @return Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados, e horarios extremos zerados onde nao ha geracao valida.
 #'
@@ -23,25 +24,17 @@
 #'
 #' @seealso ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao, combina_dados_tempo, zera_horarios_extremos
 #'
-preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados) {
+preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados, model) {
     geracao_usina[valor == 999, valor := NA]
     irrad_prev[valor == 999, valor := NA]
     geracao_usina_bruta <- copy(geracao_usina)
 
-    # ajusta modelo de regressao linear
     if (!is.null(cortes)) {
         geracao_usina <- aplica_cortes_em_geracao(
             dt_geracao_usina = copy(geracao_usina),
             dt_cortes = copy(cortes)
         )
     }
-
-    # # ajusta modelo de regressao linear
-    # regressoes <- ajusta_regressao_ger_irrad(
-    #     dty = copy(geracao_usina),
-    #     dtx = copy(irrad_prev),
-    #     dty_bruta = geracao_usina_bruta
-    # )
 
     # preenche dados faltantes pela estimativa
     geracao_usina_completo <- substitui_por_estimativas(
