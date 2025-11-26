@@ -6,6 +6,11 @@
 \usage{
 inner_parser_generic_args(parser)
 }
+\arguments{
+\item{parser}{\code{ArgumentParser} a ser modificado
+
+Funcao interna, nao deve ser chamada diretamente pelo usuario}
+}
 \description{
-Funcao interna, nao deve ser chamada diretamente pelo usuario
+Auxiliar para adicionar argumentos genericos
 }

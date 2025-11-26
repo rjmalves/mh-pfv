@@ -34,20 +34,3 @@ unicas da previsao.
 \item Adiciona \code{id_usina} e reorganiza as colunas.
 }
 }
-\examples{
-library(data.table)
-dt_usinas <- data.table(
-  id_usina = 1,
-  latitude = -20,
-  longitude = -45
-)
-dt_irrad_prev <- data.table(
-  id_modelo_nwp = "GFS",
-  latitude = c(-20.0, -19.9),
-  longitude = c(-45.0, -44.9),
-  data_hora_previsao = as.POSIXct(c("2025-10-03 00:00:00", "2025-10-03 00:00:00")),
-  data_hora_rodada = as.POSIXct(c("2025-10-02 12:00:00", "2025-10-02 12:00:00")),
-  irradiancia = c(100, 120)
-)
-associa_nwp_usina(dt_usinas, dt_irrad_prev)
-}

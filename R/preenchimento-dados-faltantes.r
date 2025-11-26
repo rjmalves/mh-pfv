@@ -1,14 +1,22 @@
 #' Preenche Serie de Geracao para com Estimativas
 #'
-#' Realiza o preenchimento de valores ausentes na geracao observada de uma usina, utilizando irradiacao prevista corrigida por regressao linear.
+#' Realiza o preenchimento de valores ausentes na geracao observada de uma usina,
+#' utilizando irradiacao prevista corrigida por regressao linear.
 #'
-#' @param geracao_usina data.table com os dados de geracao observada da usina. Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
-#' @param irrad_prev data.table com previsao de irradiancia. Deve conter colunas \code{id_usina}, \code{data_hora_previsao} e \code{valor}.
-#' @param mhg_prev data.table com melhores historicos de geracao anteriores. Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
-#' @param cortes data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor} (1 para corte).
-#' @param limite_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para valores de geracao.
+#' @param geracao_usina data.table com os dados de geracao observada da usina. Deve conter colunas
+#'                      \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
+#' @param irrad_prev data.table com previsao de irradiancia. Deve conter colunas \code{id_usina},
+#'                   \code{data_hora_previsao} e \code{valor}.
+#' @param mhg_prev data.table com melhores historicos de geracao anteriores. Deve conter colunas
+#'                 \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
+#' @param cortes data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina},
+#'               \code{data_hora_observacao} e \code{valor} (1 para corte).
+#' @param limite_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos
+#'                     para valores de geracao.
+#' @param model Lista contendo os modelos de regressao linear por horario.
 #'
-#' @return Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados, e horarios extremos zerados onde nao ha geracao valida.
+#' @return Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados,
+#'         e horarios extremos zerados onde nao ha geracao valida.
 #'
 #' @details
 #' A funcao executa o seguinte fluxo:
@@ -21,59 +29,14 @@
 #'   \item Zera valores em horarios fora do intervalo com geracao valida.
 #' }
 #'
-#' @examples
-#' # Exemplo simplificado - veja funcoes auxiliares para gerar dados simulados realistas
-#' 
-#' library(data.table)
-#' 
-#' # Dados base com multiplos dias para horario fixo (06:00)
-#' dias <- seq(from = as.Date("2025-01-01"), by = "1 day", length.out = 10)
-#' horarios <- as.POSIXct(paste(dias, "06:00:00"))
-#' 
-#' # Dados de geracao
-#' geracao_usina <- data.table(
-#'     id_usina = "U1",
-#'     id_fonte_observacao = "PI",
-#'     data_hora_observacao = horarios,
-#'     valor = c(NA, 2, 4, 6, 8, 10, 12, 14, 16, 18),
-#'     status = c(NA, rep(1, 9))
-#' )
-#' 
-#' # Dados de irradiancia
-#' irrad_prev <- data.table(
-#'     id_usina = "U1",
-#'     data_hora_previsao = horarios,
-#'     valor = seq(10, 100, by = 10)
-#' )
-#' 
-#' # Dados do melhor historico de rodadas anteriores
-#' mhg_prev <- data.table(
-#'     id_usina = "U1",
-#'     id_fonte_observacao = "PI",
-#'     data_hora_observacao = horarios,
-#'     valor = rep(1, 10),
-#'     status = c(NA, rep(1, 9))
-#' )
-#' 
-#' cortes <- NULL
-#' limite_dados <- c(0, 25)
-#' 
-#' resultado <- preenche_geracao_unit(
-#'     geracao_usina = copy(geracao_usina),
-#'     irrad_prev = copy(irrad_prev),
-#'     mhg_prev = copy(mhg_prev),
-#'     cortes = cortes,
-#'     limite_dados = limite_dados
-#' )
+#' @seealso ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao,
+#'          combina_dados_tempo, zera_horarios_extremos
 #'
-#' @seealso ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao, combina_dados_tempo, zera_horarios_extremos
-
-preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados) {
+preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados, model) {
     geracao_usina[valor == 999, valor := NA]
     irrad_prev[valor == 999, valor := NA]
+    geracao_usina_bruta <- copy(geracao_usina)
 
-
-    # ajusta modelo de regressao linear
     if (!is.null(cortes)) {
         geracao_usina <- aplica_cortes_em_geracao(
             dt_geracao_usina = copy(geracao_usina),
@@ -81,21 +44,13 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
         )
     }
 
-
-    # ajusta modelo de regressao linear
-    regressoes <- ajusta_regressao_ger_irrad(
-        dty = copy(geracao_usina),
-        dtx = copy(irrad_prev)
-    )
-
     # preenche dados faltantes pela estimativa
     geracao_usina_completo <- substitui_por_estimativas(
         df_ger_usi = copy(geracao_usina),
         df_irrad_prev = copy(irrad_prev),
-        regressoes = regressoes,
+        regressoes = model[[2]],
         lim_dados = limite_dados
     )
-
 
     # checa valores faltantes do MHG
     mhg_prev <- checa_valores_faltantes(
@@ -108,8 +63,6 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
         dt2 = geracao_usina_completo
     )
 
-
-
     # zera posicoes de horarios sem geracao
     geracao_usina_completo_final <- zera_horarios_extremos(
         df_ger_usi = copy(resultado_combinado)
@@ -119,125 +72,26 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 }
 
 
-
 # AUXILIARES ---------------------------------------------------------------------------------------
 
-#' Ajusta Regressao Linear entre Geracao Observada e Irradiacao Prevista
-#'
-#' Estima coeficientes de regressao linear para cada horario de meia em meia hora, usando dados de geracao observada e irradiacao prevista.
-#'
-#' @param dty data.table com dados de geracao observada. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_observacao}: data e hora da geracao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da geracao.
-#'   }
-#' @param dtx data.table com dados de irradiacao prevista. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_previsao}: data e hora da irradiacao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da irradiacao.
-#'   }
-#'
-#' @return Um data.frame com os coeficientes de regressao por horario, com:
-#'   \itemize{
-#'     \item \code{a}: coeficiente angular da regressao (inclinacao da reta).
-#'     \item \code{b}: coeficiente linear, sempre zero neste ajuste.
-#'     \item Nomes das linhas indicando o horario no formato "HH:MM".
-#'   }
-#'
-#' @details
-#' A funcao percorre os horarios do dia entre 05:00 e 18:30 com passos de 30 minutos.
-#' Para cada horario, filtra os dados de geracao e irradiacao correspondentes e realiza um ajuste linear sem intercepto (\code{lm(y ~ x + 0)}).
-#' Apenas pares com mais de 5 observacoes validas sao considerados. Quando ha dados insuficientes, o coeficiente angular e definido como zero.
-#'
-#' Valores iguais a zero sao tratados como ausentes (NA) antes do ajuste.
-#'
-#' @examples
-#' library(data.table)
-#'
-#' dty <- data.table(
-#'     id_usina = rep("U1", 10),
-#'     data_hora_observacao = rep(seq.POSIXt(as.POSIXct("2025-01-01 06:00"), by = "1 day", length.out = 10), each = 1),
-#'     valor = runif(10, 5, 10)
-#' )
-#'
-#' dtx <- data.table(
-#'     id_usina = rep("U1", 10),
-#'     data_hora_previsao = rep(seq.POSIXt(as.POSIXct("2025-01-01 06:00"), by = "1 day", length.out = 10), each = 1),
-#'     valor = runif(10, 80, 120)
-#' )
-#'
-#' coeficientes <- ajusta_regressao_ger_irrad(dty, dtx)
-#' print(coeficientes)
-#'
-#' @seealso substitui_por_estimativas
-
-ajusta_regressao_ger_irrad <- function(dty, dtx) {
-    
-    dty[valor == 0, valor := NA]
-    dtx[valor == 0, valor := NA]
-
-    horas_meia_hora <- seq(5.0, 18.5, by = 0.5)
-
-    angulares <- c() # a (inclinação)
-    lineares <- c() # b (sempre zero)
-    nomes_linhas <- c()
-
-    for (h in horas_meia_hora) {
-        hora_inteira <- floor(h)
-        minuto <- ifelse((h - hora_inteira) == 0.5, 30, 0)
-
-        dty_f <- dty[hour(data_hora_observacao) == hora_inteira &
-            minute(data_hora_observacao) == minuto]
-
-        dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
-            minute(data_hora_previsao) == minuto]
-
-        # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
-        dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
-
-
-
-        if (nrow(dty_f) > 5 && nrow(dty_f) == nrow(dtx_f)) {
-            dados_validos <- complete.cases(dty_f$valor, dtx_f$valor)
-            if (sum(dados_validos) > 5) {
-                y <- dty_f$valor[dados_validos]
-                x <- dtx_f$valor[dados_validos]
-
-                mod <- lm(y ~ x + 0)
-                a <- coef(mod)[1]
-                b <- 0
-
-                angulares <- c(angulares, a)
-                lineares <- c(lineares, b)
-                hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
-                nomes_linhas <- c(nomes_linhas, hora_txt)
-            } else {
-                angulares <- c(angulares, NA)
-                lineares <- c(lineares, NA)
-                hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
-                nomes_linhas <- c(nomes_linhas, hora_txt)
-            }
-        }
-    }
-
-    reg_par <- data.frame(a = angulares, b = lineares, row.names = nomes_linhas)
-
-    return(reg_par)
-}
 
 
 #' Substitui Valores Ausentes por Estimativas com Base em Irradiacao Prevista
 #'
-#' Preenche valores ausentes na geracao observada utilizando estimativas calculadas a partir de previsoes de irradiacao e coeficientes de regressao.
+#' Preenche valores ausentes na geracao observada utilizando estimativas calculadas a partir de previsoes
+#' de irradiacao e coeficientes de regressao.
 #'
-#' @param df_ger_usi data.table com a geracao observada da usina. Deve conter as colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.
-#' @param df_irrad_prev data.table com a irradiacao prevista. Deve conter as colunas \code{id_usina}, \code{data_hora_previsao} e \code{valor}.
-#' @param regressoes Data frame ou data.table com os coeficientes de regressao para cada horario. Deve conter uma coluna \code{a} e nomes das linhas como \code{HH:MM}.
-#' @param lim_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para os valores de geracao. Valores fora desse intervalo serao substituidos por NA.
+#' @param df_ger_usi data.table com a geracao observada da usina. Deve conter as colunas \code{id_usina},
+#'                   \code{data_hora_observacao} e \code{valor}.
+#' @param df_irrad_prev data.table com a irradiacao prevista. Deve conter as colunas \code{id_usina},
+#'                      \code{data_hora_previsao} e \code{valor}.
+#' @param regressoes Data frame ou data.table com os coeficientes de regressao para cada horario. Deve conter
+#'                   uma coluna \code{a} e nomes das linhas como \code{HH:MM}.
+#' @param lim_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para os
+#'                  valores de geracao. Valores fora desse intervalo serao substituidos por NA.
 #'
-#' @return O mesmo data.table \code{df_ger_usi}, com os valores originalmente ausentes preenchidos pelas estimativas, e a coluna \code{status} atualizada para 4 nos casos de substituicao.
+#' @return O mesmo data.table \code{df_ger_usi}, com os valores originalmente ausentes preenchidos pelas
+#'         estimativas, e a coluna \code{status} atualizada para 4 nos casos de substituicao.
 #'
 #' @details
 #' A funcao realiza os seguintes passos:
@@ -250,32 +104,8 @@ ajusta_regressao_ger_irrad <- function(dty, dtx) {
 #'   \item Aplica filtros finais para garantir que os valores estejam dentro dos limites definidos.
 #' }
 #'
-#' @examples
-#' library(data.table)
-#'
-#' df_ger <- data.table(
-#'     id_usina = "U1",
-#'     data_hora_observacao = as.POSIXct(c("2025-01-01 12:00", "2025-01-01 12:30")),
-#'     valor = c(NA, 5),
-#'     status = c(NA, 1)
-#' )
-#'
-#' df_irrad <- data.table(
-#'     id_usina = "U1",
-#'     data_hora_previsao = as.POSIXct(c("2025-01-01 12:00", "2025-01-01 12:30")),
-#'     valor = c(100, 120)
-#' )
-#'
-#' reg <- data.frame(a = c(0.05, 0.06))
-#' rownames(reg) <- c("12:00", "12:30")
-#'
-#' lim <- c(0, 10)
-#'
-#' df_result <- substitui_por_estimativas(df_ger, df_irrad, reg, lim)
-#' print(df_result)
-#'
 #' @seealso checa_valores_overbound, aplica_cortes_em_geracao
-
+#'
 substitui_por_estimativas <- function(df_ger_usi, df_irrad_prev, regressoes, lim_dados) {
     # Adicionar coluna hora:minuto
     df_irrad_prev[, hora_min := format(data_hora_previsao, "%H:%M")]
@@ -332,22 +162,8 @@ substitui_por_estimativas <- function(df_ger_usi, df_irrad_prev, regressoes, lim
 #'
 #' Se nenhum valor valido estiver presente, a funcao retorna o data.table original sem alteracoes.
 #'
-#' @examples
-#' library(data.table)
-#'
-#' df <- data.table(
-#'     data_hora_observacao = as.POSIXct(c(
-#'         "2025-01-01 00:00", "2025-01-01 06:30", "2025-01-01 07:00",
-#'         "2025-01-01 18:00", "2025-01-01 23:30"
-#'     )),
-#'     valor = c(NA, 10, 12, 11, NA)
-#' )
-#'
-#' df_modificado <- zera_horarios_extremos(df)
-#' print(df_modificado)
-#'
 #' @seealso aplica_cortes_em_geracao, combina_dados
-
+#'
 zera_horarios_extremos <- function(df_ger_usi) {
     # Extrair hora:minuto como decimal (ex: 6.5 = 06:30)
     df_ger_usi[, hora_dec := hour(data_hora_observacao) + minute(data_hora_observacao) / 60]
@@ -365,7 +181,7 @@ zera_horarios_extremos <- function(df_ger_usi) {
     # Substituir por 0 as horas fora do intervalo
     df_ger_usi[hora_dec < min_hora | hora_dec > max_hora, valor := 0]
 
-    # Substituir por NA as horas que o status é NA
+    # Substituir por NA as horas que o status e NA
     df_ger_usi[is.na(status), valor := NA_real_]
 
 
@@ -380,35 +196,22 @@ zera_horarios_extremos <- function(df_ger_usi) {
 #'
 #' Define como NA os valores de geracao observada em datas e usinas onde ha cortes ativos.
 #'
-#' @param dt_geracao_usina data.table contendo a serie de geracao observada, com colunas obrigatorias: \code{id_usina}, \code{data_hora_observacao}, \code{valor}.
-#' @param dt_cortes data.table com informacoes de cortes, contendo colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor},
+#' @param dt_geracao_usina data.table contendo a serie de geracao observada, com colunas obrigatorias:
+#'                         \code{id_usina}, \code{data_hora_observacao}, \code{valor}.
+#' @param dt_cortes data.table com informacoes de cortes, contendo colunas \code{id_usina},
+#'                  \code{data_hora_observacao} e \code{valor},
 #'                  onde \code{valor == 1} indica a presenca de corte ativo.
 #'
-#' @return O mesmo data.table de entrada \code{dt_geracao_usina}, com os valores substituidos por NA nas datas e usinas onde ha cortes.
+#' @return O mesmo data.table de entrada \code{dt_geracao_usina}, com os valores substituidos
+#'         por NA nas datas e usinas onde ha cortes.
 #'
 #' @details
-#' A funcao identifica os registros no data.table de cortes em que \code{valor == 1}, o que indica que ha corte ativo naquele instante.
-#' Em seguida, esses registros sao usados para sobrescrever a geracao observada com NA na tabela de entrada.
-#'
-#' @examples
-#' library(data.table)
-#' dt_geracao <- data.table(
-#'     id_usina = c("U1", "U1", "U1", "U2"),
-#'     data_hora_observacao = as.POSIXct(c("2025-01-01 00:00", "2025-01-01 00:30", "2025-01-01 01:00", "2025-01-01 00:00")),
-#'     valor = c(10, 12, 11, 9)
-#' )
-#'
-#' dt_cortes <- data.table(
-#'     id_usina = c("U1", "U2"),
-#'     data_hora_observacao = as.POSIXct(c("2025-01-01 00:30", "2025-01-01 00:00")),
-#'     valor = c(1, 1)
-#' )
-#'
-#' dt_resultado <- aplica_cortes_em_geracao(dt_geracao, dt_cortes)
-#' print(dt_resultado)
+#' A funcao identifica os registros no data.table de cortes em que \code{valor == 1}, o que indica
+#' que ha corte ativo naquele instante. Em seguida, esses registros sao usados para sobrescrever a
+#' geracao observada com NA na tabela de entrada.
 #'
 #' @seealso combina_dados, organiza_resultados
-
+#'
 aplica_cortes_em_geracao <- function(dt_geracao_usina, dt_cortes) {
     # Filtrar apenas onde valor == 1 (cortes ativos)
     dt_cortes_filtrado <- dt_cortes[valor == 1, .(id_usina, data_hora_observacao)]

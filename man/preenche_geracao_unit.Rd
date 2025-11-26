@@ -9,25 +9,35 @@ preenche_geracao_unit(
   irrad_prev,
   mhg_prev,
   cortes,
-  limite_dados
+  limite_dados,
+  model
 )
 }
 \arguments{
-\item{geracao_usina}{data.table com os dados de geracao observada da usina. Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.}
+\item{geracao_usina}{data.table com os dados de geracao observada da usina. Deve conter colunas
+\code{id_usina}, \code{data_hora_observacao} e \code{valor}.}
 
-\item{irrad_prev}{data.table com previsao de irradiancia. Deve conter colunas \code{id_usina}, \code{data_hora_previsao} e \code{valor}.}
+\item{irrad_prev}{data.table com previsao de irradiancia. Deve conter colunas \code{id_usina},
+\code{data_hora_previsao} e \code{valor}.}
 
-\item{mhg_prev}{data.table com melhores historicos de geracao anteriores. Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor}.}
+\item{mhg_prev}{data.table com melhores historicos de geracao anteriores. Deve conter colunas
+\code{id_usina}, \code{data_hora_observacao} e \code{valor}.}
 
-\item{cortes}{data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina}, \code{data_hora_observacao} e \code{valor} (1 para corte).}
+\item{cortes}{data.table com registros de cortes (opcional). Deve conter colunas \code{id_usina},
+\code{data_hora_observacao} e \code{valor} (1 para corte).}
 
-\item{limite_dados}{Vetor numerico de comprimento 2 com os limites inferior e superior permitidos para valores de geracao.}
+\item{limite_dados}{Vetor numerico de comprimento 2 com os limites inferior e superior permitidos
+para valores de geracao.}
+
+\item{model}{Lista contendo os modelos de regressao linear por horario.}
 }
 \value{
-Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados, e horarios extremos zerados onde nao ha geracao valida.
+Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados,
+e horarios extremos zerados onde nao ha geracao valida.
 }
 \description{
-Realiza o preenchimento de valores ausentes na geracao observada de uma usina, utilizando irradiacao prevista corrigida por regressao linear.
+Realiza o preenchimento de valores ausentes na geracao observada de uma usina,
+utilizando irradiacao prevista corrigida por regressao linear.
 }
 \details{
 A funcao executa o seguinte fluxo:
@@ -40,52 +50,7 @@ A funcao executa o seguinte fluxo:
 \item Zera valores em horarios fora do intervalo com geracao valida.
 }
 }
-\examples{
-# Exemplo simplificado - veja funcoes auxiliares para gerar dados simulados realistas
-
-library(data.table)
-
-# Dados base com multiplos dias para horario fixo (06:00)
-dias <- seq(from = as.Date("2025-01-01"), by = "1 day", length.out = 10)
-horarios <- as.POSIXct(paste(dias, "06:00:00"))
-
-# Dados de geracao
-geracao_usina <- data.table(
-    id_usina = "U1",
-    id_fonte_observacao = "PI",
-    data_hora_observacao = horarios,
-    valor = c(NA, 2, 4, 6, 8, 10, 12, 14, 16, 18),
-    status = c(NA, rep(1, 9))
-)
-
-# Dados de irradiancia
-irrad_prev <- data.table(
-    id_usina = "U1",
-    data_hora_previsao = horarios,
-    valor = seq(10, 100, by = 10)
-)
-
-# Dados do melhor historico de rodadas anteriores
-mhg_prev <- data.table(
-    id_usina = "U1",
-    id_fonte_observacao = "PI",
-    data_hora_observacao = horarios,
-    valor = rep(1, 10),
-    status = c(NA, rep(1, 9))
-)
-
-cortes <- NULL
-limite_dados <- c(0, 25)
-
-resultado <- preenche_geracao_unit(
-    geracao_usina = copy(geracao_usina),
-    irrad_prev = copy(irrad_prev),
-    mhg_prev = copy(mhg_prev),
-    cortes = cortes,
-    limite_dados = limite_dados
-)
-
-}
 \seealso{
-ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao, combina_dados_tempo, zera_horarios_extremos
+ajusta_regressao_ger_irrad, substitui_por_estimativas, aplica_cortes_em_geracao,
+combina_dados_tempo, zera_horarios_extremos
 }

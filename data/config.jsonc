@@ -1,6 +1,6 @@
 {
     // Modo de execucao do modelo: train | predict    
-    "mode": "predict",
+    "mode": "train",
 
     // Caminho para a leitura dos dados de entrada 
     "input": "./data",
@@ -9,7 +9,7 @@
     "output": "./out",
 
     // Caminho para obtencao do artefato do modelo treinado 
-    "artifact": ".",
+    "artifact": "./artifact",
 
     // Janela de datas para calculo do melhor historico. Pode ser informada de duas formas:
     //     * um escalar inteiro, indicando numero de dias passados contados a partir da data de 
@@ -18,7 +18,7 @@
     //       inicial e final da janela
     // "janela": ["2020-01-01", "2020-02-01"],
     "janela": 90,
-
+    
     // Vetor dos ids de usinas a serem consideradas no processo; vazio usa todas 
     "ids_usinas": [],
 

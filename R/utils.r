@@ -19,16 +19,6 @@
 #' Caso o campo `id_usina` tenha um unico valor no grupo,
 #' ele e replicado em todas as linhas.
 #'
-
-#' @examples
-#' library(data.table)
-#' d1 <- data.table(
-#'   id_fonte_observacao = rep("A", 5),
-#'   data_hora_observacao = as.POSIXct("2020-01-01 00:00:00") + c(0, 1800, 3600, 7200, 10800),
-#'   id_usina = 1,
-#'   valor = c(10, "NaN", 20, 999, 30)
-#' )
-#' checa_valores_faltantes(d1)
 checa_valores_faltantes <- function(dt) {
     if (!is.data.table(dt)) dt <- as.data.table(dt)
 
@@ -102,22 +92,6 @@ checa_valores_faltantes <- function(dt) {
 #' 2. Faz merge com `dt2` e aplica sobreposicao dos valores e status.
 #' 3. Adiciona a coluna `id_fonte_observacao` com valor "Consis".
 #'
-#' @examples
-#' library(data.table)
-#' dt1 <- data.table(
-#'   id_usina = c(1,1),
-#'   data_hora_observacao = as.POSIXct(c("2020-01-01 00:00:00", "2020-01-01 00:30:00")),
-#'   valor = c(10, 20),
-#'   status = c(1,1)
-#' )
-#' dt2 <- data.table(
-#'   id_usina = 1,
-#'   data_hora_observacao = as.POSIXct("2020-01-01 00:30:00"),
-#'   valor = 25,
-#'   status = 2
-#' )
-#' combina_dados_tempo(dt1, dt2)
-
 combina_dados_tempo <- function(dt1, dt2) {
     # Garante que sao data.tables
     dt1 <- as.data.table(dt1)
@@ -134,8 +108,12 @@ combina_dados_tempo <- function(dt1, dt2) {
     usinas <- unique(c(dt1$id_usina, dt2$id_usina))
 
     # Define o intervalo de datas
-    data_min <- min(c(dt1$data_hora_observacao, dt2$data_hora_observacao), na.rm = TRUE)
-    data_max <- max(c(dt1$data_hora_observacao, dt2$data_hora_observacao), na.rm = TRUE)
+    datas <- c(
+        lubridate::as_datetime(dt1$data_hora_observacao, tz = "UTC"),
+        lubridate::as_datetime(dt2$data_hora_observacao, tz = "UTC")
+    )
+    data_min <- min(datas, na.rm = TRUE)
+    data_max <- max(datas, na.rm = TRUE)
 
     # Cria grade completa
     grade <- CJ(
@@ -204,23 +182,6 @@ combina_dados_tempo <- function(dt1, dt2) {
 #' 3. Filtra os dados da previsao para essa coordenada.
 #' 4. Adiciona `id_usina` e reorganiza as colunas.
 #'
-#' @examples
-#' library(data.table)
-#' dt_usinas <- data.table(
-#'   id_usina = 1,
-#'   latitude = -20,
-#'   longitude = -45
-#' )
-#' dt_irrad_prev <- data.table(
-#'   id_modelo_nwp = "GFS",
-#'   latitude = c(-20.0, -19.9),
-#'   longitude = c(-45.0, -44.9),
-#'   data_hora_previsao = as.POSIXct(c("2025-10-03 00:00:00", "2025-10-03 00:00:00")),
-#'   data_hora_rodada = as.POSIXct(c("2025-10-02 12:00:00", "2025-10-02 12:00:00")),
-#'   irradiancia = c(100, 120)
-#' )
-#' associa_nwp_usina(dt_usinas, dt_irrad_prev)
-
 associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
     # Coordenadas unicas da previsao
     coord_prev <- unique(dt_irrad_prev[, .(latitude, longitude)])
@@ -232,16 +193,10 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
       lista_filtrados <- lapply(seq_len(nrow(dt_usinas)), function(i) {
         usina <- dt_usinas[i]
 
-        # Calcula a distancia euclidiana entre a usina e todas as coordenadas da previsao
-        # coord_prev[, distancia := sqrt(
-        #   (( (latitude - usina$latitude) * 111.32 )^2) +
-        #   (( (longitude - usina$longitude) * 111.32 * cos((latitude + usina$latitude) * pi/360) )^2)
-        # )]
-
-        R <- 6371 # raio medio da Terra em km
+        raio_km <- 6371 # raio medio da Terra em km
 
         # Calcula a distancia Haversine entre a usina e todas as coordenadas da previsao
-        coord_prev[, distancia := 2 * R * asin(sqrt(
+        coord_prev[, distancia := 2 * raio_km * asin(sqrt(
             sin(((latitude - usina$latitude) * pi / 180) / 2)^2 +
                 cos(usina$latitude * pi / 180) * cos(latitude * pi / 180) *
                     sin(((longitude - usina$longitude) * pi / 180) / 2)^2
@@ -252,7 +207,7 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
 
         # Filtra os dados da previsao para essa coordenada
         dt_filt <- dt_irrad_prev[latitude == coord_mais_proxima$latitude &
-            longitude == coord_mais_proxima$longitude]
+                longitude == coord_mais_proxima$longitude]
 
         # Adiciona o id_usina
         dt_filt[, id_usina := usina$id_usina]
@@ -273,7 +228,25 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
 }
 
 
-
+#' Adiciona a coluna passo_prev com base na diferenca entre datas de rodada e previsao
+#'
+#' Esta funcao calcula o passo de previsao (em dias) entre as colunas
+#' `data_hora_rodada` e `data_hora_previsao` e adiciona a coluna `passo_prev`
+#' no formato "D+N", onde N e o numero inteiro de dias de diferenca.
+#'
+#' @param dt_irrad_prev_filt Um data.table contendo pelo menos as colunas
+#'   `data_hora_rodada` e `data_hora_previsao`. As colunas podem estar em
+#'   qualquer formato que possa ser convertido para POSIXct.
+#'
+#' @return O mesmo data.table de entrada, com uma nova coluna `passo_prev`
+#'   indicando o passo de previsao em dias (exemplo: "D+0", "D+1", etc).
+#'
+#' @details
+#' A funcao converte as colunas `data_hora_rodada` e `data_hora_previsao` para
+#' o tipo POSIXct, garantindo consistencia no calculo de diferencas de datas.
+#' Em seguida, calcula a diferenca de dias inteiros entre as duas colunas e
+#' gera a string do passo de previsao.
+#'
 adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
     # Garante que as colunas sao do tipo POSIXct
     dt_irrad_prev_filt[, data_hora_rodada := as.POSIXct(data_hora_rodada)]
@@ -286,4 +259,70 @@ adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
     )]
 
     return(dt_irrad_prev_filt)
+}
+
+
+#' Interpolar valores para intervalos de 30 minutos
+#'
+#' Esta funcao realiza a interpolacao linear de valores em uma tabela de previsao,
+#' gerando novas observacoes a cada 30 minutos dentro do intervalo de datas de cada grupo.
+#' O agrupamento e feito por `id_modelo_nwp`, `id_usina` e `passo_prev`.
+#'
+#' @param dt Um data.table contendo as colunas:
+#'   - `id_modelo_nwp` (character): identificador do modelo NWP
+#'   - `id_usina` (character): identificador da usina
+#'   - `latitude` (numeric): latitude da usina
+#'   - `longitude` (numeric): longitude da usina
+#'   - `data_hora_rodada` (POSIXct): data e hora da rodada do modelo
+#'   - `data_hora_previsao` (POSIXct): data e hora da previsao
+#'   - `valor` (numeric): valor previsto
+#'   - `passo_prev` (character): passo da previsao (ex: "D+1")
+#'
+#' @return Um `data.table` com os mesmos campos de entrada, porem com novos registros
+#'   interpolados em intervalos de 30 minutos. As colunas permanecem na mesma ordem do
+#'   objeto original.
+#'
+#' @details
+#' A funcao realiza a interpolacao linear com base na funcao `approx`, garantindo que
+#' o intervalo entre `min(data_hora_previsao)` e `max(data_hora_previsao)` de cada grupo
+#' seja preenchido com valores a cada 30 minutos. As colunas de identificacao e
+#' coordenadas sao mantidas fixas conforme o primeiro registro de cada grupo.
+#'
+interpolar_30min <- function(dt) {
+    # Garantir que e data.table
+    dt <- as.data.table(dt)
+
+    # Guardar ordem original das colunas
+    col_order <- names(dt)
+
+    # Ordenar
+    setorder(dt, id_modelo_nwp, id_usina, data_hora_previsao)
+
+    # Aplicar interpolacao por grupo
+    dt_interp <- dt[,
+        {
+            nova_seq <- seq(min(data_hora_previsao), max(data_hora_previsao), by = "30 min")
+
+            valor_interp <- approx(
+                x = as.numeric(data_hora_previsao),
+                y = valor,
+                xout = as.numeric(nova_seq),
+                method = "linear"
+            )$y
+
+            list(
+                latitude = first(latitude),
+                longitude = first(longitude),
+                data_hora_rodada = first(data_hora_rodada),
+                data_hora_previsao = nova_seq,
+                valor = valor_interp
+            )
+        },
+        by = .(id_modelo_nwp, id_usina, passo_prev)
+    ]
+
+    # Reordenar colunas conforme o original
+    setcolorder(dt_interp, col_order)
+
+    return(dt_interp[])
 }

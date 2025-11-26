@@ -38,19 +38,3 @@ usinas presentes em \code{dt1} e \code{dt2}. Em seguida:
 \item Adiciona a coluna \code{id_fonte_observacao} com valor "Consis".
 }
 }
-\examples{
-library(data.table)
-dt1 <- data.table(
-  id_usina = c(1,1),
-  data_hora_observacao = as.POSIXct(c("2020-01-01 00:00:00", "2020-01-01 00:30:00")),
-  valor = c(10, 20),
-  status = c(1,1)
-)
-dt2 <- data.table(
-  id_usina = 1,
-  data_hora_observacao = as.POSIXct("2020-01-01 00:30:00"),
-  valor = 25,
-  status = 2
-)
-combina_dados_tempo(dt1, dt2)
-}

@@ -13,31 +13,18 @@ combina_dados(dt, ordem)
 Fontes mais prioritarias devem aparecer antes no vetor.}
 }
 \value{
-Um data.table com as mesmas colunas do objeto de entrada, contendo apenas um valor por combinacao de id_usina e data_hora_observacao,
-escolhido de acordo com a prioridade definida. Fontes com valor NA sao descartadas. A coluna id_fonte_observacao e substituida por "Consis"
-para indicar dado combinado, e a coluna status recebe o indice de prioridade.
+Um data.table com as mesmas colunas do objeto de entrada, contendo apenas um valor por combinacao de id_usina
+e data_hora_observacao, escolhido de acordo com a prioridade definida. Fontes com valor NA sao descartadas.
+A coluna id_fonte_observacao e substituida por "Consis" para indicar dado combinado, e a coluna status recebe
+o indice de prioridade.
 }
 \description{
-Seleciona valores nao ausentes a partir de multiplas fontes de dados, com base em uma ordem de prioridade definida pelo usuario.
+Seleciona valores nao ausentes a partir de multiplas fontes de dados,
+com base em uma ordem de prioridade definida pelo usuario.
 }
 \details{
-A funcao filtra os dados validos (valores nao NA) e seleciona, para cada combinacao de id_usina e data_hora_observacao,
-apenas o valor da fonte mais prioritaria. Em seguida, garante que todas as combinacoes de usina e horario estejam presentes
-no resultado final, mesmo que com valor NA. A coluna de origem e substituida por "Consis" e o status indica a posicao
-da fonte usada segundo o vetor de prioridade fornecido.
-}
-\examples{
-library(data.table)
-dt <- data.table(
-    id_fonte_observacao = c("A", "B", "A", "B"),
-    id_usina = c(1, 1, 2, 2),
-    data_hora_observacao = as.POSIXct(c(
-        "2020-01-01 00:00", "2020-01-01 00:00",
-        "2020-01-01 01:00", "2020-01-01 01:00"
-    )),
-    valor = c(NA, 10, 5, NA)
-)
-ordem_prioridade <- c("A", "B")
-resultado <- combina_dados(dt, ordem_prioridade)
-
+A funcao filtra os dados validos (valores nao NA) e seleciona, para cada combinacao de id_usina e
+data_hora_observacao, apenas o valor da fonte mais prioritaria. Em seguida, garante que todas as combinacoes de
+usina e horario estejam presentes no resultado final, mesmo que com valor NA. A coluna de origem e substituida por
+"Consis" e o status indica a posicao da fonte usada segundo o vetor de prioridade fornecido.
 }

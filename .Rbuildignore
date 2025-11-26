@@ -1,8 +1,12 @@
+^renv$
+^renv\.lock$
 ^\.vscode$
 ^.lintr$
 ^LICENSE\.md$
 ^README\.Rmd$
 ^main.r$
 ^data$
+^docs$
 ^saida$
 ^saida$
+^Dockerfile$

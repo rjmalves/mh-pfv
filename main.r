@@ -12,10 +12,12 @@ config <- parse_config(config, conn)
 
 tryCatch(
     {
-        if (config$mode == "predict") {
+        if (config$mode == "train") {
+            train_main(config)
+        } else if (config$mode == "predict") {
             predict_main(config)
         } else {
-            stop("Modo invalido. Apenas o modo 'predict' esta disponivel para esse modelo.")
+            stop("Modo invalido. Apenas os modos 'train' e 'predict' estao disponiveis para esse modelo.")
         }
         q(status = 0)
     },

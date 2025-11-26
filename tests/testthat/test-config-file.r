@@ -28,7 +28,6 @@ test_that("valida_nomes_config", {
 })
 
 test_that("valid_tipos_unit", {
-
     # tipos escalares
 
     x <- "a"
@@ -64,7 +63,6 @@ test_that("valid_tipos_unit", {
 })
 
 test_that("valid_tipos", {
-
     l <- list(1, 2, 3)
     tipos <- "numeric"
     expect_true(valid_tipos(l, tipos))
@@ -119,7 +117,7 @@ test_that("parsearg_ids_usinas", {
 
     ids <- list("teste1", "teste2", "teste2")
     ids_parsed <- parsearg_ids_usinas(ids, conn)
-    expect_identical(unlist(ids), ids_parsed)
+    expect_identical(unique(unlist(ids)), ids_parsed)
 
     ref <- get_usinas(conn)$id_usina
     ids <- list()
