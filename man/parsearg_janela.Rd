@@ -19,5 +19,5 @@ parsearg_janela(x)
 vetor \code{Date} de duas posicoes indicando inicio e fim da janela de melhor historico
 }
 \description{
-Funcao interna de \code{\link{parse_config}} para interpretar o parametro \code{janela} da configuracao
+Funcao interna de \code{parse_config()} para interpretar o parametro \code{janela} da configuracao
 }

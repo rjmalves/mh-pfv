@@ -16,5 +16,5 @@ se \code{x} era uma lista vazia, retorna um vetor com todos os ids no banco \cod
 contrario retorna \code{x} vetorizado
 }
 \description{
-Funcao interna de \code{\link{parse_config}} para interpretar o parametro \code{ids_usinas} da configuracao
+Funcao interna de \code{parse_config()} para interpretar o parametro \code{ids_usinas} da configuracao
 }

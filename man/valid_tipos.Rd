@@ -15,7 +15,7 @@ valid_tipos(l, tipos)
 booleano indicando se validacao encerrou com sucesso ou nao
 }
 \description{
-Funcao interna auxiliar de \code{\link{valida_tipos_config}}
+Funcao interna auxiliar de \code{valida_tipos_config()}
 }
 \details{
 Tanto \code{l} quanto \code{tipos} podem ser escalares ou listas. No caso de \code{l}, cada elemento sera checado

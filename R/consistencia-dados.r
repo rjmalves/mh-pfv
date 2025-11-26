@@ -71,7 +71,7 @@ consiste_geracao_unit <- function(dados_usina, geracao_usina, corte_obs, ordem_p
 #'          com diferentes parametros de janela e limiar, permitindo uma filtragem mais robusta de dados
 #'          suspeitos de congelamento.
 #'
-#' @seealso [remove_congelados()]
+#' @seealso `remove_congelados()`
 #'
 checa_valores_congelados <- function(dt, v_n_valores = c(5, 8), v_limiar = c(0.01, 0.1)) {
     # Validacao: os vetores devem ter o mesmo comprimento
