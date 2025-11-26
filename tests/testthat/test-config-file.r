@@ -113,7 +113,7 @@ test_that("parsearg_janela", {
 })
 
 test_that("parsearg_ids_usinas", {
-    conn <- conectamock_pfv(system.file("data", package = "melhorhistoricosolar"))
+    conn <- conectamock_pfv(testthat::test_path("data"))
 
     ids <- list("teste1", "teste2", "teste2")
     ids_parsed <- parsearg_ids_usinas(ids, conn)
