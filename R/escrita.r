@@ -5,7 +5,7 @@
 #' @param dt `data.table` com os dados a serem salvos
 #' @param output_dir diretorio de saida onde sera salvo o arquivo CSV
 #'
-#' @return Caminho completo do arquivo salvo
+#' @return vazio, apenas escreve arquivo
 write_melhor_historico_geracao <- function(dt, output_dir = ".") {
     lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao...")
@@ -17,14 +17,9 @@ write_melhor_historico_geracao <- function(dt, output_dir = ".") {
         pfvIO:::guess_col_limits("melhor_historico_geracao")
     )
 
-    arq <- inner_writer(dt,
-        "melhor_historico_geracao",
-        output_dir,
-        output_type = "parquet"
-    )
+    write_dataset(dt, "melhor_historico_geracao.parquet", output_dir)
 
     lg$debug("Dados de melhor historico de geracao salvos com sucesso")
-    return(arq)
 }
 
 
@@ -35,7 +30,7 @@ write_melhor_historico_geracao <- function(dt, output_dir = ".") {
 #' @param dt `data.table` com os dados a serem salvos
 #' @param output_dir diretorio de saida onde sera salvo o arquivo CSV
 #'
-#' @return Caminho completo do arquivo salvo
+#' @return vazio, apenas escreve arquivo
 write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
     lg <- get_pkg_logger()
     lg$debug("Escrevendo dados de melhor historico de geracao sem cortes...")
@@ -47,38 +42,7 @@ write_melhor_historico_geracao_sem_cortes <- function(dt, output_dir = ".") {
         pfvIO:::guess_col_limits("melhor_historico_geracao_sem_cortes")
     )
 
-    arq <- inner_writer(dt,
-        "melhor_historico_geracao_sem_cortes",
-        output_dir,
-        output_type = "parquet"
-    )
+    write_dataset(dt, "melhor_historico_geracao_sem_cortes.parquet", output_dir)
 
     lg$debug("Dados de melhor historico de geracao sem cortes salvos com sucesso")
-    return(arq)
-}
-
-
-
-# AUXILIARES ---------------------------------------------------------------------------------------
-
-#' Auxiliar Para Escrita de Dados
-#'
-#' Funcao interna para salvar data.tables em CSV. Nao deve ser chamada diretamente pelo usuario.
-#'
-#' @param dt `data.table` a ser salvo
-#' @param table nome-base da tabela (sem extensao .csv)
-#' @param output_dir diretorio onde o arquivo sera salvo
-#'
-#' @return Caminho do arquivo salvo
-inner_writer <- function(dt, table = "", output_dir = ".", output_type = "csv") {
-    if (output_type == "csv") {
-        arq <- file.path(output_dir, paste0(table, ".csv"))
-        # Escreve o arquivo CSV
-        fwrite(dt, arq)
-    } else if (output_type == "parquet") {
-        arq <- file.path(output_dir, paste0(table, ".parquet"))
-        # Escreve o arquivo parquet
-        write_parquet(dt, arq)
-    }
-    return(arq)
 }
