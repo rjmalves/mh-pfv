@@ -10,7 +10,6 @@ train_main(args)
 \item{args}{Lista de argumentos necessarios para o processamento. Os campos esperados sao:
 \itemize{
 \item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-<<<<<<< HEAD
 \item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd",
 indicando o inicio do periodo de analise.
 \item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
@@ -28,19 +27,6 @@ por virgula, em ordem de prioridade.
 \value{
 Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente
 em arquivos na pasta de saida especificada.
-=======
-\item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd", indicando o inicio do periodo de analise.
-\item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
-\item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia aplicado ao limite superior de geracao observada.
-\item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas disponiveis serao utilizadas.
-\item \code{input}: caminho para a pasta onde estao localizados os dados de entrada (ex: dados de SCADA, modelos NWP, cortes, etc.).
-\item \code{mode}: string que define o modo de operacao. Deve ser "train" para rodar o treinamento dos modelos.
-\item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula, em ordem de prioridade.
-}}
-}
-\value{
-Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos na pasta de saida especificada.
->>>>>>> write-pfvIO
 }
 \description{
 Executa o treinamento dos modelos para consistencia dos dados observados para um conjunto de usinas.
@@ -53,24 +39,6 @@ A funcao executa o treinamento do modelo para cada usina:
 \item Retorno dos modelos ajustados.
 }
 }
-<<<<<<< HEAD
-=======
-\examples{
-args <- list(
-    artifact = ".",
-    janela = c("2025-02-01","2025-10-31"),
-    fator_tolerancia_limite_superior_geracao = 1.1,
-    ids_usinas = c("CEFMT1","RNDUN2"),
-    input = "./data",
-    mode = "train",
-    ordem_prioridade_fontes = "PI,CCEE,CCEE1h",
-    ordem_prioridade_modelosNWP = "GFS",
-    output = "./out"
-)
-train_main(args)
-
-}
->>>>>>> write-pfvIO
 \seealso{
 ajustar_usina, ajusta_regressao_ger_irrad
 }
