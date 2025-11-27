@@ -12,7 +12,7 @@ write_melhor_historico_geracao(dt, output_dir = ".")
 \item{output_dir}{diretorio de saida onde sera salvo o arquivo CSV}
 }
 \value{
-Caminho completo do arquivo salvo
+vazio, apenas escreve arquivo
 }
 \description{
 Salva os dados de melhor historico de geracao em disco, formatados e validados

@@ -1,3 +1,102 @@
+test_that("coloca_na_antes_inicio", {
+
+  # Teste 1: valores anteriores ao inicio devem virar NA
+  dt1 <- data.table::data.table(
+    id_usina = c("U1", "U1", "U1"),
+    data_hora_observacao = as.POSIXct(c("2020-01-01 00:00:00",
+                                        "2020-01-02 00:00:00",
+                                        "2020-01-03 00:00:00")),
+    valor = c(10, 20, 30)
+  )
+
+  dados_usina1 <- data.table::data.table(
+    id_usina = "U1",
+    data_inicio_operacao_comercial = as.POSIXct("2020-01-02 00:00:00")
+  )
+
+  res1 <- coloca_na_antes_inicio(dt1, dados_usina1)
+
+  expect_equal(res1$valor, c(NA_real_, 20, 30))
+
+
+  # Teste 2: nenhuma data anterior ao inicio, nada deve mudar
+  dt2 <- data.table::data.table(
+    id_usina = c("U2", "U2"),
+    data_hora_observacao = as.POSIXct(c("2021-05-10 12:00:00",
+                                        "2021-05-11 12:00:00")),
+    valor = c(5, 7)
+  )
+
+  dados_usina2 <- data.table::data.table(
+    id_usina = "U2",
+    data_inicio_operacao_comercial = as.POSIXct("2021-05-01 00:00:00")
+  )
+
+  res2 <- coloca_na_antes_inicio(dt2, dados_usina2)
+
+  expect_equal(res2$valor, c(5, 7))
+
+
+  # Teste 3: multiplas usinas com datas diferentes
+  dt3 <- data.table::data.table(
+    id_usina = c("A", "A", "B", "B"),
+    data_hora_observacao = as.POSIXct(c("2019-01-01 00:00:00",
+                                        "2019-01-05 00:00:00",
+                                        "2020-06-10 00:00:00",
+                                        "2020-06-12 00:00:00")),
+    valor = c(1, 2, 3, 4)
+  )
+
+  dados_usina3 <- data.table::data.table(
+    id_usina = c("A", "B"),
+    data_inicio_operacao_comercial = as.POSIXct(c("2019-01-03 00:00:00",
+                                                  "2020-06-11 00:00:00"))
+  )
+
+  res3 <- coloca_na_antes_inicio(dt3, dados_usina3)
+
+  expect_equal(res3$valor,
+               c(NA_real_, 2, NA_real_, 4))
+
+
+  # Teste 4: id_usina sem data de inicio deve manter valores
+  dt4 <- data.table::data.table(
+    id_usina = c("X", "X"),
+    data_hora_observacao = as.POSIXct(c("2022-01-01 00:00:00",
+                                        "2022-01-02 00:00:00")),
+    valor = c(10, 20)
+  )
+
+  dados_usina4 <- data.table::data.table(
+    id_usina = "Z",
+    data_inicio_operacao_comercial = as.POSIXct("2022-01-01 00:00:00")
+  )
+
+  res4 <- coloca_na_antes_inicio(dt4, dados_usina4)
+
+  expect_equal(res4$valor, c(10, 20))
+
+
+  # Teste 5: coluna valor com NAs deve ser preservada
+  dt5 <- data.table::data.table(
+    id_usina = c("U", "U"),
+    data_hora_observacao = as.POSIXct(c("2021-01-01 00:00:00",
+                                        "2021-01-10 00:00:00")),
+    valor = c(NA_real_, 5)
+  )
+
+  dados_usina5 <- data.table::data.table(
+    id_usina = "U",
+    data_inicio_operacao_comercial = as.POSIXct("2021-01-05 00:00:00")
+  )
+
+  res5 <- coloca_na_antes_inicio(dt5, dados_usina5)
+
+  expect_equal(res5$valor, c(NA_real_, 5))
+
+})
+
+
 test_that("checa_valores_faltantes", {
     # Teste 1: Conversao para data.table se necessario
     df <- data.frame(

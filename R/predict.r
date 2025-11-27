@@ -67,15 +67,27 @@ predict_main <- function(args) {
         v_usinas = v_usinas
     )
 
+    # remove valores de antes da entrada em operacao comercial da usina
+    geracao_usina_preenchida_com_cortes <- coloca_na_antes_inicio(
+        dt = copy(resultados_organizados$com_cortes),
+        dados_usina = dt_usinas
+    )
+
+    # remove valores de antes da entrada em operacao comercial da usina
+    geracao_usina_preenchida_sem_cortes <- coloca_na_antes_inicio(
+        dt = copy(resultados_organizados$sem_cortes),
+        dados_usina = dt_usinas
+    )
+
     # Escreve o MH sem considerar efeitos dos cortes
     write_melhor_historico_geracao(
-        dt = resultados_organizados$com_cortes,
+        dt = geracao_usina_preenchida_com_cortes,
         output_dir = args$output
     )
 
     # Escreve o MH  considerarando efeitos dos cortes
     write_melhor_historico_geracao_sem_cortes(
-        dt = resultados_organizados$sem_cortes,
+        dt = geracao_usina_preenchida_sem_cortes,
         output_dir = args$output
     )
 }
@@ -102,20 +114,6 @@ get_dataset <- function(args, conn) {
     names(out) <- c("ger_obs", "corte", "irrad_prev", "mhg", "mhg_sem_cortes")
 
     return(out)
-}
-
-#' Leitura do artefato de modelo treinado para uso em previsao
-#'
-#' Le o conteudo do objeto do modelo de um arquivo RDS
-#'
-#' @param iu ID da usina, usado para montar o nome do arquivo
-#' @param artifact_dir diretorio de saida onde foi salvo o artefato
-#'
-#' @return Objeto em R representando o modelo treinado
-read_model_artifact <- function(iu, artifact_dir = ".") {
-    arq <- file.path(artifact_dir, paste0(iu, ".rds"))
-    model <- readRDS(arq)
-    return(model)
 }
 
 # Esta funcao processa uma unica usina individualmente
@@ -149,7 +147,7 @@ processar_usina <- function(
     )
 
     # Leitura dos modelos de estimacao
-    model <- read_model_artifact(iu, artifact_dir = artifact_dir)
+    model <- pfvIO:::get_model_artifact(iu, artifact_dir)
 
     # Preenche a serie de geracao usando dados previstos e MHG com cortes
     geracao_usina_preenchida <- preenche_geracao_unit(

@@ -3,6 +3,7 @@
 \name{predict_main}
 \alias{predict_main}
 \title{Funcao Principal de Consolidacao dos dados}
+\title{Funcao Principal de Consolidacao dos dados}
 \usage{
 predict_main(args)
 }
