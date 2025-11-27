@@ -9,7 +9,8 @@ preenche_geracao_unit(
   irrad_prev,
   mhg_prev,
   cortes,
-  limite_dados
+  limite_dados,
+  model
 )
 }
 \arguments{
