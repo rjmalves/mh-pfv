@@ -179,7 +179,7 @@ remove_congelados <- function(v, n_valores, limiar) {
 #' Finalmente, as posicoes selecionadas sao substituidas por NA_real_.
 #'
 marca_zeros_consecutivos <- function(v, n_lim) {
-    runs <- rle(v == 0) # identifica sequências TRUE/FALSE
+    runs <- rle(v == 0 & !is.na(v)) # identifica sequências TRUE/FALSE
     idx <- inverse.rle(list(
         lengths = runs$lengths,
         values  = runs$values & runs$lengths >= n_lim
