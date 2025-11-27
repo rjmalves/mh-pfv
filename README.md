@@ -95,10 +95,10 @@ Este pacote implementa um pipeline de processamento de dados que:
 
 ```bash
 # Instale o pacote usando remotes para desenvolvimento (branch main)
-Rscript -e "remotes::install_github("rjmalves/melhor-historico-solar")"
+Rscript -e "remotes::install_github(\"rjmalves/melhor-historico-solar\")"
 
 # Instale o pacote usando remotes de uma tag específica (para uso)
-Rscript -e "remotes::install_github("rjmalves/melhor-historico-solar@release")"
+Rscript -e "remotes::install_github(\"rjmalves/melhor-historico-solar@release\")"
 ```
 
 ### Execução Rápida

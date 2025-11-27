@@ -21,7 +21,7 @@
 #'
 coloca_na_antes_inicio <- function(dt, dados_usina) {
 
-   # junta para trazer a data de inicio
+    # junta para trazer a data de inicio
   dt <- merge(
     dt,
     dados_usina[, .(id_usina, data_inicio_operacao_comercial)],
@@ -33,6 +33,7 @@ coloca_na_antes_inicio <- function(dt, dados_usina) {
   dt[data_hora_observacao < data_inicio_operacao_comercial,
      valor := NA_real_]
 
+  dt[, data_inicio_operacao_comercial := NULL]
   return(dt[])
 }
 

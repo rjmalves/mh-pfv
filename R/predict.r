@@ -85,7 +85,7 @@ predict_main <- function(args) {
         output_dir = args$output
     )
 
-    # Escreve o MH  considerarando efeitos dos cortes
+    # Escreve o MH  considerando efeitos dos cortes
     write_melhor_historico_geracao_sem_cortes(
         dt = geracao_usina_preenchida_sem_cortes,
         output_dir = args$output
