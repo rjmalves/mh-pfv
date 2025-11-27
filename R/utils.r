@@ -18,7 +18,7 @@
 #' identifica todas as linhas em que a data e hora da observacao eh anterior
 #' ao inicio de operacao e substitui o valor por NA_real_. A operacao mantem
 #' o restante da estrutura da tabela inalterada.
-#' 
+#'
 coloca_na_antes_inicio <- function(dt, dados_usina) {
 
    # junta para trazer a data de inicio

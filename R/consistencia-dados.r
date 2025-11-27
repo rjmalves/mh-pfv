@@ -11,7 +11,6 @@
 #' @return `geracao_usina` consolidado em apenas uma fonte denominada `"Consis"`
 
 consiste_geracao_unit <- function(dados_usina, geracao_usina, corte_obs, ordem_prioridade, limite_dados) {
- 
     # checa valores faltantes por fonte
     geracao_usina_preenchido <- checa_valores_faltantes(
         dt = geracao_usina
