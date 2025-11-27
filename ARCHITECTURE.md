@@ -1,10 +1,10 @@
-# Arquitetura do Sistema
+# Arquitetura da Aplicação
 
 Este documento descreve a arquitetura do pacote `melhorhistoricosolar`, incluindo o fluxo de dados, componentes principais e decisões de design.
 
 ## Visão Geral
 
-O sistema implementa um pipeline de processamento de dados para consolidação de séries históricas de geração solar fotovoltaica. Opera em dois modos:
+A aplicação implementa um pipeline de processamento de dados para consolidação de séries históricas de geração solar fotovoltaica. Opera em dois modos:
 
 1. **Train**: Calibra modelos de regressão linear para estimar geração a partir de irradiância
 2. **Predict**: Aplica consistência, preenche lacunas e gera o histórico consolidado
@@ -53,7 +53,7 @@ O sistema implementa um pipeline de processamento de dados para consolidação d
     │           │           │  (artefato)      │            │            │
     │           │           └──────────────────┘            │            │
     │           │                                           │            │
-    │           └──────────────────┬──────────────────────-─┘            │
+    │           └──────────────────┬────────────────────────┘            │
     │                              │                                     │
     │                              ▼                                     │
     │                   ┌──────────────────┐                             │
@@ -81,7 +81,8 @@ O sistema implementa um pipeline de processamento de dados para consolidação d
 
 ### 1. Entry Point (`main.r`)
 
-Ponto de entrada do sistema. Responsabilidades:
+Ponto de entrada da aplicação. Responsabilidades:
+
 - Carregar bibliotecas necessárias
 - Parsear argumentos de linha de comando
 - Carregar configuração
@@ -92,13 +93,13 @@ Ponto de entrada do sistema. Responsabilidades:
 
 Gerencia parsing e validação do arquivo de configuração.
 
-| Função | Descrição |
-|--------|-----------|
-| `parse_config()` | Interpreta e valida configuração completa |
-| `valida_nomes_config()` | Verifica presença de chaves obrigatórias |
-| `valida_tipos_config()` | Valida tipos de cada chave |
-| `parsearg_janela()` | Interpreta janela temporal (S3 generic) |
-| `parsearg_ids_usinas()` | Interpreta lista de usinas |
+| Função                  | Descrição                                 |
+| ----------------------- | ----------------------------------------- |
+| `parse_config()`        | Interpreta e valida configuração completa |
+| `valida_nomes_config()` | Verifica presença de chaves obrigatórias  |
+| `valida_tipos_config()` | Valida tipos de cada chave                |
+| `parsearg_janela()`     | Interpreta janela temporal (S3 generic)   |
+| `parsearg_ids_usinas()` | Interpreta lista de usinas                |
 
 ### 3. Consistência de Dados (`consistencia-dados.r`)
 
@@ -153,11 +154,11 @@ Saída: dados consistidos com fonte única ("Consis")
 
 Calibra modelos de regressão para cada usina.
 
-| Função | Descrição |
-|--------|-----------|
-| `train_main()` | Orquestra treinamento para todas as usinas |
-| `ajustar_usina()` | Processa uma usina individual |
-| `ajusta_regressao_ger_irrad()` | Ajusta regressão por hora do dia |
+| Função                         | Descrição                                  |
+| ------------------------------ | ------------------------------------------ |
+| `train_main()`                 | Orquestra treinamento para todas as usinas |
+| `ajustar_usina()`              | Processa uma usina individual              |
+| `ajusta_regressao_ger_irrad()` | Ajusta regressão por hora do dia           |
 
 #### Modelo de Regressão
 
@@ -189,12 +190,12 @@ list(
 
 Aplica consistência e gera histórico final.
 
-| Função | Descrição |
-|--------|-----------|
-| `predict_main()` | Orquestra processamento de todas as usinas |
-| `processar_usina()` | Processa uma usina individual |
+| Função                  | Descrição                                   |
+| ----------------------- | ------------------------------------------- |
+| `predict_main()`        | Orquestra processamento de todas as usinas  |
+| `processar_usina()`     | Processa uma usina individual               |
 | `organiza_resultados()` | Agrupa resultados por tipo (com/sem cortes) |
-| `get_dataset()` | Carrega todos os dados necessários |
+| `get_dataset()`         | Carrega todos os dados necessários          |
 
 ### 6. Preenchimento de Lacunas (`preenchimento-dados-faltantes.r`)
 
@@ -220,22 +221,22 @@ Imputa valores faltantes usando modelo treinado.
 
 Funções auxiliares reutilizáveis.
 
-| Função | Descrição |
-|--------|-----------|
-| `checa_valores_faltantes()` | Expande série para 30min, trata NaN/999 |
-| `combina_dados_tempo()` | Merge temporal com sobreposição |
-| `associa_nwp_usina()` | Encontra ponto NWP mais próximo (Haversine) |
-| `adicionar_passo_previsao()` | Calcula D+0, D+1, etc. |
-| `interpolar_30min()` | Interpola NWP de 1h para 30min |
+| Função                       | Descrição                                   |
+| ---------------------------- | ------------------------------------------- |
+| `checa_valores_faltantes()`  | Expande série para 30min, trata NaN/999     |
+| `combina_dados_tempo()`      | Merge temporal com sobreposição             |
+| `associa_nwp_usina()`        | Encontra ponto NWP mais próximo (Haversine) |
+| `adicionar_passo_previsao()` | Calcula D+0, D+1, etc.                      |
+| `interpolar_30min()`         | Interpola NWP de 1h para 30min              |
 
 ### 8. Escrita (`escrita.r`)
 
 Exportação de resultados.
 
-| Função | Descrição |
-|--------|-----------|
-| `write_model_artifact()` | Salva modelo em RDS |
-| `write_melhor_historico_geracao()` | Exporta MH em Parquet |
+| Função                                        | Descrição             |
+| --------------------------------------------- | --------------------- |
+| `write_model_artifact()`                      | Salva modelo em RDS   |
+| `write_melhor_historico_geracao()`            | Exporta MH em Parquet |
 | `write_melhor_historico_geracao_sem_cortes()` | Exporta MH sem cortes |
 
 ## Fluxo de Dados
@@ -249,8 +250,6 @@ data/
 ├── geracao_observada.csv            # Séries de geração
 ├── irradiancia_prevista.parquet     # Previsões NWP
 ├── corte_observado.csv              # Eventos de corte
-├── melhor_historico_geracao.csv     # MH anterior
-└── melhor_historico_geracao_sem_cortes.csv
 ```
 
 ### Processamento Interno
@@ -262,8 +261,6 @@ pfvIO::conectamock_pfv()
     ├── get_geracao_observada()
     ├── get_irradiancia_prevista()
     ├── get_corte_observado()
-    ├── get_melhor_historico_geracao()
-    └── get_melhor_historico_geracao_sem_cortes()
 ```
 
 ### Saída
@@ -290,7 +287,6 @@ artifact/
 - Irradiância zero implica geração zero (físicamente correto)
 - Modelo simples e interpretável
 - Robusto com poucos dados
-- Coeficiente α representa eficiência aproximada da planta
 
 ### Por que processar usinas individualmente?
 
@@ -301,7 +297,7 @@ artifact/
 ### Por que dois históricos (com/sem cortes)?
 
 - **Com cortes**: Reflete geração real observada
-- **Sem cortes**: Estima geração potencial (útil para estudos de capacidade)
+- **Sem cortes**: Estima geração potencial
 
 ## Extensibilidade
 
@@ -315,7 +311,7 @@ artifact/
 
 1. Atualizar `ordem_prioridade_modelosNWP` no config
 2. Garantir que coordenadas e timestamps estão corretos
-3. Associação usina-NWP é automática (nearest neighbor)
+3. Associação usina-NWP é automática
 
 ### Modificar modelo de regressão
 
@@ -344,27 +340,3 @@ arrow (>= 22.0.0)
 lgr (>= 0.4.4)
 └── Logging estruturado
 ```
-
-## Performance
-
-### Complexidade
-
-| Operação | Complexidade |
-|----------|-------------|
-| Leitura de dados | O(N) |
-| Detecção de congelados | O(N × janela) |
-| Combinação de fontes | O(N × fontes) |
-| Treinamento | O(N × horas) |
-| Interpolação NWP | O(N) |
-
-### Gargalos Conhecidos
-
-1. **Associação NWP-usina**: Loop sobre usinas (pode ser vetorizado)
-2. **Detecção de congelados**: Loop sobre série (poderia usar rolling com data.table)
-3. **Ajuste de regressão**: Loop sobre horas (paralelizável)
-
-### Otimizações Futuras
-
-- Paralelização do loop de usinas
-- Uso de `frollapply` para janela deslizante
-- Cache de associações NWP-usina

@@ -72,15 +72,15 @@ Este pacote implementa um pipeline de processamento de dados que:
 
 ### Componentes Principais
 
-| Módulo | Descrição |
-|--------|-----------|
-| `config-file.r` | Parsing e validação do arquivo de configuração |
-| `consistencia-dados.r` | Detecção de valores congelados, outliers, combinação de fontes |
-| `train.r` | Treinamento de modelos de regressão linear (geração ~ irradiância) |
-| `predict.r` | Pipeline de consolidação e geração do melhor histórico |
-| `preenchimento-dados-faltantes.r` | Imputação de dados faltantes usando NWP |
-| `utils.r` | Funções auxiliares (interpolação, associação NWP-usina) |
-| `escrita.r` | Exportação de resultados em CSV/Parquet |
+| Módulo                            | Descrição                                                          |
+| --------------------------------- | ------------------------------------------------------------------ |
+| `config-file.r`                   | Parsing e validação do arquivo de configuração                     |
+| `consistencia-dados.r`            | Detecção de valores congelados, outliers, combinação de fontes     |
+| `train.r`                         | Treinamento de modelos de regressão linear (geração ~ irradiância) |
+| `predict.r`                       | Pipeline de consolidação e geração do melhor histórico             |
+| `preenchimento-dados-faltantes.r` | Imputação de dados faltantes usando NWP                            |
+| `utils.r`                         | Funções auxiliares (interpolação, associação NWP-usina)            |
+| `escrita.r`                       | Exportação de resultados em CSV/Parquet                            |
 
 ---
 
@@ -94,15 +94,11 @@ Este pacote implementa um pipeline de processamento de dados que:
 ### Instalação
 
 ```bash
-# Clone o repositório
-git clone https://github.com/ONS/melhor-historico-solar.git
-cd melhor-historico-solar
+# Instale o pacote usando remotes para desenvolvimento (branch main)
+Rscript -e "remotes::install_github("rjmalves/melhor-historico-solar")"
 
-# Restaure as dependências
-Rscript -e "renv::restore()"
-
-# Instale o pacote localmente
-Rscript -e "remotes::install_local('.', dependencies = FALSE)"
+# Instale o pacote usando remotes de uma tag específica (para uso)
+Rscript -e "remotes::install_github("rjmalves/melhor-historico-solar@release")"
 ```
 
 ### Execução Rápida
@@ -139,43 +135,43 @@ docker run -v $(pwd)/data:/app/data -v $(pwd)/out:/app/out melhorhistoricosolar 
 Rscript main.r --datadir <DIRETÓRIO>
 ```
 
-| Argumento | Descrição | Default |
-|-----------|-----------|---------|
+| Argumento   | Descrição                                            | Default  |
+| ----------- | ---------------------------------------------------- | -------- |
 | `--datadir` | Diretório contendo dados de entrada e `config.jsonc` | `./data` |
 
 ### Arquivo de Configuração (`config.jsonc`)
 
 ```jsonc
 {
-    // Modo de execução: "train" ou "predict"
-    "mode": "train",
+  // Modo de execução: "train" ou "predict"
+  "mode": "train",
 
-    // Caminhos de I/O
-    "input": "./data",
-    "output": "./out",
-    "artifact": "./artifact",
+  // Caminhos de I/O
+  "input": "./data",
+  "output": "./out",
+  "artifact": "./artifact",
 
-    // Janela temporal: inteiro (dias passados) ou ["YYYY-MM-DD", "YYYY-MM-DD"]
-    "janela": 90,
-    
-    // IDs das usinas (vazio = todas)
-    "ids_usinas": [],
+  // Janela temporal: inteiro (dias passados) ou ["YYYY-MM-DD", "YYYY-MM-DD"]
+  "janela": 90,
 
-    // Prioridade das fontes de geração observada
-    "ordem_prioridade_fontes": ["PI", "CCEE", "CCEE1h"],
+  // IDs das usinas (vazio = todas)
+  "ids_usinas": [],
 
-    // Prioridade dos modelos NWP
-    "ordem_prioridade_modelosNWP": ["GFS"],
+  // Prioridade das fontes de geração observada
+  "ordem_prioridade_fontes": ["PI", "CCEE", "CCEE1h"],
 
-    // Fator multiplicador da capacidade instalada para limite superior
-    "fator_tolerancia_limite_superior_geracao": 1.1
+  // Prioridade dos modelos NWP
+  "ordem_prioridade_modelosNWP": ["GFS"],
+
+  // Fator multiplicador da capacidade instalada para limite superior
+  "fator_tolerancia_limite_superior_geracao": 1.1
 }
 ```
 
 ### Variáveis de Ambiente
 
-| Variável | Descrição | Valores |
-|----------|-----------|---------|
+| Variável    | Descrição    | Valores                          |
+| ----------- | ------------ | -------------------------------- |
 | `LOG_LEVEL` | Nível de log | `debug`, `info`, `warn`, `error` |
 
 ```bash
@@ -188,34 +184,42 @@ LOG_LEVEL=debug Rscript main.r --datadir ./data
 
 O diretório de dados deve conter os seguintes arquivos:
 
-| Arquivo | Formato | Descrição |
-|---------|---------|-----------|
-| `config.jsonc` | JSONC | Configuração do modelo |
-| `usinas.csv` | CSV | Cadastro de usinas (id, lat, lon, capacidade) |
-| `geracao_observada.csv` | CSV | Série temporal de geração por fonte |
-| `irradiancia_prevista.parquet` | Parquet | Previsões NWP de irradiância |
-| `corte_observado.csv` | CSV | Registro de cortes de geração |
-| `melhor_historico_geracao.csv` | CSV | MH anterior (para modo predict) |
-| `melhor_historico_geracao_sem_cortes.csv` | CSV | MH sem cortes anterior |
+| Arquivo                        | Formato        | Descrição                                     |
+| ------------------------------ | -------------- | --------------------------------------------- |
+| `config.jsonc`                 | JSONC          | Configuração do modelo                        |
+| `usinas.parquet`               | Parquet ou CSV | Cadastro de usinas (id, lat, lon, capacidade) |
+| `geracao_observada.parquet`    | Parquet ou CSV | Série temporal de geração por fonte           |
+| `irradiancia_prevista.parquet` | Parquet ou CSV | Previsões NWP de irradiância                  |
+| `corte_observado.parquet`      | Parquet ou CSV | Registro de cortes de geração                 |
 
 ### Schemas de Dados
 
-#### `usinas.csv`
+#### `usinas.parquet`
+
 ```
-id_usina,latitude,longitude,capacidade_instalada_MW
-USINA_A,-23.5505,-46.6333,100.0
+id_usina,latitude,longitude,capacidade_instalada_MW,data_inicio_operacao_comercial
+USINA_A,-23.5505,-46.6333,100.0,2020-01-01 12:00:00
 ```
 
-#### `geracao_observada.csv`
+#### `geracao_observada.parquet`
+
 ```
-id_fonte_observacao,id_usina,data_hora_observacao,valor
-PI,USINA_A,2024-01-01 00:00:00,45.2
+id_fonte_observacao,id_usina,data_hora_observacao,valor,status
+PI,USINA_A,2024-01-01 00:00:00,45.2,0
 ```
 
 #### `irradiancia_prevista.parquet`
+
 ```
-id_modelo_nwp,latitude,longitude,data_hora_rodada,data_hora_previsao,irradiancia
+id_modelo_nwp,latitude,longitude,data_hora_rodada,data_hora_previsao,valor
 GFS,-23.5,-46.5,2024-01-01 00:00:00,2024-01-01 12:00:00,850.5
+```
+
+#### `corte_observado.parquet`
+
+```
+id_fonte_observacao,id_usina,data_hora_observacao,valor,status
+PI,USINA_A,2024-01-01 00:00:00,45.2,0
 ```
 
 ---
@@ -224,10 +228,10 @@ GFS,-23.5,-46.5,2024-01-01 00:00:00,2024-01-01 12:00:00,850.5
 
 O modelo gera dois arquivos no diretório de saída:
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `melhor_historico_geracao.parquet` | Série consolidada de geração |
-| `melhor_historico_geracao_sem_cortes.parquet` | Série com valores estimados durante cortes |
+| Arquivo                                       | Descrição                                                                |
+| --------------------------------------------- | ------------------------------------------------------------------------ |
+| `melhor_historico_geracao.parquet`            | Série consolidada de geração sem estimar valores para momentos de cortes |
+| `melhor_historico_geracao_sem_cortes.parquet` | Série consolidada de geração com valores estimados durante cortes        |
 
 ### Schema de Saída
 
@@ -236,12 +240,12 @@ id_fonte_observacao,id_usina,data_hora_observacao,valor,status
 Consis,USINA_A,2024-01-01 00:00:00,45.2,1
 ```
 
-| Status | Significado |
-|--------|-------------|
-| 1 | Dado original da fonte prioritária |
-| 2 | Dado de fonte secundária |
-| 3 | Dado de fonte terciária |
-| 4 | Estimado pelo modelo (NWP + regressão) |
+| Status | Significado                            |
+| ------ | -------------------------------------- |
+| 1      | Dado original da fonte prioritária     |
+| 2      | Dado de fonte secundária               |
+| 3      | Dado de fonte terciária                |
+| 4      | Estimado pelo modelo (NWP + regressão) |
 
 ---
 
@@ -250,6 +254,7 @@ Consis,USINA_A,2024-01-01 00:00:00,45.2,1
 ### Detecção de Valores Congelados
 
 Valores são considerados "congelados" quando uma janela deslizante de N valores consecutivos apresenta variação menor que um limiar. O algoritmo aplica duas passagens:
+
 - Janela de 5 valores com limiar de 0.01
 - Janela de 8 valores com limiar de 0.1
 
@@ -271,16 +276,6 @@ Requer mínimo de 10 pares válidos por hora para ajuste.
 
 ---
 
-## ⚠️ Limitações Conhecidas
-
-- **Cobertura temporal**: Requer dados históricos suficientes para calibração (mínimo 10 dias por hora)
-- **Resolução**: Opera em intervalos de 30 minutos
-- **Modelos NWP**: Atualmente suporta apenas GFS; outros modelos requerem adaptação
-- **Fuso horário**: Assume UTC para todas as séries temporais
-- **Interpolação NWP**: Usa interpolação linear simples para converter de 1h para 30min
-
----
-
 ## 🧪 Testes
 
 ```bash
@@ -299,6 +294,7 @@ Rscript -e "lintr::lint_package()"
 ## 🤝 Contribuindo
 
 Contribuições são bem-vindas! Por favor, leia o [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes sobre:
+
 - Configuração do ambiente de desenvolvimento
 - Padrões de código e estilo
 - Processo de submissão de Pull Requests
@@ -313,9 +309,7 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 ## 📚 Documentação Adicional
 
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - Detalhes da arquitetura do sistema
-- [MODEL_CARD.md](docs/MODEL_CARD.md) - Informações do modelo de ML
-- [API.md](docs/API.md) - Referência completa da API
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Detalhes da arquitetura da aplicação
 - [CHANGELOG.md](CHANGELOG.md) - Histórico de versões
 
 ---

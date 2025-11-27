@@ -8,14 +8,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Added
-- Documentação completa do projeto (README, CONTRIBUTING, ARCHITECTURE, MODEL_CARD)
+
+- Documentação completa do projeto (README, CONTRIBUTING, ARCHITECTURE)
 - GitHub Actions para CI/CD (R-CMD-check, lint, testes)
 - Templates de issues e pull requests
 
 ### Changed
-- Reorganização dos dados de teste para `tests/testthat/fixtures/`
+
+- Reorganização dos dados de teste para `tests/testthat/data/`
 
 ### Fixed
+
 - Correção de links roxygen2 para funções internas
 
 ---
@@ -23,6 +26,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [0.1.0] - 2025-11-28
 
 ### Added
+
 - Implementação inicial do pipeline de consistência de dados
 - Modo `train`: treinamento de modelos de regressão linear por hora
 - Modo `predict`: geração do melhor histórico consolidado
@@ -37,6 +41,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Linting com `lintr`
 
 ### Dependencies
+
 - R >= 4.0
 - data.table >= 1.17.0
 - lubridate >= 1.9.4
