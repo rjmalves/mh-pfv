@@ -9,14 +9,21 @@
 #' @return `geracao_usina` consolidado em apenas uma fonte denominada `"Consis"`
 
 consiste_geracao_unit <- function(dados_usina, geracao_usina, corte_obs, ordem_prioridade, limite_dados) {
+ 
     # checa valores faltantes por fonte
     geracao_usina_preenchido <- checa_valores_faltantes(
         dt = geracao_usina
     )
 
+    # remove dados de antes da entrada em operacao comercial da usina
+    geracao_usina_data_entrada <- coloca_na_antes_inicio(
+        dt = copy(geracao_usina_preenchido),
+        dados_usina = dados_usina
+    )
+
     # checa valores congelados
     geracao_usina_limpos <- checa_valores_congelados(
-        dt = copy(geracao_usina_preenchido),
+        dt = copy(geracao_usina_data_entrada),
         v_n_valores = c(5, 8),
         v_limiar = c(0.01, 0.1)
     )
@@ -27,7 +34,7 @@ consiste_geracao_unit <- function(dados_usina, geracao_usina, corte_obs, ordem_p
         geracao_usina,
         corte_obs
     )
-    
+
     # checa valores valores fora de limites fisicos
     geracao_usina_sem_overbound <- checa_valores_overbound(
         dt = copy(geracao_usina_limpos),
@@ -129,8 +136,7 @@ checa_valores_congelados <- function(dt, v_n_valores = c(5, 8), v_limiar = c(0.0
 #' remove_congelados(v, n_valores = 5, limiar = 0.01)
 #'
 #' @seealso checa_valores_congelados
-
-
+#'
 remove_congelados <- function(v, n_valores, limiar) {
     # Vetor logico para marcar posicoes que serao substituidas por NA
     flag_na <- rep(FALSE, length(v))
@@ -154,7 +160,42 @@ remove_congelados <- function(v, n_valores, limiar) {
     # Substitui os valores marcados por NA
     v[flag_na] <- NA_real_
 
+    # Remove dados quando ha uma sequencia de n_lim de zeros
+    v <- marca_zeros_consecutivos(v, n_lim = 48)
+
     # Retorna o vetor processado
+    return(v)
+}
+
+
+#' Marca zeros consecutivos como NA
+#'
+#' Esta funcao identifica sequencias de zeros em um vetor numerico e substitui
+#' por NA todas as posicoes pertencentes a sequencias cujo comprimento seja
+#' maior ou igual ao limite definido.
+#'
+
+#' @param v Vetor numerico a ser avaliado.
+#' @param n_lim Numero minimo de zeros consecutivos necessario para que a
+#'   sequencia seja substituida por NA.
+#'
+#' @return O vetor v com NA nas posicoes onde ocorreram sequencias de zeros
+#'   com comprimento maior ou igual ao limite especificado.
+#'
+#' @details
+#' A funcao utiliza rle para identificar sequencias consecutivas de zeros.
+#' Em seguida, constrói um vetor logico por meio de inverse.rle indicando quais
+#' posicoes pertencem a sequencias longas o suficiente para serem marcadas.
+#' Finalmente, as posicoes selecionadas sao substituidas por NA_real_.
+#'
+marca_zeros_consecutivos <- function(v, n_lim) {
+    runs <- rle(v == 0) # identifica sequências TRUE/FALSE
+    idx <- inverse.rle(list(
+        lengths = runs$lengths,
+        values  = runs$values & runs$lengths >= n_lim
+    )) # TRUE onde deve virar NA
+
+    v[idx] <- NA_real_
     return(v)
 }
 

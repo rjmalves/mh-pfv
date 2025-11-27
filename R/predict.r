@@ -30,9 +30,9 @@
 #' @examples
 #' args <- list(
 #'     artifact = ".",
-#'     janela = c("2025-02-01","2025-10-31"),
+#'     janela = c("2025-02-01", "2025-10-31"),
 #'     fator_tolerancia_limite_superior_geracao = 1.1,
-#'     ids_usinas = c("CEFMT1","RNDUN2"),
+#'     ids_usinas = c("CEFMT1", "RNDUN2"),
 #'     input = "./data",
 #'     mode = "train",
 #'     ordem_prioridade_fontes = "PI,CCEE,CCEE1h",
@@ -42,7 +42,7 @@
 #' predict_main(args)
 #'
 #' @seealso processar_usina, get_dados_historicos, organiza_resultados, write_melhor_historico_geracao
-#' 
+#'
 #' @export
 
 predict_main <- function(args) {
@@ -73,29 +73,46 @@ predict_main <- function(args) {
         v_usinas = v_usinas
     )
 
+    # remove valores de antes da entrada em operacao comercial da usina
+    geracao_usina_preenchida_com_cortes <- coloca_na_antes_inicio(
+        dt = copy(resultados_organizados$com_cortes),
+        dados_usina = dt_usinas
+    )
+
+    # remove valores de antes da entrada em operacao comercial da usina
+    geracao_usina_preenchida_sem_cortes <- coloca_na_antes_inicio(
+        dt = copy(resultados_organizados$sem_cortes),
+        dados_usina = dt_usinas
+    )
+
     # Escreve o MH sem considerar efeitos dos cortes
     write_melhor_historico_geracao(
-        dt = resultados_organizados$com_cortes,
+        dt = geracao_usina_preenchida_com_cortes,
         output_dir = args$output
     )
 
     # Escreve o MH  considerarando efeitos dos cortes
     write_melhor_historico_geracao_sem_cortes(
-        dt = resultados_organizados$sem_cortes,
+        dt = geracao_usina_preenchida_sem_cortes,
         output_dir = args$output
     )
 }
 
 get_dataset <- function(args, conn) {
-
     janela <- paste0(args$janela[1], "/", args$janela[2])
 
-    ger_obs <- get_geracao_observada(conn, id_usina = args$ids_usinas,
-        data_hora_observacao = janela)
-    corte <- get_corte_observado(conn, id_usina = args$ids_usinas,
-        id_fonte_observacao = args$ordem_prioridade_fontes, data_hora_observacao = janela)
-    irrad_prev <- get_irradiancia_prevista(conn, id_usina = args$ids_usinas,
-        id_modelo_nwp = args$ordem_prioridade_modelosNWP, data_hora_previsao = janela)
+    ger_obs <- get_geracao_observada(conn,
+        id_usina = args$ids_usinas,
+        data_hora_observacao = janela
+    )
+    corte <- get_corte_observado(conn,
+        id_usina = args$ids_usinas,
+        id_fonte_observacao = args$ordem_prioridade_fontes, data_hora_observacao = janela
+    )
+    irrad_prev <- get_irradiancia_prevista(conn,
+        id_usina = args$ids_usinas,
+        id_modelo_nwp = args$ordem_prioridade_modelosNWP, data_hora_previsao = janela
+    )
     mhg <- get_melhor_historico_geracao(conn, id_usina = args$ids_usinas)
     mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(conn, id_usina = args$ids_usinas)
 

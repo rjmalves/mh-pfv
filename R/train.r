@@ -34,7 +34,7 @@
 #'     mode = "train",
 #'     ordem_prioridade_fontes = "PI,CCEE,CCEE1h",
 #'     ordem_prioridade_modelosNWP = "GFS",
-#'     output = "./saida"
+#'     output = "./out"
 #' )
 #' train_main(args)
 #'
