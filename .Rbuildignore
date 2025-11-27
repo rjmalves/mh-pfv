@@ -10,3 +10,8 @@
 ^saida$
 ^saida$
 ^Dockerfile$
+^\.dockerignore$
+^\.github$
+^ARCHITECTURE\.md$
+^CONTRIBUTING\.md$
+^CHANGELOG\.md$
