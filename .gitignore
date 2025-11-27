@@ -52,7 +52,7 @@ rsconnect/
 **.rds
 
 # Saidas em .csv na raiz
-*.csv
+/*.csv
 
 # Saidas na pasta saida/
 saida/
