@@ -1,4 +1,4 @@
-# melhorhistoricosolar
+# mhpfv
 
 [![R-CMD-check](https://github.com/ONS/melhor-historico-solar/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ONS/melhor-historico-solar/actions/workflows/R-CMD-check.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -119,10 +119,10 @@ Rscript main.r --datadir ./data
 
 ```bash
 # Build da imagem
-docker build -t melhorhistoricosolar .
+docker build -t mhpfv .
 
 # Execução com volumes montados
-docker run -v $(pwd)/data:/app/data -v $(pwd)/out:/app/out melhorhistoricosolar --datadir /app/data
+docker run -v $(pwd)/data:/app/data -v $(pwd)/out:/app/out mhpfv --datadir /app/data
 ```
 
 ---
@@ -322,9 +322,9 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 ## Citação
 
 ```bibtex
-@software{melhorhistoricosolar2025,
+@software{mhpfv2025,
   author = {{ONS - Operador Nacional do Sistema Elétrico}},
-  title = {melhorhistoricosolar: Consolidação de Histórico de Geração Solar},
+  title = {mhpfv: Consolidação de Histórico de Geração Solar},
   year = {2025},
   url = {https://github.com/rjmalves/melhor-historico-solar},
   version = {0.1.0}

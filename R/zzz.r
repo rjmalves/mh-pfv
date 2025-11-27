@@ -1,10 +1,10 @@
 .onLoad <- function(libname, pkgname) {
     lg <- logger_setup()
-    assign("lg", lg, asNamespace("melhorhistoricosolar"))
+    assign("lg", lg, asNamespace("mhpfv"))
 }
 
 .onUnload <- function(libname, pkgname) {
-    ns <- asNamespace("melhorhistoricosolar")
+    ns <- asNamespace("mhpfv")
     if (exists("lg", envir = ns, inherits = FALSE)) {
         try(rm(lg, envir = ns), silent = TRUE)
     }

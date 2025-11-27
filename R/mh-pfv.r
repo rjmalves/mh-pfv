@@ -1,4 +1,4 @@
-#' `melhorhistoricosolar`
+#' `mhpfv`
 #'
 #' Construcao Do Melhor Historico De Insumos Observados Para Previsao De Solar Fotovoltaica
 #'

@@ -1,7 +1,7 @@
 FROM rocker/tidyverse:4.5.2
 
 # Labels for container metadata
-LABEL org.opencontainers.image.title="melhorhistoricosolar"
+LABEL org.opencontainers.image.title="mhpfv"
 LABEL org.opencontainers.image.description="Consolidação de histórico de geração solar fotovoltaica"
 LABEL org.opencontainers.image.vendor="ONS - Operador Nacional do Sistema Elétrico"
 LABEL org.opencontainers.image.source="https://github.com/rjmalves/melhor-historico-solar"
@@ -44,7 +44,7 @@ USER appuser
 
 # Health check - verify R and package load correctly
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD Rscript -e "library(melhorhistoricosolar); cat('OK')" || exit 1
+    CMD Rscript -e "library(mhpfv); cat('OK')" || exit 1
 
 # Default environment variables
 ENV LOG_LEVEL=info

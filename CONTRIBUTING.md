@@ -1,4 +1,4 @@
-# Contribuindo para o melhorhistoricosolar
+# Contribuindo para o mhpfv
 
 Obrigado pelo interesse em contribuir! Este documento fornece diretrizes para contribuições ao projeto.
 
@@ -197,10 +197,10 @@ tests/
 test_that("funcao_exemplo retorna resultado esperado", {
     # Arrange: preparar dados
     entrada <- data.table(valor = c(1, 2, 3, NA, 5))
-    
+
     # Act: executar função
     resultado <- funcao_exemplo(entrada)
-    
+
     # Assert: verificar resultado
     expect_equal(nrow(resultado), 5)
     expect_true(all(!is.na(resultado$valor)))
@@ -280,12 +280,14 @@ devtools::check_man()
 ### Antes de Abrir o PR
 
 1. **Sincronize com upstream**
+
    ```bash
    git fetch upstream
    git rebase upstream/main
    ```
 
 2. **Execute verificações locais**
+
    ```r
    devtools::document()  # Atualiza documentação
    devtools::test()      # Testes passam
@@ -307,21 +309,25 @@ devtools::check_man()
 
 ```markdown
 ## Descrição
+
 Breve descrição das mudanças.
 
 ## Tipo de Mudança
+
 - [ ] Bug fix
 - [ ] Nova feature
 - [ ] Breaking change
 - [ ] Documentação
 
 ## Checklist
+
 - [ ] Testes adicionados/atualizados
 - [ ] Documentação atualizada
 - [ ] `devtools::check()` passa sem erros
 - [ ] Código segue os padrões do projeto
 
 ## Issues Relacionadas
+
 Closes #123
 ```
 

@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(melhorhistoricosolar)
+library(mhpfv)
 
-test_check("melhorhistoricosolar")
+test_check("mhpfv")

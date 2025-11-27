@@ -1,6 +1,6 @@
 # Arquitetura da Aplicação
 
-Este documento descreve a arquitetura do pacote `melhorhistoricosolar`, incluindo o fluxo de dados, componentes principais e decisões de design.
+Este documento descreve a arquitetura do pacote `mhpfv`, incluindo o fluxo de dados, componentes principais e decisões de design.
 
 ## Visão Geral
 
