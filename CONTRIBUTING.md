@@ -17,7 +17,7 @@ Obrigado pelo interesse em contribuir! Este documento fornece diretrizes para co
 
 ### Reportando Bugs
 
-1. Verifique se o bug já não foi reportado nas [Issues](https://github.com/rjmalves/melhor-historico-solar/issues)
+1. Verifique se o bug já não foi reportado nas [Issues](https://github.com/rjmalves/mh-pfv/issues)
 2. Se não encontrar, crie uma nova issue usando o template de bug report
 3. Inclua:
    - Descrição clara do problema
@@ -57,11 +57,11 @@ Obrigado pelo interesse em contribuir! Este documento fornece diretrizes para co
 
 ```bash
 # Clone seu fork
-git clone https://github.com/SEU_USUARIO/melhor-historico-solar.git
-cd melhor-historico-solar
+git clone https://github.com/SEU_USUARIO/mh-pfv.git
+cd mh-pfv
 
 # Adicione o upstream
-git remote add upstream https://github.com/rjmalves/melhor-historico-solar.git
+git remote add upstream https://github.com/rjmalves/mh-pfv.git
 
 # Restaure as dependências com renv
 Rscript -e "renv::restore()"
@@ -353,8 +353,8 @@ Atualize o `DESCRIPTION` e `CHANGELOG.md` ao lançar versões.
 
 ## ❓ Dúvidas?
 
-- Abra uma [Discussion](https://github.com/ONS/melhor-historico-solar/discussions) para perguntas gerais
-- Use [Issues](https://github.com/ONS/melhor-historico-solar/issues) para bugs e features
+- Abra uma [Discussion](https://github.com/rjmalves/mh-pfv/discussions) para perguntas gerais
+- Use [Issues](https://github.com/rjmalves/mh-pfv/issues) para bugs e features
 - Consulte a documentação existente
 
 Obrigado por contribuir! 🎉

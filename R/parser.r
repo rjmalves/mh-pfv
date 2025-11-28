@@ -22,7 +22,7 @@ get_parser <- function() {
 inner_parser_generic_args <- function(parser) {
     help_msg <- paste0(
         "Diretorio de dados para execucao do melhor historico -- Veja ",
-        "https://github.com/rjmalves/melhor-historico-solar para detalhes"
+        "https://github.com/rjmalves/mh-pfv para detalhes"
     )
     parser$add_argument("--datadir",
         type = "character",

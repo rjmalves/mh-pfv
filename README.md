@@ -95,10 +95,10 @@ Este pacote implementa um pipeline de processamento de dados que:
 
 ```bash
 # Instale o pacote usando remotes para desenvolvimento (branch main)
-Rscript -e "remotes::install_github(\"rjmalves/melhor-historico-solar\")"
+Rscript -e "remotes::install_github(\"rjmalves/mh-pfv\")"
 
 # Instale o pacote usando remotes de uma tag específica (para uso)
-Rscript -e "remotes::install_github(\"rjmalves/melhor-historico-solar@release\")"
+Rscript -e "remotes::install_github(\"rjmalves/mh-pfv@release\")"
 ```
 
 ### Execução Rápida
@@ -317,7 +317,7 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 ## 📞 Contato
 
 - **Organização**: [ONS - Operador Nacional do Sistema Elétrico](https://www.ons.org.br/)
-- **Issues**: [GitHub Issues](https://github.com/ONS/melhor-historico-solar/issues)
+- **Issues**: [GitHub Issues](https://github.com/rjmalves/mh-pfv/issues)
 
 ## Citação
 
@@ -326,7 +326,7 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
   author = {{ONS - Operador Nacional do Sistema Elétrico}},
   title = {mhpfv: Consolidação de Histórico de Geração Solar},
   year = {2025},
-  url = {https://github.com/rjmalves/melhor-historico-solar},
+  url = {https://github.com/rjmalves/mh-pfv},
   version = {0.1.0}
 }
 ```

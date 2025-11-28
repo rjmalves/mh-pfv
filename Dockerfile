@@ -4,7 +4,7 @@ FROM rocker/tidyverse:4.5.2
 LABEL org.opencontainers.image.title="mhpfv"
 LABEL org.opencontainers.image.description="Consolidação de histórico de geração solar fotovoltaica"
 LABEL org.opencontainers.image.vendor="ONS - Operador Nacional do Sistema Elétrico"
-LABEL org.opencontainers.image.source="https://github.com/rjmalves/melhor-historico-solar"
+LABEL org.opencontainers.image.source="https://github.com/rjmalves/mh-pfv"
 LABEL org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
