@@ -83,7 +83,7 @@ config_types <- function() {
 
 #' Validacao Singular De Uma Chave
 #'
-#' Funcao interna auxiliar de [`valida_tipos_config`]
+#' Funcao interna auxiliar de `valida_tipos_config()`
 #'
 #' Tanto `l` quanto `tipos` podem ser escalares ou listas. No caso de `l`, cada elemento sera checado
 #' individualmente. Se `tipos` for uma lista, `l` sera checado contra cada um dos tipos e retorna
@@ -109,7 +109,7 @@ valid_tipos_unit <- function(x, tipos) Reduce("|", lapply(tipos, inherits, x = x
 
 #' Interpretador De Chave `janela`
 #'
-#' Funcao interna de [`parse_config`] para interpretar o parametro `janela` da configuracao
+#' Funcao interna de `parse_config()` para interpretar o parametro `janela` da configuracao
 #'
 #' @param x valor da chave `janela`; numerico ou vetor de duas strings de data
 #'
@@ -124,7 +124,7 @@ parsearg_janela.character <- function(x) as.Date(x)
 
 #' Interpretador De Chave `ids_usinas`
 #'
-#' Funcao interna de [`parse_config`] para interpretar o parametro `ids_usinas` da configuracao
+#' Funcao interna de `parse_config()` para interpretar o parametro `ids_usinas` da configuracao
 #'
 #' @param x valor da chave `ids_usinas`; lista vazia ou de codigos de usinas
 #' @param conn objeto de conexao com um banco

@@ -39,9 +39,6 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# pkgdown site
-docs/
-
 # translation temp files
 po/*~
 
@@ -55,7 +52,7 @@ rsconnect/
 **.rds
 
 # Saidas em .csv na raiz
-*.csv
+/*.csv
 
 # Saidas na pasta saida/
 saida/

@@ -493,7 +493,7 @@
     },
     "dbinterface": {
       "Package": "dbinterface",
-      "Version": "0.8.2",
+      "Version": "0.9",
       "Source": "GitHub",
       "Title": "Backend Para Acesso A Bancos De Dados `mock` E Relacionais",
       "Authors@R": "person(\"Lucas\", \"Khenayfis\", , \"lucaskhenayfis@gmail.com\", role = c(\"aut\", \"cre\"))",
@@ -528,7 +528,7 @@
       "RemoteUsername": "lkhenayfis",
       "RemoteRepo": "dbinterface",
       "RemoteRef": "master",
-      "RemoteSha": "7a291ae380599d04063427be05dd3f10d10734e6"
+      "RemoteSha": "44b8cdf3e95ad54bfee6c2a0ea3bb21222a45cdb"
     },
     "digest": {
       "Package": "digest",
@@ -1009,7 +1009,7 @@
     },
     "pfvIO": {
       "Package": "pfvIO",
-      "Version": "0.2.2",
+      "Version": "0.3.1",
       "Source": "GitHub",
       "Title": "Funcionalidades De Input/Output Para O Modelo De Previsão De Geracao Solar Fotovoltaica",
       "Authors@R": "person(\"Lucas\", \"Khenayfis\", , \"lkhenayfis@ons.org.br\", role = c(\"aut\", \"cre\"))",
@@ -1025,7 +1025,7 @@
       ],
       "Imports": [
         "data.table (>= 1.17.0)",
-        "dbinterface (>= 0.8.2)",
+        "dbinterface (>= 0.9)",
         "aws.s3 (>= 0.3.20)",
         "lgr (>= 0.4.4)"
       ],
@@ -1036,11 +1036,11 @@
       "Author": "Lucas Khenayfis [aut, cre]",
       "Maintainer": "Lucas Khenayfis <lkhenayfis@ons.org.br>",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "lkhenayfis",
       "RemoteRepo": "pfvIO",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "95149bdec391675c57fe8800661acf110d2d2c0f",
-      "RemoteHost": "api.github.com",
+      "RemoteRef": "master",
+      "RemoteSha": "9f3540c0fb241de9405718147f3dc2ae07275851",
       "Remotes": "lkhenayfis/dbinterface"
     },
     "pillar": {

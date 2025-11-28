@@ -1,3 +1,44 @@
+#' Coloca NA antes do inicio de operacao
+#'
+#' Esta funcao substitui os valores de uma tabela de observacoes por NA
+#' sempre que a data e hora da observacao ocorrer antes da data de inicio
+#' de operacao comercial da usina.
+#'
+#' @param dt Data table com as observacoes. Deve conter as colunas:
+#'   id_usina, data_hora_observacao e valor.
+#' @param dados_usina Data table contendo pelo menos as colunas:
+#'   id_usina e data_inicio_operacao_comercial.
+#'
+#' @return A mesma data table dt, mas com valores substituidos por NA
+#'   quando a observacao ocorre antes do inicio de operacao.
+#'
+#' @details
+#' A funcao realiza um merge entre a tabela de observacoes e a tabela de dados
+#' das usinas para obter a data de inicio de operacao comercial. Em seguida,
+#' identifica todas as linhas em que a data e hora da observacao eh anterior
+#' ao inicio de operacao e substitui o valor por NA_real_. A operacao mantem
+#' o restante da estrutura da tabela inalterada.
+#'
+coloca_na_antes_inicio <- function(dt, dados_usina) {
+    # junta para trazer a data de inicio
+    dt <- merge(
+        dt,
+        dados_usina[, .(id_usina, data_inicio_operacao_comercial)],
+        by = "id_usina",
+        all.x = TRUE
+    )
+
+    # substitui valor antes da data de operacao
+    dt[
+        data_hora_observacao < data_inicio_operacao_comercial,
+        valor := NA_real_
+    ]
+
+    dt[, data_inicio_operacao_comercial := NULL]
+    return(dt[])
+}
+
+
 #' Checa  Valores Faltantes
 #'
 #' Detecta e trata valores faltantes nos dados de geracao observada.
@@ -206,8 +247,10 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
         coord_mais_proxima <- coord_prev[which.min(distancia)]
 
         # Filtra os dados da previsao para essa coordenada
-        dt_filt <- dt_irrad_prev[latitude == coord_mais_proxima$latitude &
-                longitude == coord_mais_proxima$longitude]
+        dt_filt <- dt_irrad_prev[
+            latitude == coord_mais_proxima$latitude &
+                longitude == coord_mais_proxima$longitude
+        ]
 
         # Adiciona o id_usina
         dt_filt[, id_usina := usina$id_usina]

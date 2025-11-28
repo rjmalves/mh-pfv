@@ -16,5 +16,5 @@ logger_setup <- function() {
 #' @export
 
 get_pkg_logger <- function() {
-    get("lg", envir = asNamespace("melhorhistoricosolar"))
+    get("lg", envir = asNamespace("mhpfv"))
 }

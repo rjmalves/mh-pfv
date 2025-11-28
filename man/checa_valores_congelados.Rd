@@ -31,5 +31,5 @@ com diferentes parametros de janela e limiar, permitindo uma filtragem mais robu
 suspeitos de congelamento.
 }
 \seealso{
-\code{\link[=remove_congelados]{remove_congelados()}}
+\code{remove_congelados()}
 }

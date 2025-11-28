@@ -1,4 +1,4 @@
-Package: melhorhistoricosolar
+Package: mhpfv
 Title: Construcao do melhor historico de insumos observados para previsao de solar fotovoltaica
 Version: 0.1.0.9999
 Authors@R: 
@@ -16,7 +16,7 @@ Imports:
     argparse (>= 2.2.5),
     lgr (>= 0.4.4),
     lubridate (>= 1.9.4),
-    pfvIO (>= 0.2.2),
+    pfvIO (>= 0.3.1),
     arrow (>= 22.0.0)
 Suggests: 
     testthat (>= 3.0.0)

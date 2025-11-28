@@ -75,7 +75,6 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
 # AUXILIARES ---------------------------------------------------------------------------------------
 
 
-
 #' Substitui Valores Ausentes por Estimativas com Base em Irradiacao Prevista
 #'
 #' Preenche valores ausentes na geracao observada utilizando estimativas calculadas a partir de previsoes

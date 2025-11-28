@@ -1,3 +1,31 @@
+test_that("marca_zeros_consecutivos", {
+    # Teste 1: sequencia simples de zeros maior que o limite
+    v1 <- c(0, 0, 0, 5, 1)
+    res1 <- marca_zeros_consecutivos(v1, n_lim = 2)
+    expect_equal(res1, c(NA_real_, NA_real_, NA_real_, 5, 1))
+
+    # Teste 2: zeros abaixo do limite nao sao substituidos
+    v2 <- c(0, 5, 0)
+    res2 <- marca_zeros_consecutivos(v2, n_lim = 2)
+    expect_equal(res2, c(0, 5, 0))
+
+    # Teste 3: mistura de sequencias longas e curtas
+    v3 <- c(0, 0, 1, 0, 0, 0, 2)
+    res3 <- marca_zeros_consecutivos(v3, n_lim = 3)
+    expect_equal(res3, c(0, 0, 1, NA_real_, NA_real_, NA_real_, 2))
+
+    # Teste 4: vetor sem zeros
+    v4 <- c(1, 2, 3)
+    res4 <- marca_zeros_consecutivos(v4, n_lim = 2)
+    expect_equal(res4, c(1, 2, 3))
+
+    # Teste 5: vetor todo zero
+    v5 <- c(0, 0, 0, 0)
+    res5 <- marca_zeros_consecutivos(v5, n_lim = 1)
+    expect_equal(res5, rep(NA_real_, 4))
+})
+
+
 test_that("remove_congelados", {
     # caso trivial ------------------------------
 
