@@ -5,22 +5,6 @@ Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
-
-### Added
-
-- Documentação completa do projeto (README, CONTRIBUTING, ARCHITECTURE)
-- GitHub Actions para CI/CD (R-CMD-check, lint, testes)
-- Templates de issues e pull requests
-
-### Changed
-
-- Reorganização dos dados de teste para `tests/testthat/data/`
-
-### Fixed
-
-- Correção de links roxygen2 para funções internas
-
 ---
 
 ## [0.1.0] - 2025-11-28
@@ -39,16 +23,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Dockerfile para containerização
 - Testes unitários com `testthat`
 - Linting com `lintr`
-
-### Dependencies
-
-- R >= 4.0
-- data.table >= 1.17.0
-- lubridate >= 1.9.4
-- arrow >= 22.0.0
-- argparse >= 2.2.5
-- lgr >= 0.4.4
-- pfvIO >= 0.2.2
+- Documentação completa do projeto (README, CONTRIBUTING, ARCHITECTURE)
+- GitHub Actions para CI/CD (R-CMD-check, lint, testes)
+- Templates de issues e pull requests
 
 ---
 
