@@ -39,11 +39,20 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# pkgdown site
-docs/
-
 # translation temp files
 po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# VSCode
+.vscode/*
+
+# Modelos em R
+**.rds
+
+# Saidas em .csv na raiz
+/*.csv
+
+# Saidas na pasta saida/
+saida/
