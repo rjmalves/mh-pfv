@@ -20,21 +20,22 @@
 #' o restante da estrutura da tabela inalterada.
 #'
 coloca_na_antes_inicio <- function(dt, dados_usina) {
-
     # junta para trazer a data de inicio
-  dt <- merge(
-    dt,
-    dados_usina[, .(id_usina, data_inicio_operacao_comercial)],
-    by = "id_usina",
-    all.x = TRUE
-  )
+    dt <- merge(
+        dt,
+        dados_usina[, .(id_usina, data_inicio_operacao_comercial)],
+        by = "id_usina",
+        all.x = TRUE
+    )
 
-  # substitui valor antes da data de operacao
-  dt[data_hora_observacao < data_inicio_operacao_comercial,
-     valor := NA_real_]
+    # substitui valor antes da data de operacao
+    dt[
+        data_hora_observacao < data_inicio_operacao_comercial,
+        valor := NA_real_
+    ]
 
-  dt[, data_inicio_operacao_comercial := NULL]
-  return(dt[])
+    dt[, data_inicio_operacao_comercial := NULL]
+    return(dt[])
 }
 
 
@@ -246,8 +247,10 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
         coord_mais_proxima <- coord_prev[which.min(distancia)]
 
         # Filtra os dados da previsao para essa coordenada
-        dt_filt <- dt_irrad_prev[latitude == coord_mais_proxima$latitude &
-                longitude == coord_mais_proxima$longitude]
+        dt_filt <- dt_irrad_prev[
+            latitude == coord_mais_proxima$latitude &
+                longitude == coord_mais_proxima$longitude
+        ]
 
         # Adiciona o id_usina
         dt_filt[, id_usina := usina$id_usina]
