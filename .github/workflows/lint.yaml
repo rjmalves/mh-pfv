@@ -28,9 +28,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
 
+      - name: Install remotes
+        run: |
+          install.packages("remotes", "cyclocomp")
+        shell: Rscript {0}
+
       - name: Install lintr
         run: |
-          install.packages("lintr", "cyclocomp")
+          remotes::install_version("lintr", version = "3.2.0")
         shell: Rscript {0}
 
       - name: Run lintr
