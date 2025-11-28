@@ -1,6 +1,7 @@
 # mhpfv
 
 [![R-CMD-check](https://github.com/rjmalves/mh-pfv/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/rjmalves/mh-pfv/actions/workflows/R-CMD-check.yaml)
+[![codecov](https://codecov.io/gh/rjmalves/mh-pfv/graph/badge.svg?token=ek0AkoDosq)](https://codecov.io/gh/rjmalves/mh-pfv)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Construção do Melhor Histórico de Geração Solar Fotovoltaica** — Um pacote R para consolidação e consistência de dados históricos de geração de usinas solares fotovoltaicas do Sistema Interligado Nacional (SIN).
