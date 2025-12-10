@@ -31,17 +31,6 @@ COPY main.r main.r
 RUN R -e "install.packages('remotes')" && \
     R -e "remotes::install_local('.', dependencies = FALSE, upgrade = 'never')"
 
-# Create non-root user for security
-RUN useradd -m -s /bin/bash appuser && \
-    chown -R appuser:appuser /app
-
-# Create directories for data volumes
-RUN mkdir -p /app/data /app/out /app/artifact && \
-    chown -R appuser:appuser /app/data /app/out /app/artifact
-
-# Switch to non-root user
-USER appuser
-
 # Health check - verify R and package load correctly
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD Rscript -e "library(mhpfv); cat('OK')" || exit 1

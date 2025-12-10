@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [0.1.1] - 2025-12-10
+
+### Changed
+
+- Atualiza documentação para feature de preenchimento com MHG
+
+### Fixed
+
+- Permissões na dockerfile estavam impedindo o renv de restaurar
+
 ## [0.1.0] - 2025-11-28
 
 ### Added
