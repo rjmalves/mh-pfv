@@ -93,3 +93,32 @@ test_that("predict_main produces valid output files", {
     expect_true(all(fonte_com == "Consis"))
     expect_true(all(fonte_sem == "Consis"))
 })
+
+test_that("predict_main accepts custom strategy", {
+    skip_if_not(dir.exists(test_path("data")))
+    temp_artifact <- withr::local_tempdir()
+    temp_output <- withr::local_tempdir()
+
+    conn <- conectamock_pfv(test_path("data"))
+    config_train <- gen_config(
+        mode = "train",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_train$input <- test_path("data")
+    config_train$artifact <- temp_artifact
+    config_train <- parse_config(config_train, conn)
+
+    train_main(config_train)
+
+    config_predict <- gen_config(
+        mode = "predict",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_predict$input <- test_path("data")
+    config_predict$artifact <- temp_artifact
+    config_predict$output <- temp_output
+    config_predict <- parse_config(config_predict, conn)
+
+    strategy <- linear_regression_strategy()
+    expect_no_error(predict_main(config_predict, strategy = strategy))
+})

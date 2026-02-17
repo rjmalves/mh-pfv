@@ -4,7 +4,7 @@
 \alias{predict_main}
 \title{Funcao Principal de Consolidacao dos dados}
 \usage{
-predict_main(args)
+predict_main(args, strategy = linear_regression_strategy())
 }
 \arguments{
 \item{args}{Lista de argumentos necessarios para o processamento. Os campos esperados sao:
@@ -26,6 +26,10 @@ indicando a ordem de prioridade para uso dos dados historicos.
 em ordem de prioridade.
 \item \code{output}: caminho para a pasta onde os arquivos de saida serao escritos.
 }}
+
+\item{strategy}{objeto \code{\link[=new_model_strategy]{new_model_strategy()}} definindo o tipo de modelo a
+usar na previsao. Por padrao usa \code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, mantendo
+comportamento identico ao original.}
 }
 \value{
 Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos
@@ -45,5 +49,6 @@ A funcao executa o fluxo completo para cada usina:
 }
 }
 \seealso{
-processar_usina, get_dados_historicos, organiza_resultados, write_melhor_historico_geracao
+\code{\link[=organiza_resultados]{organiza_resultados()}}, \code{\link[=write_melhor_historico_geracao]{write_melhor_historico_geracao()}},
+\code{\link[=linear_regression_strategy]{linear_regression_strategy()}}
 }

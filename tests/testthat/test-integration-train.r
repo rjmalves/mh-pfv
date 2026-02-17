@@ -14,6 +14,23 @@ test_that("train_main completes without error", {
     expect_no_error(train_main(config))
 })
 
+test_that("train_main accepts custom strategy", {
+    skip_if_not(dir.exists(test_path("data")))
+    temp_artifact <- withr::local_tempdir()
+
+    conn <- conectamock_pfv(test_path("data"))
+    config <- gen_config(
+        mode = "train",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config$input <- test_path("data")
+    config$artifact <- temp_artifact
+    config <- parse_config(config, conn)
+
+    strategy <- linear_regression_strategy()
+    expect_no_error(train_main(config, strategy = strategy))
+})
+
 test_that("train_main produces valid model artifacts", {
     skip_if_not(dir.exists(test_path("data")))
     temp_artifact <- withr::local_tempdir()

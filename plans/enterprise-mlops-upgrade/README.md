@@ -100,12 +100,12 @@ Refine outline tickets using learnings from Epics 1-2, then execute.
 | E01-T006 | Add snapshot tests                 | epic-01 | completed | Detailed     |
 | E01-T007 | Expand unit test coverage          | epic-01 | completed | Detailed     |
 | E01-T008 | Add coverage threshold to CI       | epic-01 | completed | Detailed     |
-| E02-T001 | Design model strategy interface    | epic-02 | pending   | Detailed     |
-| E02-T002 | Wrap linear regression as strategy | epic-02 | pending   | Detailed     |
-| E02-T003 | Refactor train.r to use strategy   | epic-02 | pending   | Detailed     |
-| E02-T004 | Refactor predict.r to use strategy | epic-02 | pending   | Detailed     |
-| E02-T005 | Add input validation framework     | epic-02 | pending   | Detailed     |
-| E02-T006 | Add strategy and validation tests  | epic-02 | pending   | Detailed     |
+| E02-T001 | Design model strategy interface    | epic-02 | completed | Detailed     |
+| E02-T002 | Wrap linear regression as strategy | epic-02 | completed | Detailed     |
+| E02-T003 | Refactor train.r to use strategy   | epic-02 | completed | Detailed     |
+| E02-T004 | Refactor predict.r to use strategy | epic-02 | completed | Detailed     |
+| E02-T005 | Add input validation framework     | epic-02 | completed | Detailed     |
+| E02-T006 | Add strategy and validation tests  | epic-02 | completed | Detailed     |
 | E03-T001 | Add parallel infrastructure        | epic-03 | pending   | Outline      |
 | E03-T002 | Parallelize train_main             | epic-03 | pending   | Outline      |
 | E03-T003 | Parallelize predict_main           | epic-03 | pending   | Outline      |
