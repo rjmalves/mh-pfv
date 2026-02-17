@@ -99,6 +99,39 @@ test_that("train_main with test_strategy produces mock artifacts", {
     }
 })
 
+test_that("train_main with parallel = TRUE produces identical artifacts", {
+    skip_if_not(dir.exists(test_path("data")))
+    temp_seq <- withr::local_tempdir()
+    temp_par <- withr::local_tempdir()
+
+    conn <- conectamock_pfv(test_path("data"))
+    config <- gen_config(
+        mode = "train",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config$input <- test_path("data")
+    config <- parse_config(config, conn)
+
+    strategy <- new_model_strategy("test_strategy")
+
+    config$artifact <- temp_seq
+    train_main(config, strategy = strategy, parallel = FALSE)
+
+    config$artifact <- temp_par
+    withr::defer(future::plan("sequential"))
+    train_main(config, strategy = strategy, parallel = TRUE)
+
+    expected_ids <- config$ids_usinas
+    for (iu in expected_ids) {
+        fname <- paste0(iu, ".rds")
+        art_seq <- readRDS(file.path(temp_seq, fname))
+        art_par <- readRDS(file.path(temp_par, fname))
+
+        expect_equal(art_seq$id_usina, art_par$id_usina)
+        expect_equal(art_seq$parametros, art_par$parametros)
+    }
+})
+
 test_that("test_strategy lifecycle: fit -> artifact -> predict_model", {
     skip_if_not(dir.exists(test_path("data")))
     temp_artifact <- withr::local_tempdir()

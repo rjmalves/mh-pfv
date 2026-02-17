@@ -20,7 +20,6 @@
 #' o restante da estrutura da tabela inalterada.
 #'
 coloca_na_antes_inicio <- function(dt, dados_usina) {
-    # junta para trazer a data de inicio
     dt <- merge(
         dt,
         dados_usina[, .(id_usina, data_inicio_operacao_comercial)],
@@ -28,14 +27,13 @@ coloca_na_antes_inicio <- function(dt, dados_usina) {
         all.x = TRUE
     )
 
-    # substitui valor antes da data de operacao
     dt[
         data_hora_observacao < data_inicio_operacao_comercial,
         valor := NA_real_
     ]
 
     dt[, data_inicio_operacao_comercial := NULL]
-    return(dt[])
+    dt[]
 }
 
 
@@ -65,10 +63,8 @@ checa_valores_faltantes <- function(dt) {
 
     dt[valor == "NaN" | is.nan(valor) | valor == 999, valor := NA]
 
-    # Salvar a ordem original das colunas
     colunas_ordem_original <- names(dt)
 
-    # Aplicar o preenchimento por grupo
     dt_resultado <- dt[,
         {
             seq_tempo <- seq(
@@ -87,7 +83,6 @@ checa_valores_faltantes <- function(dt) {
                 sort = TRUE
             )
 
-            # Preencher id_usina se for unico no grupo
             id_usina_unico <- unique(na.omit(id_usina))
             if (length(id_usina_unico) == 1) {
                 dt_merged[, id_usina := id_usina_unico]
@@ -98,10 +93,8 @@ checa_valores_faltantes <- function(dt) {
         by = .(id_fonte_observacao)
     ]
 
-    # Ordenar as colunas na ordem original
     setcolorder(dt_resultado, colunas_ordem_original)
-
-    return(dt_resultado[])
+    dt_resultado[]
 }
 
 
@@ -134,21 +127,16 @@ checa_valores_faltantes <- function(dt) {
 #' 3. Adiciona a coluna `id_fonte_observacao` com valor "Consis".
 #'
 combina_dados_tempo <- function(dt1, dt2) {
-    # Garante que sao data.tables
     dt1 <- as.data.table(dt1)
     dt2 <- as.data.table(dt2)
 
-    # Forca tipos corretos
     dt1[, valor := as.numeric(valor)]
     dt2[, valor := as.numeric(valor)]
-
     dt1[, status := as.integer(status)]
     dt2[, status := as.integer(status)]
 
-    # Identifica todos os id_usina presentes
     usinas <- unique(c(dt1$id_usina, dt2$id_usina))
 
-    # Define o intervalo de datas
     datas <- c(
         lubridate::as_datetime(dt1$data_hora_observacao, tz = "UTC"),
         lubridate::as_datetime(dt2$data_hora_observacao, tz = "UTC")
@@ -156,13 +144,11 @@ combina_dados_tempo <- function(dt1, dt2) {
     data_min <- min(datas, na.rm = TRUE)
     data_max <- max(datas, na.rm = TRUE)
 
-    # Cria grade completa
     grade <- CJ(
         data_hora_observacao = seq(data_min, data_max, by = "30 mins"),
         id_usina = usinas
     )
 
-    # Merge com dt1 (base)
     base <- merge(
         grade,
         dt1[, .(data_hora_observacao, id_usina, valor, status)],
@@ -171,31 +157,86 @@ combina_dados_tempo <- function(dt1, dt2) {
         sort = TRUE
     )
 
-    # Merge com dt2 (sobreposicao)
-    dt2_reduzido <- dt2[, .(data_hora_observacao, id_usina, valor, status)]
-
     base_final <- merge(
         base,
-        dt2_reduzido,
+        dt2[, .(data_hora_observacao, id_usina, valor, status)],
         by = c("data_hora_observacao", "id_usina"),
         all.x = TRUE,
         suffixes = c("_dt1", "_dt2")
     )
 
-    # Aplica sobreposicao
     base_final[, valor := fifelse(!is.na(valor_dt2), valor_dt2, valor_dt1)]
     base_final[, status := fifelse(!is.na(status_dt2), status_dt2, status_dt1)]
-
-    # Adiciona id_fonte_observacao = "Consis"
     base_final[, id_fonte_observacao := "Consis"]
 
-    # Seleciona colunas finais
-    resultado <- base_final[
+    base_final[
         ,
         .(id_fonte_observacao, id_usina, data_hora_observacao, valor, status)
     ][order(id_usina, data_hora_observacao)]
+}
 
-    return(resultado[])
+
+.haversine_cache <- new.env(parent = emptyenv())
+
+
+make_coord_key <- function(dt_usinas, coord_prev) {
+    plant_part <- paste(
+        dt_usinas$id_usina, dt_usinas$latitude, dt_usinas$longitude,
+        collapse = "|"
+    )
+    nwp_part <- paste(
+        sort(paste(coord_prev$latitude, coord_prev$longitude)),
+        collapse = "|"
+    )
+    paste(plant_part, nwp_part, sep = "##")
+}
+
+
+#' Encontra Coordenadas NWP Mais Proximas para Cada Usina
+#'
+#' Calcula a distancia Haversine entre cada usina e todas as coordenadas
+#' NWP disponiveis, retornando a coordenada mais proxima para cada usina.
+#' Resultados sao armazenados em cache para evitar recomputacao.
+#'
+#' @param dt_usinas data.table contendo pelo menos as colunas:
+#'     `id_usina`, `latitude` e `longitude`.
+#' @param coord_prev data.table com colunas `latitude` e `longitude`
+#'     representando as coordenadas unicas do grid NWP.
+#'
+#' @return data.table com colunas `id_usina`, `nearest_latitude` e
+#'     `nearest_longitude`, contendo o mapeamento de cada usina para
+#'     sua coordenada NWP mais proxima.
+#'
+find_nearest_nwp_coords <- function(dt_usinas, coord_prev) {
+    cache_key <- make_coord_key(dt_usinas, coord_prev)
+
+    if (exists(cache_key, envir = .haversine_cache, inherits = FALSE)) {
+        return(get(cache_key, envir = .haversine_cache, inherits = FALSE))
+    }
+
+    raio_km <- 6371
+
+    mapping <- rbindlist(lapply(seq_len(nrow(dt_usinas)), function(i) {
+        usina <- dt_usinas[i]
+        coords <- copy(coord_prev)
+
+        coords[, distancia := 2 * raio_km * asin(sqrt(
+            sin(((latitude - usina$latitude) * pi / 180) / 2)^2 +
+                cos(usina$latitude * pi / 180) * cos(latitude * pi / 180) *
+                    sin(((longitude - usina$longitude) * pi / 180) / 2)^2
+        ))]
+
+        nearest <- coords[which.min(distancia)]
+
+        data.table(
+            id_usina = usina$id_usina,
+            nearest_latitude = nearest$latitude,
+            nearest_longitude = nearest$longitude
+        )
+    }))
+
+    assign(cache_key, mapping, envir = .haversine_cache)
+    mapping
 }
 
 
@@ -207,67 +248,58 @@ combina_dados_tempo <- function(dt1, dt2) {
 #' com a coluna `id_usina` associada.
 #'
 #' @param dt_usinas data.table contendo pelo menos as colunas:
-#'        `id_usina`, `latitude` e `longitude`.
+#'     `id_usina`, `latitude` e `longitude`.
 #' @param dt_irrad_prev data.table contendo previsoes de irradiancia,
-#'        com colunas `latitude` e `longitude` (alem de outras colunas de dados).
+#'     com colunas `latitude` e `longitude` (alem de outras colunas de dados).
 #'
 #' @return data.table com todos os registros de `dt_irrad_prev` filtrados
-#'         para a coordenada mais proxima de cada usina e com a coluna
-#'         `id_usina` adicionada.
+#'     para a coordenada mais proxima de cada usina e com a coluna
+#'     `id_usina` adicionada.
 #'
 #' @details
 #' A funcao:
 #' 1. Calcula a distancia Haversine entre cada usina e todas as coordenadas
-#'    unicas da previsao.
+#'    unicas da previsao (com memoizacao por coordenadas).
 #' 2. Seleciona a coordenada mais proxima para cada usina.
 #' 3. Filtra os dados da previsao para essa coordenada.
 #' 4. Adiciona `id_usina` e reorganiza as colunas.
 #'
 associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
-    # Coordenadas unicas da previsao
     coord_prev <- unique(dt_irrad_prev[, .(latitude, longitude)])
+    mapping <- find_nearest_nwp_coords(dt_usinas, coord_prev)
 
-    # Lista para armazenar os resultados
-    lista_filtrados <- list()
-
-    # Loop sobre cada usina
-      lista_filtrados <- lapply(seq_len(nrow(dt_usinas)), function(i) {
-        usina <- dt_usinas[i]
-
-        raio_km <- 6371 # raio medio da Terra em km
-
-        # Calcula a distancia Haversine entre a usina e todas as coordenadas da previsao
-        coord_prev[, distancia := 2 * raio_km * asin(sqrt(
-            sin(((latitude - usina$latitude) * pi / 180) / 2)^2 +
-                cos(usina$latitude * pi / 180) * cos(latitude * pi / 180) *
-                    sin(((longitude - usina$longitude) * pi / 180) / 2)^2
-        ))]
-
-        # Pega a coordenada mais próxima
-        coord_mais_proxima <- coord_prev[which.min(distancia)]
-
-        # Filtra os dados da previsao para essa coordenada
+    lista_filtrados <- lapply(seq_len(nrow(mapping)), function(i) {
+        row <- mapping[i]
         dt_filt <- dt_irrad_prev[
-            latitude == coord_mais_proxima$latitude &
-                longitude == coord_mais_proxima$longitude
+            latitude == row$nearest_latitude &
+                longitude == row$nearest_longitude
         ]
-
-        # Adiciona o id_usina
-        dt_filt[, id_usina := usina$id_usina]
-        
-        return(dt_filt)
+        dt_filt[, id_usina := row$id_usina]
+        dt_filt
     })
 
-    # Junta tudo
     dt_irrad_prev_filt <- rbindlist(lista_filtrados)
 
-    # Reorganiza para id_usina ser a segunda coluna
     setcolorder(dt_irrad_prev_filt, c(
         "id_modelo_nwp", "id_usina",
         setdiff(names(dt_irrad_prev_filt), c("id_modelo_nwp", "id_usina"))
     ))
 
-    return(dt_irrad_prev_filt)
+    dt_irrad_prev_filt
+}
+
+
+#' Limpa Cache de Distancias Haversine
+#'
+#' Remove todos os mapeamentos de coordenadas NWP-usina armazenados em cache.
+#' Use quando as coordenadas das usinas ou do grid NWP mudarem.
+#'
+#' @return `invisible(NULL)`
+#'
+#' @export
+clear_haversine_cache <- function() {
+    rm(list = ls(.haversine_cache), envir = .haversine_cache)
+    invisible(NULL)
 }
 
 
@@ -291,17 +323,15 @@ associa_nwp_usina <- function(dt_usinas, dt_irrad_prev) {
 #' gera a string do passo de previsao.
 #'
 adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
-    # Garante que as colunas sao do tipo POSIXct
     dt_irrad_prev_filt[, data_hora_rodada := as.POSIXct(data_hora_rodada)]
     dt_irrad_prev_filt[, data_hora_previsao := as.POSIXct(data_hora_previsao)]
 
-    # Calcula a diferenca de dias entre as datas (ignorando horario)
     dt_irrad_prev_filt[, passo_prev := paste0(
         "D+",
         as.integer(as.Date(data_hora_previsao) - as.Date(data_hora_rodada))
     )]
 
-    return(dt_irrad_prev_filt)
+    dt_irrad_prev_filt
 }
 
 
@@ -332,16 +362,10 @@ adicionar_passo_previsao <- function(dt_irrad_prev_filt) {
 #' coordenadas sao mantidas fixas conforme o primeiro registro de cada grupo.
 #'
 interpolar_30min <- function(dt) {
-    # Garantir que e data.table
     dt <- as.data.table(dt)
-
-    # Guardar ordem original das colunas
     col_order <- names(dt)
-
-    # Ordenar
     setorder(dt, id_modelo_nwp, id_usina, data_hora_previsao)
 
-    # Aplicar interpolacao por grupo
     dt_interp <- dt[,
         {
             nova_seq <- seq(min(data_hora_previsao), max(data_hora_previsao), by = "30 min")
@@ -364,8 +388,6 @@ interpolar_30min <- function(dt) {
         by = .(id_modelo_nwp, id_usina, passo_prev)
     ]
 
-    # Reordenar colunas conforme o original
     setcolorder(dt_interp, col_order)
-
-    return(dt_interp[])
+    dt_interp[]
 }

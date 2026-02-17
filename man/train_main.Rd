@@ -4,7 +4,7 @@
 \alias{train_main}
 \title{Funcao Principal de Treinamento dos Modelos para Consistencia dos Dados}
 \usage{
-train_main(args, strategy = linear_regression_strategy())
+train_main(args, strategy = linear_regression_strategy(), parallel = FALSE)
 }
 \arguments{
 \item{args}{lista de argumentos necessarios para o processamento. Os campos
@@ -30,6 +30,9 @@ separados por virgula, em ordem de prioridade.
 \item{strategy}{objeto \code{\link[=new_model_strategy]{new_model_strategy()}} definindo o tipo de modelo a
 ajustar. Por padrao usa \code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, mantendo
 comportamento identico ao original.}
+
+\item{parallel}{logico, se \code{TRUE} usa \code{future_lapply} para processar
+usinas em paralelo. Padrao \code{FALSE} para compatibilidade.}
 }
 \value{
 Nenhum valor e retornado pela funcao. Os resultados sao gravados
@@ -44,11 +47,18 @@ A funcao executa o treinamento do modelo para cada usina:
 \enumerate{
 \item Leitura da configuracao e dados de entrada (usinas, geracao observada,
 modelos NWP, cortes, etc).
+\item Associacao das coordenadas NWP a cada usina e calculo do passo de
+previsao (computados uma unica vez antes do loop).
 \item Aplicacao da funcao \code{ajustar_usina()} para cada usina de forma
-individual, usando a estrategia de modelo fornecida.
-\item Retorno dos modelos ajustados.
+individual (sequencial ou paralela), usando a estrategia de modelo
+fornecida.
+\item Gravacao sequencial dos artefatos de modelo em disco.
 }
+
+Quando \code{parallel = TRUE}, o plano de execucao paralela e configurado via
+\code{\link[=setup_parallel_plan]{setup_parallel_plan()}} e restaurado ao final com \code{\link[=reset_parallel_plan]{reset_parallel_plan()}}.
 }
 \seealso{
-\code{\link[=fit_model]{fit_model()}}, \code{\link[=linear_regression_strategy]{linear_regression_strategy()}}
+\code{\link[=fit_model]{fit_model()}}, \code{\link[=linear_regression_strategy]{linear_regression_strategy()}},
+\code{\link[=setup_parallel_plan]{setup_parallel_plan()}}
 }

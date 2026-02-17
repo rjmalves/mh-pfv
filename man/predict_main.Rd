@@ -4,7 +4,7 @@
 \alias{predict_main}
 \title{Funcao Principal de Consolidacao dos dados}
 \usage{
-predict_main(args, strategy = linear_regression_strategy())
+predict_main(args, strategy = linear_regression_strategy(), parallel = FALSE)
 }
 \arguments{
 \item{args}{Lista de argumentos necessarios para o processamento. Os campos esperados sao:
@@ -30,6 +30,9 @@ em ordem de prioridade.
 \item{strategy}{objeto \code{\link[=new_model_strategy]{new_model_strategy()}} definindo o tipo de modelo a
 usar na previsao. Por padrao usa \code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, mantendo
 comportamento identico ao original.}
+
+\item{parallel}{logico, se \code{TRUE} usa \code{future_lapply} para processar
+usinas em paralelo. Padrao \code{FALSE} para compatibilidade.}
 }
 \value{
 Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos
@@ -50,5 +53,5 @@ A funcao executa o fluxo completo para cada usina:
 }
 \seealso{
 \code{\link[=organiza_resultados]{organiza_resultados()}}, \code{\link[=write_melhor_historico_geracao]{write_melhor_historico_geracao()}},
-\code{\link[=linear_regression_strategy]{linear_regression_strategy()}}
+\code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, \code{\link[=setup_parallel_plan]{setup_parallel_plan()}}
 }

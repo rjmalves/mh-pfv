@@ -23,6 +23,8 @@
 #' @param strategy objeto [new_model_strategy()] definindo o tipo de modelo a
 #'   ajustar. Por padrao usa [linear_regression_strategy()], mantendo
 #'   comportamento identico ao original.
+#' @param parallel logico, se `TRUE` usa `future_lapply` para processar
+#'   usinas em paralelo. Padrao `FALSE` para compatibilidade.
 #'
 #' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados
 #'   diretamente em arquivos na pasta de saida especificada.
@@ -32,16 +34,23 @@
 #'
 #' 1. Leitura da configuracao e dados de entrada (usinas, geracao observada,
 #'    modelos NWP, cortes, etc).
-#' 2. Aplicacao da funcao `ajustar_usina()` para cada usina de forma
-#'    individual, usando a estrategia de modelo fornecida.
-#' 3. Retorno dos modelos ajustados.
+#' 2. Associacao das coordenadas NWP a cada usina e calculo do passo de
+#'    previsao (computados uma unica vez antes do loop).
+#' 3. Aplicacao da funcao `ajustar_usina()` para cada usina de forma
+#'    individual (sequencial ou paralela), usando a estrategia de modelo
+#'    fornecida.
+#' 4. Gravacao sequencial dos artefatos de modelo em disco.
 #'
-#' @seealso [fit_model()], [linear_regression_strategy()]
+#' Quando `parallel = TRUE`, o plano de execucao paralela e configurado via
+#' [setup_parallel_plan()] e restaurado ao final com [reset_parallel_plan()].
+#'
+#' @seealso [fit_model()], [linear_regression_strategy()],
+#'   [setup_parallel_plan()]
 #'
 #' @export
+train_main <- function(args, strategy = linear_regression_strategy(),
+    parallel = FALSE) {
 
-
-train_main <- function(args, strategy = linear_regression_strategy()) {
     conn <- conectamock_pfv(args$input)
 
     v_usinas <- args$ids_usinas
@@ -49,32 +58,48 @@ train_main <- function(args, strategy = linear_regression_strategy()) {
 
     dataset <- get_dataset(args, conn)
 
-    models <- lapply(v_usinas, ajustar_usina,
-        dt_usinas = dt_usinas,
-        dt_ger_obs = dataset$ger_obs,
-        dt_irrad_prev = dataset$irrad_prev,
-        dt_corte_obs = dataset$corte,
-        fonte = args$ordem_prioridade_fontes,
-        fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
-        strategy = strategy
-    )
+    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dataset$irrad_prev)
+    dt_irrad_prev_filt <- adicionar_passo_previsao(dt_irrad_prev_filt)
+
+    if (parallel) {
+        old_plan <- setup_parallel_plan()
+        on.exit(reset_parallel_plan(old_plan), add = TRUE)
+        models <- future.apply::future_lapply(v_usinas, ajustar_usina,
+            dt_usinas = dt_usinas,
+            dt_ger_obs = dataset$ger_obs,
+            dt_irrad_prev_filt = dt_irrad_prev_filt,
+            dt_corte_obs = dataset$corte,
+            fonte = args$ordem_prioridade_fontes,
+            fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+            strategy = strategy,
+            future.seed = TRUE
+        )
+    } else {
+        models <- lapply(v_usinas, ajustar_usina,
+            dt_usinas = dt_usinas,
+            dt_ger_obs = dataset$ger_obs,
+            dt_irrad_prev_filt = dt_irrad_prev_filt,
+            dt_corte_obs = dataset$corte,
+            fonte = args$ordem_prioridade_fontes,
+            fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+            strategy = strategy
+        )
+    }
 
     lapply(seq_along(v_usinas), function(i) {
         write_model_artifact(models[[i]], v_usinas[i], args$artifact)
     })
 }
 
-ajustar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_irrad_prev,
+ajustar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_irrad_prev_filt,
     dt_corte_obs, fonte, fator_tolerancia,
-    strategy = linear_regression_strategy()) {
+    strategy = linear_regression_strategy(), ...) {
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
     corte_obs <- dt_corte_obs[id_usina == iu]
     potencia_instalada <- dad_usi$capacidade_instalada_MW
 
-    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dt_irrad_prev)
-    dt_irrad_prev_filt_n <- adicionar_passo_previsao(dt_irrad_prev_filt)
-    irrad_prev <- dt_irrad_prev_filt_n[id_usina == iu & passo_prev == "D+0"]
+    irrad_prev <- dt_irrad_prev_filt[id_usina == iu & passo_prev == "D+0"]
     irrad_prev <- interpolar_30min(irrad_prev)
 
     geracao_usina_selec <- consiste_geracao_unit(
@@ -154,8 +179,8 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
 
     horas_meia_hora <- seq(5.0, 18.5, by = 0.5)
 
-    angulares <- c() # a (inclinação)
-    lineares <- c() # b (sempre zero)
+    angulares <- c()
+    lineares <- c()
     nomes_linhas <- c()
 
     for (h in horas_meia_hora) {
@@ -168,30 +193,20 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
         dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
                 minute(data_hora_previsao) == minuto]
 
-        # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
         dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
-
-        # Mantém somente as datas de dty_f que existam em dtx_fn
         dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
-
 
         dados_validos <- complete.cases(dty_f$valor, dtx_f$valor)
         if (sum(dados_validos) < 10) {
             dty_f <- dty_bruta[hour(data_hora_observacao) == hora_inteira &
                     minute(data_hora_observacao) == minuto]
-            # Calcular o quantil de 60% da coluna 'valor'
             q60 <- quantile(dty_f$valor, probs = 0.7, na.rm = TRUE)
-
-            # Substituir por NA os valores menores que o quantil de 60%
             dty_f[valor < q60, valor := NA]
 
             dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
                     minute(data_hora_previsao) == minuto]
 
-            # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
             dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
-
-            # Mantém somente as datas de dty_f que existam em dtx_fn
             dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
         }
 
@@ -219,7 +234,5 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
         }
     }
 
-    reg_par <- data.frame(a = angulares, b = lineares, row.names = nomes_linhas)
-
-    return(reg_par)
+    data.frame(a = angulares, b = lineares, row.names = nomes_linhas)
 }

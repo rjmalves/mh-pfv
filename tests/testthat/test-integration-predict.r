@@ -122,3 +122,67 @@ test_that("predict_main accepts custom strategy", {
     strategy <- linear_regression_strategy()
     expect_no_error(predict_main(config_predict, strategy = strategy))
 })
+
+test_that("predict_main parallel produces identical output to sequential", {
+    skip_if_not(dir.exists(test_path("data")))
+
+    temp_artifact <- withr::local_tempdir()
+    temp_output_seq <- withr::local_tempdir()
+    temp_output_par <- withr::local_tempdir()
+
+    conn <- conectamock_pfv(test_path("data"))
+    config_train <- gen_config(
+        mode = "train",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_train$input <- test_path("data")
+    config_train$artifact <- temp_artifact
+    config_train <- parse_config(config_train, conn)
+
+    train_main(config_train)
+
+    config_seq <- gen_config(
+        mode = "predict",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_seq$input <- test_path("data")
+    config_seq$artifact <- temp_artifact
+    config_seq$output <- temp_output_seq
+    config_seq <- parse_config(config_seq, conn)
+
+    predict_main(config_seq, parallel = FALSE)
+
+    config_par <- gen_config(
+        mode = "predict",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_par$input <- test_path("data")
+    config_par$artifact <- temp_artifact
+    config_par$output <- temp_output_par
+    config_par <- parse_config(config_par, conn)
+
+    predict_main(config_par, parallel = TRUE)
+
+    files <- c(
+        "melhor_historico_geracao.parquet",
+        "melhor_historico_geracao_sem_cortes.parquet"
+    )
+
+    for (f in files) {
+        dt_seq <- data.table::setDT(
+            arrow::read_parquet(file.path(temp_output_seq, f))
+        )
+        dt_par <- data.table::setDT(
+            arrow::read_parquet(file.path(temp_output_par, f))
+        )
+
+        data.table::setorderv(dt_seq, c("id_usina", "data_hora_observacao"))
+        data.table::setorderv(dt_par, c("id_usina", "data_hora_observacao"))
+
+        expect_equal(nrow(dt_seq), nrow(dt_par))
+        expect_equal(names(dt_seq), names(dt_par))
+        expect_equal(dt_seq$id_usina, dt_par$id_usina)
+        expect_equal(dt_seq$data_hora_observacao, dt_par$data_hora_observacao)
+        expect_equal(dt_seq$valor, dt_par$valor, tolerance = 1e-10)
+    }
+})

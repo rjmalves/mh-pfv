@@ -4,7 +4,7 @@
 
 This plan upgrades the mhpfv R package (v0.1.1) from its current state to enterprise-grade MLOps standards. The package, operated by ONS (Brazilian national power grid operator), consolidates historical solar photovoltaic generation data through a train/predict pipeline using linear regression models.
 
-The upgrade is organized into 6 epics covering quality, extensibility, performance, MLOps, infrastructure, and observability. Epics 1-2 have fully detailed tickets ready for implementation. Epics 3-6 have outline tickets that will be refined with learnings from earlier epics.
+The upgrade is organized into 6 epics covering quality, extensibility, performance, MLOps, infrastructure, and observability. Epics 1-3 are completed. Epics 4-6 have outline tickets that will be refined with learnings from earlier epics.
 
 ## Decision Log
 
@@ -21,14 +21,14 @@ The upgrade is organized into 6 epics covering quality, extensibility, performan
 
 ## Epic Overview
 
-| Epic | Name                            | Tickets | Status  | Detail Level |
-| ---- | ------------------------------- | ------- | ------- | ------------ |
-| 01   | Quality Foundation              | 8       | pending | Detailed     |
-| 02   | Extensibility Refactor          | 6       | pending | Detailed     |
-| 03   | Performance and Parallelization | 5       | pending | Outline      |
-| 04   | MLOps and Provenance            | 4       | pending | Outline      |
-| 05   | Infrastructure Hardening        | 3       | pending | Outline      |
-| 06   | Observability and Monitoring    | 3       | pending | Outline      |
+| Epic | Name                            | Tickets | Status    | Detail Level |
+| ---- | ------------------------------- | ------- | --------- | ------------ |
+| 01   | Quality Foundation              | 8       | completed | Detailed     |
+| 02   | Extensibility Refactor          | 6       | completed | Detailed     |
+| 03   | Performance and Parallelization | 5       | completed | Refined      |
+| 04   | MLOps and Provenance            | 4       | pending   | Outline      |
+| 05   | Infrastructure Hardening        | 3       | pending   | Outline      |
+| 06   | Observability and Monitoring    | 3       | pending   | Outline      |
 
 ## Dependency Graph
 
@@ -51,7 +51,7 @@ Epic 02: Extensibility Refactor
     E02-T005 (validation) ------------> E02-T006
     E02-T006 (strategy tests) --------> (none)
 
-Epic 03: Performance (outline)
+Epic 03: Performance (refined)
     E03-T001 --> E03-T002 --> E03-T003 --> E03-T005
     E03-T004 (cache) is independent
 
@@ -84,9 +84,16 @@ Sequential strategy chain, with validation in parallel:
 - **Dev 3**: E02-T005 (validation framework, independent)
 - **All**: E02-T006 (comprehensive tests, after E02-T004 and E02-T005)
 
-### Phase C (Weeks 5-11): Epics 3-6
+### Phase C (Weeks 5-7): Performance -- Epic 03
 
-Refine outline tickets using learnings from Epics 1-2, then execute.
+Sequential parallelization chain, with cache in parallel:
+
+- **Dev 1**: E03-T001 -> E03-T002 -> E03-T003 -> E03-T005 (parallel infrastructure chain)
+- **Dev 2**: E03-T004 (cache haversine, independent)
+
+### Phase D (Weeks 7-11): Epics 4-6
+
+Refine outline tickets using learnings from Epics 1-3, then execute.
 
 ## Ticket Status Tracking
 
@@ -106,11 +113,11 @@ Refine outline tickets using learnings from Epics 1-2, then execute.
 | E02-T004 | Refactor predict.r to use strategy | epic-02 | completed | Detailed     |
 | E02-T005 | Add input validation framework     | epic-02 | completed | Detailed     |
 | E02-T006 | Add strategy and validation tests  | epic-02 | completed | Detailed     |
-| E03-T001 | Add parallel infrastructure        | epic-03 | pending   | Outline      |
-| E03-T002 | Parallelize train_main             | epic-03 | pending   | Outline      |
-| E03-T003 | Parallelize predict_main           | epic-03 | pending   | Outline      |
-| E03-T004 | Cache Haversine distances          | epic-03 | pending   | Outline      |
-| E03-T005 | Add benchmarking infrastructure    | epic-03 | pending   | Outline      |
+| E03-T001 | Add parallel infrastructure        | epic-03 | completed | Refined      |
+| E03-T002 | Parallelize train_main             | epic-03 | completed | Refined      |
+| E03-T003 | Parallelize predict_main           | epic-03 | completed | Refined      |
+| E03-T004 | Cache Haversine distances          | epic-03 | completed | Refined      |
+| E03-T005 | Add benchmarking infrastructure    | epic-03 | completed | Refined      |
 | E04-T001 | Enrich artifacts with metadata     | epic-04 | pending   | Outline      |
 | E04-T002 | Add run provenance tracking        | epic-04 | pending   | Outline      |
 | E04-T003 | Implement pipeline resume          | epic-04 | pending   | Outline      |

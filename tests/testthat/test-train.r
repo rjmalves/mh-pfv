@@ -12,12 +12,15 @@ test_that("ajustar_usina returns list with id_usina and parametros", {
     dataset <- get_dataset(config, conn)
     dt_usinas <- get_usinas(conn, id_usina = config$ids_usinas)
 
+    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dataset$irrad_prev)
+    dt_irrad_prev_filt <- adicionar_passo_previsao(dt_irrad_prev_filt)
+
     iu <- config$ids_usinas[1]
     result <- ajustar_usina(
         iu,
         dt_usinas = dt_usinas,
         dt_ger_obs = dataset$ger_obs,
-        dt_irrad_prev = dataset$irrad_prev,
+        dt_irrad_prev_filt = dt_irrad_prev_filt,
         dt_corte_obs = dataset$corte,
         fonte = config$ordem_prioridade_fontes,
         fator_tolerancia = config$fator_tolerancia_limite_superior_geracao
@@ -44,12 +47,15 @@ test_that("ajustar_usina parametros has expected structure", {
     dataset <- get_dataset(config, conn)
     dt_usinas <- get_usinas(conn, id_usina = config$ids_usinas)
 
+    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dataset$irrad_prev)
+    dt_irrad_prev_filt <- adicionar_passo_previsao(dt_irrad_prev_filt)
+
     iu <- config$ids_usinas[1]
     result <- ajustar_usina(
         iu,
         dt_usinas = dt_usinas,
         dt_ger_obs = dataset$ger_obs,
-        dt_irrad_prev = dataset$irrad_prev,
+        dt_irrad_prev_filt = dt_irrad_prev_filt,
         dt_corte_obs = dataset$corte,
         fonte = config$ordem_prioridade_fontes,
         fator_tolerancia = config$fator_tolerancia_limite_superior_geracao
@@ -85,13 +91,11 @@ test_that("ajusta_regressao_ger_irrad", {
     expect_gt(resultado["06:00", "a"], 0)
     expect_equal(resultado["06:00", "b"], 0)
 
-    # fewer than 6 valid pairs: no regression fit
     dty_poucos <- dty_base[1:5]
     dtx_poucos <- dtx_base[1:5]
     resultado_poucos <- ajusta_regressao_ger_irrad(copy(dty_poucos), copy(dtx_poucos), copy(dty_poucos))
     expect_equal(nrow(resultado_poucos), 0)
 
-    # zeros are treated as NA
     dty_zero <- copy(dty_base)
     dtx_zero <- copy(dtx_base)
     dty_zero[1:3, valor := 0]
@@ -99,7 +103,6 @@ test_that("ajusta_regressao_ger_irrad", {
     resultado_zero <- ajusta_regressao_ger_irrad(copy(dty_zero), copy(dtx_zero), copy(dty_zero))
     expect_equal(rownames(resultado_zero), "06:00")
 
-    # all NA yields NA coefficient
     dty_na <- copy(dty_base)
     dtx_na <- copy(dtx_base)
     dty_na[, valor := NA]
@@ -107,7 +110,6 @@ test_that("ajusta_regressao_ger_irrad", {
     resultado_na <- ajusta_regressao_ger_irrad(copy(dty_na), copy(dtx_na), copy(dty_na))
     expect_equal(resultado_na["06:00", "a"], NA)
 
-    # half-hour timestamps work correctly
     horarios_0630 <- seq(from = as.POSIXct("2025-01-01 06:30"), by = "1 day", length.out = 10)
     dtx_0630 <- data.table(
         id_usina = "U1",

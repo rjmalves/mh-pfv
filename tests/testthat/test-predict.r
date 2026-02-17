@@ -66,6 +66,9 @@ test_that("processar_usina returns list with com_cortes and sem_cortes", {
     dataset <- get_dataset(config_predict, conn)
     dt_usinas <- get_usinas(conn, id_usina = config_predict$ids_usinas)
 
+    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dataset$irrad_prev)
+    dt_irrad_prev_filt <- adicionar_passo_previsao(dt_irrad_prev_filt)
+
     iu <- config_predict$ids_usinas[1]
     result <- processar_usina(
         iu,
@@ -73,7 +76,7 @@ test_that("processar_usina returns list with com_cortes and sem_cortes", {
         dt_ger_obs = dataset$ger_obs,
         dt_mhg = dataset$mhg,
         dt_mhg_sem_cortes = dataset$mhg_sem_cortes,
-        dt_irrad_prev = dataset$irrad_prev,
+        dt_irrad_prev_filt = dt_irrad_prev_filt,
         dt_corte_obs = dataset$corte,
         fonte = config_predict$ordem_prioridade_fontes,
         fator_tolerancia = config_predict$fator_tolerancia_limite_superior_geracao,
@@ -113,6 +116,9 @@ test_that("processar_usina output data.tables have rows and expected columns", {
     dataset <- get_dataset(config_predict, conn)
     dt_usinas <- get_usinas(conn, id_usina = config_predict$ids_usinas)
 
+    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dataset$irrad_prev)
+    dt_irrad_prev_filt <- adicionar_passo_previsao(dt_irrad_prev_filt)
+
     iu <- config_predict$ids_usinas[1]
     result <- processar_usina(
         iu,
@@ -120,7 +126,7 @@ test_that("processar_usina output data.tables have rows and expected columns", {
         dt_ger_obs = dataset$ger_obs,
         dt_mhg = dataset$mhg,
         dt_mhg_sem_cortes = dataset$mhg_sem_cortes,
-        dt_irrad_prev = dataset$irrad_prev,
+        dt_irrad_prev_filt = dt_irrad_prev_filt,
         dt_corte_obs = dataset$corte,
         fonte = config_predict$ordem_prioridade_fontes,
         fator_tolerancia = config_predict$fator_tolerancia_limite_superior_geracao,

@@ -28,7 +28,7 @@ com a coluna \code{id_usina} associada.
 A funcao:
 \enumerate{
 \item Calcula a distancia Haversine entre cada usina e todas as coordenadas
-unicas da previsao.
+unicas da previsao (com memoizacao por coordenadas).
 \item Seleciona a coordenada mais proxima para cada usina.
 \item Filtra os dados da previsao para essa coordenada.
 \item Adiciona \code{id_usina} e reorganiza as colunas.

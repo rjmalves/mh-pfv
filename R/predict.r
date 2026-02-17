@@ -38,13 +38,17 @@
 #' @param strategy objeto [new_model_strategy()] definindo o tipo de modelo a
 #'   usar na previsao. Por padrao usa [linear_regression_strategy()], mantendo
 #'   comportamento identico ao original.
+#' @param parallel logico, se `TRUE` usa `future_lapply` para processar
+#'   usinas em paralelo. Padrao `FALSE` para compatibilidade.
 #'
 #' @seealso [organiza_resultados()], [write_melhor_historico_geracao()],
-#'   [linear_regression_strategy()]
+#'   [linear_regression_strategy()], [setup_parallel_plan()]
 #'
 #' @export
-#'
-predict_main <- function(args, strategy = linear_regression_strategy()) {
+
+predict_main <- function(args, strategy = linear_regression_strategy(),
+    parallel = FALSE) {
+
     conn <- conectamock_pfv(args$input)
 
     v_usinas <- args$ids_usinas
@@ -52,18 +56,30 @@ predict_main <- function(args, strategy = linear_regression_strategy()) {
 
     dataset <- get_dataset(args, conn)
 
-    resultados <- lapply(v_usinas, processar_usina,
+    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dataset$irrad_prev)
+    dt_irrad_prev_filt <- adicionar_passo_previsao(dt_irrad_prev_filt)
+
+    apply_args <- list(v_usinas, processar_usina,
         dt_usinas = dt_usinas,
         dt_ger_obs = dataset$ger_obs,
         dt_mhg = dataset$mhg,
         dt_mhg_sem_cortes = dataset$mhg_sem_cortes,
-        dt_irrad_prev = dataset$irrad_prev,
+        dt_irrad_prev_filt = dt_irrad_prev_filt,
         dt_corte_obs = dataset$corte,
         fonte = args$ordem_prioridade_fontes,
         fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
         artifact_dir = args$artifact,
         strategy = strategy
     )
+
+    if (parallel) {
+        old_plan <- setup_parallel_plan()
+        on.exit(reset_parallel_plan(old_plan), add = TRUE)
+        resultados <- do.call(future.apply::future_lapply,
+            c(apply_args, list(future.seed = TRUE)))
+    } else {
+        resultados <- do.call(lapply, apply_args)
+    }
 
     resultados_organizados <- organiza_resultados(
         resultados = resultados,
@@ -118,11 +134,11 @@ get_dataset <- function(args, conn) {
     )
 }
 
-processar_usina <- function(
-    iu, dt_usinas, dt_ger_obs, dt_mhg, dt_mhg_sem_cortes,
-    dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia,
-    artifact_dir, strategy = linear_regression_strategy()
-) {
+processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg,
+    dt_mhg_sem_cortes, dt_irrad_prev_filt, dt_corte_obs, fonte,
+    fator_tolerancia, artifact_dir,
+    strategy = linear_regression_strategy(), ...) {
+
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
     corte_obs <- dt_corte_obs[id_usina == iu]
@@ -130,9 +146,7 @@ processar_usina <- function(
     mhg_sc <- dt_mhg_sem_cortes[id_usina == iu]
     potencia_instalada <- dad_usi$capacidade_instalada_MW
 
-    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dt_irrad_prev)
-    dt_irrad_prev_filt_n <- adicionar_passo_previsao(dt_irrad_prev_filt)
-    irrad_prev <- dt_irrad_prev_filt_n[id_usina == iu & passo_prev == "D+0"]
+    irrad_prev <- dt_irrad_prev_filt[id_usina == iu & passo_prev == "D+0"]
 
     irrad_prev <- interpolar_30min(irrad_prev)
 
