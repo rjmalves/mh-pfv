@@ -44,6 +44,11 @@ jobs:
           )
           print(cov)
           covr::to_cobertura(cov)
+          pct <- covr::percent_coverage(cov)
+          cat(sprintf("Overall coverage: %.1f%%\n", pct))
+          if (pct < 75) {
+              stop(sprintf("Coverage %.1f%% is below minimum threshold of 75%%", pct))
+          }
         shell: Rscript {0}
 
       - uses: codecov/codecov-action@v5
