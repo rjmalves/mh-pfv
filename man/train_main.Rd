@@ -50,27 +50,6 @@ diretamente em arquivos na pasta de saida especificada.
 Executa o treinamento dos modelos para consistencia dos dados observados
 para um conjunto de usinas.
 }
-\details{
-A funcao executa o treinamento do modelo para cada usina:
-\enumerate{
-\item Leitura da configuracao e dados de entrada (usinas, geracao observada,
-modelos NWP, cortes, etc).
-\item Associacao das coordenadas NWP a cada usina e calculo do passo de
-previsao (computados uma unica vez antes do loop).
-\item Aplicacao da funcao \code{ajustar_usina()} para cada usina de forma
-individual (sequencial ou paralela), usando a estrategia de modelo
-fornecida.
-\item Gravacao sequencial dos artefatos de modelo em disco, com escrita de
-checkpoint apos cada usina quando \code{resume = TRUE}.
-}
-
-Quando \code{parallel = TRUE}, o plano de execucao paralela e configurado via
-\code{\link[=setup_parallel_plan]{setup_parallel_plan()}} e restaurado ao final com \code{\link[=reset_parallel_plan]{reset_parallel_plan()}}.
-
-Quando \code{resume = TRUE}, o pipeline verifica se existe um checkpoint valido
-no diretorio de artefatos. Usinas ja concluidas sao ignoradas. Ao final
-bem-sucedido, o checkpoint e removido.
-}
 \seealso{
 \code{\link[=fit_model]{fit_model()}}, \code{\link[=linear_regression_strategy]{linear_regression_strategy()}},
 \code{\link[=setup_parallel_plan]{setup_parallel_plan()}}, \code{\link[=write_checkpoint]{write_checkpoint()}}, \code{\link[=read_checkpoint]{read_checkpoint()}}

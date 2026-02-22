@@ -11,7 +11,8 @@ setup_parallel_plan(
 }
 \arguments{
 \item{workers}{inteiro positivo indicando o numero de workers, ou \code{NULL}
-para usar \code{future::availableCores() - 1} (minimo 1)}
+para usar \code{MHPFV_WORKERS} (se definida) ou \code{future::availableCores() - 1}
+(minimo 1)}
 
 \item{strategy}{character escalar com a estrategia de paralelismo. Deve ser
 um entre \code{"multisession"}, \code{"multicore"} ou \code{"sequential"}}
@@ -23,6 +24,10 @@ o plano anterior (invisivelmente), como retornado por \code{future::plan()}
 Inicializa o plano de execucao paralela do pacote \code{future} com a estrategia
 e numero de workers especificados. O plano anterior e retornado
 invisivelmente para permitir restauracao posterior via \code{\link[=reset_parallel_plan]{reset_parallel_plan()}}.
+}
+\details{
+Quando \code{workers = NULL}, a variavel de ambiente \code{MHPFV_WORKERS} e consultada
+como fallback antes de recorrer ao auto-detect via \code{availableCores() - 1}.
 }
 \examples{
 old <- setup_parallel_plan(workers = 2L, strategy = "multisession")

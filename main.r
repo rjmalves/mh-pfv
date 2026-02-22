@@ -5,7 +5,12 @@ args <- parser$parse_args()
 
 tryCatch(
     {
-        cli_main(args$datadir)
+        cli_main(
+            datadir = args$datadir,
+            parallel = args$parallel,
+            resume = args$resume,
+            workers = args$workers
+        )
         q(status = 0)
     },
     error = function(e) {

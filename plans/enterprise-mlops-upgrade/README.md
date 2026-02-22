@@ -4,7 +4,7 @@
 
 This plan upgrades the mhpfv R package (v0.1.1) from its current state to enterprise-grade MLOps standards. The package, operated by ONS (Brazilian national power grid operator), consolidates historical solar photovoltaic generation data through a train/predict pipeline using linear regression models.
 
-The upgrade is organized into 6 epics covering quality, extensibility, performance, MLOps, infrastructure, and observability. Epics 1-3 are completed. Epic 4 tickets have been refined with learnings from Epics 1-3 and are ready for implementation. Epics 5-6 have outline tickets that will be refined after Epic 4.
+The upgrade is organized into 6 epics covering quality, extensibility, performance, MLOps, infrastructure, and observability. Epics 1-4 are completed. Epic 5 tickets have been refined with learnings from Epics 1-4 and are ready for implementation. Epic 6 has outline tickets that will be refined after Epic 5.
 
 ## Decision Log
 
@@ -26,8 +26,8 @@ The upgrade is organized into 6 epics covering quality, extensibility, performan
 | 01   | Quality Foundation              | 8       | completed | Detailed     |
 | 02   | Extensibility Refactor          | 6       | completed | Detailed     |
 | 03   | Performance and Parallelization | 5       | completed | Refined      |
-| 04   | MLOps and Provenance            | 4       | executing | Refined      |
-| 05   | Infrastructure Hardening        | 3       | pending   | Outline      |
+| 04   | MLOps and Provenance            | 4       | completed | Refined      |
+| 05   | Infrastructure Hardening        | 3       | executing | Refined      |
 | 06   | Observability and Monitoring    | 3       | pending   | Outline      |
 
 ## Dependency Graph
@@ -55,12 +55,12 @@ Epic 03: Performance (completed)
     E03-T001 --> E03-T002 --> E03-T003 --> E03-T005
     E03-T004 (cache) is independent
 
-Epic 04: MLOps (refined, ready for execution)
+Epic 04: MLOps (completed)
     E04-T001 (artifact metadata) -----> E04-T004 (model comparison)
     E04-T001 (artifact metadata) -----> E04-T002 (run provenance)
     E04-T002 (run provenance) --------> E04-T003 (pipeline resume)
 
-Epic 05: Infrastructure (outline)
+Epic 05: Infrastructure (refined, ready for execution)
     E05-T001, E05-T002, E05-T003 are largely independent
 
 Epic 06: Observability (outline)
@@ -99,9 +99,15 @@ Two parallel chains:
 - **Dev 1**: E04-T001 (artifact metadata) -> E04-T004 (model comparison)
 - **Dev 2**: E04-T001 (must wait) -> E04-T002 (run provenance) -> E04-T003 (pipeline resume)
 
-### Phase E (Weeks 9-11): Epics 5-6
+### Phase E (Weeks 9-11): Infrastructure and Observability -- Epics 5-6
 
-Refine outline tickets using learnings from Epics 1-4, then execute.
+All three Epic 05 tickets are independent and can be executed in parallel:
+
+- **Dev 1**: E05-T001 (Docker optimization)
+- **Dev 2**: E05-T002 (CI quality gates)
+- **Dev 3**: E05-T003 (resource configuration)
+
+Then refine and execute Epic 06 outline tickets.
 
 ## Ticket Status Tracking
 
@@ -130,9 +136,9 @@ Refine outline tickets using learnings from Epics 1-4, then execute.
 | E04-T002 | Add run provenance tracking        | epic-04 | completed | Refined      |
 | E04-T003 | Implement pipeline resume          | epic-04 | completed | Refined      |
 | E04-T004 | Add model comparison utilities     | epic-04 | completed | Refined      |
-| E05-T001 | Optimize Docker image              | epic-05 | pending   | Outline      |
-| E05-T002 | Enhance CI/CD quality gates        | epic-05 | pending   | Outline      |
-| E05-T003 | Add resource configuration         | epic-05 | pending   | Outline      |
+| E05-T001 | Optimize Docker image              | epic-05 | completed | Refined      |
+| E05-T002 | Enhance CI/CD quality gates        | epic-05 | completed | Refined      |
+| E05-T003 | Add resource configuration         | epic-05 | completed | Refined      |
 | E06-T001 | Enhance structured logging         | epic-06 | pending   | Outline      |
 | E06-T002 | Add pipeline metrics collection    | epic-06 | pending   | Outline      |
 | E06-T003 | Create pipeline health report      | epic-06 | pending   | Outline      |

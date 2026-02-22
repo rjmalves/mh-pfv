@@ -8,8 +8,12 @@ NULL
 #' e numero de workers especificados. O plano anterior e retornado
 #' invisivelmente para permitir restauracao posterior via [reset_parallel_plan()].
 #'
+#' Quando `workers = NULL`, a variavel de ambiente `MHPFV_WORKERS` e consultada
+#' como fallback antes de recorrer ao auto-detect via `availableCores() - 1`.
+#'
 #' @param workers inteiro positivo indicando o numero de workers, ou `NULL`
-#'     para usar `future::availableCores() - 1` (minimo 1)
+#'     para usar `MHPFV_WORKERS` (se definida) ou `future::availableCores() - 1`
+#'     (minimo 1)
 #' @param strategy character escalar com a estrategia de paralelismo. Deve ser
 #'     um entre `"multisession"`, `"multicore"` ou `"sequential"`
 #'
@@ -25,6 +29,11 @@ setup_parallel_plan <- function(workers = NULL,
     strategy = c("multisession", "multicore", "sequential")) {
 
     strategy <- match.arg(strategy)
+
+    if (is.null(workers)) {
+        workers <- read_env_workers_fallback()
+    }
+
     validate_workers(workers)
 
     if (is.null(workers)) {
@@ -93,6 +102,20 @@ extract_strategy_name <- function(plan_obj) {
     found <- intersect(classes, known)
     if (length(found) == 0L) return(classes[1L])
     found[1L]
+}
+
+read_env_workers_fallback <- function() {
+    env_workers <- Sys.getenv("MHPFV_WORKERS", unset = "")
+    if (env_workers == "") return(NULL)
+
+    parsed <- suppressWarnings(as.integer(env_workers))
+    if (is.na(parsed) || parsed < 1L) {
+        lgr::get_logger("mhpfv")$warn(
+            "MHPFV_WORKERS invalido: '%s'. Usando auto-detect.", env_workers
+        )
+        return(NULL)
+    }
+    parsed
 }
 
 validate_workers <- function(workers) {

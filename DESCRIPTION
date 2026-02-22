@@ -24,7 +24,8 @@ Imports:
     pfvIO (>= 0.3.1)
 Suggests:
     bench (>= 1.1.0),
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr (>= 2.5.0)
 Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true

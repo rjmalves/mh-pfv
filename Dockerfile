@@ -1,42 +1,99 @@
-FROM rocker/tidyverse:4.5.2
+# syntax=docker/dockerfile:1
 
-# Labels for container metadata
-LABEL org.opencontainers.image.title="mhpfv"
-LABEL org.opencontainers.image.description="Consolidação de histórico de geração solar fotovoltaica"
-LABEL org.opencontainers.image.vendor="ONS - Operador Nacional do Sistema Elétrico"
-LABEL org.opencontainers.image.source="https://github.com/rjmalves/mh-pfv"
-LABEL org.opencontainers.image.licenses="MIT"
+# =============================================================================
+# Stage 1: Builder — installs build tools and restores all R packages via renv
+# =============================================================================
+FROM rocker/r-ver:4.5.2 AS builder
+
+ARG MHPFV_VERSION=0.1.1
+
+# ---- System build dependencies -----------------------------------------------
+# build-essential / cmake: compile packages with C/C++ code (arrow, data.table)
+# libcurl4-openssl-dev / libssl-dev: arrow HTTP/TLS support at build time
+# libxml2-dev: xml2 (transitive dep of some packages)
+# zlib1g-dev / libzstd-dev: ZSTD codec for arrow Parquet support
+# python3 / python3-dev: argparse R package delegates to Python at build time
+# git: renv needs git to install GitHub-sourced packages (pfvIO, dbinterface)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libxml2-dev \
+        zlib1g-dev \
+        libzstd-dev \
+        python3 \
+        python3-dev \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+# ARROW_WITH_ZSTD: ensures ZSTD codec is included when arrow compiles from source.
+# RENV_CONFIG_REPOS_OVERRIDE: routes CRAN packages through PPM for pre-built Linux binaries.
+ENV ARROW_WITH_ZSTD=ON \
+    RENV_CONFIG_REPOS_OVERRIDE="https://p3m.dev/cran/__linux__/noble/latest"
 
 WORKDIR /app
 
-# Copy package files first (for better layer caching)
-COPY DESCRIPTION DESCRIPTION
-COPY NAMESPACE NAMESPACE
-
-# Setup renv
-RUN mkdir -p renv/
-COPY renv.lock renv.lock
+# ---- renv bootstrap layer (invalidated only on lockfile or settings changes) --
+RUN mkdir -p renv
+COPY renv.lock       renv.lock
 COPY renv/activate.R renv/activate.R
 COPY renv/settings.json renv/settings.json
-COPY .Rprofile .Rprofile
+COPY .Rprofile       .Rprofile
 
-# Restore dependencies (cached layer if renv.lock unchanged)
-RUN R -e "renv::restore()"
+RUN R -e "renv::restore(confirm = FALSE)"
 
-# Copy R source code
-COPY R/ R/
+# ---- Package install layer (invalidated only on DESCRIPTION/R/ changes) -------
+COPY DESCRIPTION DESCRIPTION
+COPY NAMESPACE   NAMESPACE
+COPY R/          R/
+COPY main.r      main.r
+
+RUN R -e "remotes::install_local('.', dependencies = FALSE, upgrade = 'never')"
+
+# =============================================================================
+# Stage 2: Runtime — minimal image with only runtime libraries and entrypoint
+# =============================================================================
+FROM rocker/r-ver:4.5.2
+
+ARG MHPFV_VERSION=0.1.1
+
+LABEL org.opencontainers.image.title="mhpfv" \
+      org.opencontainers.image.description="Consolidação de histórico de geração solar fotovoltaica" \
+      org.opencontainers.image.vendor="ONS - Operador Nacional do Sistema Elétrico" \
+      org.opencontainers.image.source="https://github.com/rjmalves/mh-pfv" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.version="${MHPFV_VERSION}"
+
+# ---- Runtime system dependencies ---------------------------------------------
+# libcurl4-openssl-dev / libssl-dev: arrow C++ library needs these at runtime
+#   (missing causes segfault, not a clean R error)
+# libzstd-dev: ZSTD codec used by arrow for Parquet compression/decompression
+# python3: argparse R package shells out to Python's argparse module at runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libzstd-dev \
+        python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- Copy installed R library from builder -----------------------------------
+COPY --from=builder /usr/local/lib/R/site-library /usr/local/lib/R/site-library
+COPY --from=builder /usr/local/lib/R/library       /usr/local/lib/R/library
+
+# ---- Application code --------------------------------------------------------
+WORKDIR /app
 COPY main.r main.r
 
-# Install the package
-RUN R -e "install.packages('remotes')" && \
-    R -e "remotes::install_local('.', dependencies = FALSE, upgrade = 'never')"
+# ---- Runtime environment -----------------------------------------------------
+ENV LOG_LEVEL=info
+ENV MHPFV_PARALLEL=false
+ENV MHPFV_RESUME=false
+ENV MHPFV_WORKERS=
 
-# Health check - verify R and package load correctly
+# ---- Health check ------------------------------------------------------------
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD Rscript -e "library(mhpfv); cat('OK')" || exit 1
-
-# Default environment variables
-ENV LOG_LEVEL=info
 
 ENTRYPOINT ["Rscript", "main.r"]
 CMD ["--datadir", "/app/data"]
