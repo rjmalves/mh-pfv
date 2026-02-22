@@ -114,3 +114,36 @@ test_that("train_main writes valid provenance JSON", {
     expect_equal(parsed$n_plants, 2L)
     expect_equal(parsed$mode, "train")
 })
+
+test_that("train_main writes valid metrics JSON", {
+    skip_if_not(dir.exists(test_path("data")))
+    temp_artifact <- withr::local_tempdir()
+
+    conn <- conectamock_pfv(test_path("data"))
+    config <- gen_config(
+        mode = "train",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config$input <- test_path("data")
+    config$artifact <- temp_artifact
+    config <- parse_config(config, conn)
+
+    train_main(config)
+
+    metrics_files <- list.files(
+        temp_artifact, pattern = "^metrics-.*\\.json$", full.names = TRUE
+    )
+    expect_equal(length(metrics_files), 1L)
+
+    parsed <- jsonlite::fromJSON(metrics_files[1])
+    plants <- parsed$plants
+
+    for (plant_name in names(plants)) {
+        plant <- plants[[plant_name]]
+        expect_true(is.numeric(plant$duration_seconds))
+        expect_true(!is.null(plant$model_quality))
+        expect_true(!is.null(plant$model_quality$n_slots))
+        expect_true(!is.null(plant$model_quality$n_valid_slots))
+        expect_true(!is.null(plant$model_quality$mean_coefficient))
+    }
+})

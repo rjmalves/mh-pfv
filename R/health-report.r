@@ -1,0 +1,174 @@
+#' Constroi Relatorio de Saude do Pipeline
+#'
+#' Agrega dados de proveniencia e metricas em um relatorio estruturado com
+#' classificacao de saude por usina e do pipeline. Registra aviso se a
+#' proveniencia ainda estiver com status `"running"`.
+#'
+#' @param provenance lista de proveniencia finalizada por [finalize_provenance()]
+#' @param metrics lista de metricas finalizada por [finalize_metrics()], ou `NULL`
+#'
+#' @return lista com `run_id`, `mode`, `created_at`, `overall_health`,
+#'   `summary`, `plants`, `warnings` e `errors`
+build_health_report <- function(provenance, metrics = NULL) {
+    stopifnot(is.list(provenance))
+
+    lg <- lgr::get_logger("mhpfv")
+    if (provenance$status == "running") {
+        lg$warn("Relatorio de saude gerado com proveniencia nao finalizada")
+    }
+
+    plant_reports <- build_plant_reports(provenance, metrics)
+    plant_healths <- vapply(plant_reports, function(p) p$health, character(1L))
+
+    overall <- classify_overall_health(provenance, plant_healths)
+
+    list(
+        run_id = provenance$run_id,
+        mode = provenance$mode,
+        created_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+        overall_health = overall,
+        summary = list(
+            status = provenance$status,
+            duration_seconds = provenance$duration_seconds,
+            n_plants = provenance$n_plants,
+            n_plants_completed = sum(plant_healths != "failed"),
+            n_plants_failed = sum(plant_healths == "failed"),
+            n_plants_warning = sum(plant_healths == "warning"),
+            package_version = provenance$package_version,
+            config_hash = provenance$config_hash
+        ),
+        plants = plant_reports,
+        warnings = collect_warnings(plant_reports),
+        errors = collect_errors(plant_reports)
+    )
+}
+
+# Regras: "failed" se provenance != "completed"; "warning" se NA > 50% ou
+# menos da metade dos slots validos; "healthy" caso contrario.
+classify_plant_health <- function(provenance_status, plant_metrics) {
+    if (provenance_status != "completed") return("failed")
+
+    if (!is.null(plant_metrics$data_volume)) {
+        na_rate <- plant_metrics$data_volume$na_rate
+        if (!is.na(na_rate) && na_rate > 0.5) return("warning")
+    }
+
+    if (!is.null(plant_metrics$model_quality)) {
+        mq <- plant_metrics$model_quality
+        if (!is.null(mq$n_slots) && !is.null(mq$n_valid_slots)) {
+            if (mq$n_valid_slots < mq$n_slots * 0.5) return("warning")
+        }
+    }
+
+    "healthy"
+}
+
+classify_overall_health <- function(provenance, plant_healths) {
+    if (provenance$status == "failed") return("failed")
+    if (any(plant_healths == "failed")) return("failed")
+    if (any(plant_healths == "warning")) return("degraded")
+    "healthy"
+}
+
+#' Escreve Relatorio de Saude em JSON
+#'
+#' Serializa o relatorio como `health-{run_id}.json` no diretorio informado.
+#' Falhas de I/O geram apenas aviso no log e nunca interrompem o pipeline.
+#'
+#' @param report lista gerada por [build_health_report()]
+#' @param output_dir character, diretorio de saida
+#'
+#' @return caminho do arquivo escrito (invisivelmente)
+write_health_report <- function(report, output_dir) {
+    lg <- lgr::get_logger("mhpfv")
+    filename <- paste0("health-", report$run_id, ".json")
+    filepath <- file.path(output_dir, filename)
+
+    tryCatch({
+        if (!dir.exists(output_dir)) {
+            suppressWarnings(dir.create(output_dir, recursive = TRUE))
+        }
+        json_str <- jsonlite::toJSON(
+            report, pretty = TRUE, auto_unbox = TRUE, null = "null"
+        )
+        writeLines(json_str, filepath)
+        lg$info("Relatorio de saude escrito em: %s", filepath)
+    }, error = function(e) {
+        lg$warn(
+            "Falha ao escrever relatorio de saude em '%s': %s",
+            filepath, conditionMessage(e)
+        )
+    })
+
+    invisible(filepath)
+}
+
+build_plant_reports <- function(provenance, metrics) {
+    reports <- list()
+    for (iu in provenance$plant_ids) {
+        prov_status <- provenance$plant_status[[iu]]
+        if (is.null(prov_status)) prov_status <- "pending"
+
+        plant_metrics <- if (!is.null(metrics)) metrics$plants[[iu]] else NULL
+
+        data_quality <- NULL
+        if (!is.null(plant_metrics$data_volume)) {
+            data_quality <- list(
+                na_rate = plant_metrics$data_volume$na_rate,
+                n_rows = plant_metrics$data_volume$n_rows
+            )
+        }
+
+        model_quality <- plant_metrics$model_quality
+
+        reports[[iu]] <- list(
+            health = classify_plant_health(prov_status, plant_metrics),
+            provenance_status = prov_status,
+            duration_seconds = plant_metrics$duration_seconds,
+            data_quality = data_quality,
+            model_quality = model_quality
+        )
+    }
+    reports
+}
+
+collect_warnings <- function(plant_reports) {
+    warnings_list <- character(0L)
+    for (iu in names(plant_reports)) {
+        p <- plant_reports[[iu]]
+        if (p$health != "warning") next
+
+        if (!is.null(p$data_quality)) {
+            na_rate <- p$data_quality$na_rate
+            if (!is.na(na_rate) && na_rate > 0.5) {
+                warnings_list <- c(warnings_list, sprintf(
+                    "Usina %s: taxa de NA elevada (%.1f%%)", iu, na_rate * 100
+                ))
+            }
+        }
+
+        if (!is.null(p$model_quality)) {
+            mq <- p$model_quality
+            if (!is.null(mq$n_slots) && !is.null(mq$n_valid_slots) &&
+                mq$n_valid_slots < mq$n_slots * 0.5) {
+                warnings_list <- c(warnings_list, sprintf(
+                    "Usina %s: apenas %d de %d slots com coeficiente valido",
+                    iu, mq$n_valid_slots, mq$n_slots
+                ))
+            }
+        }
+    }
+    warnings_list
+}
+
+collect_errors <- function(plant_reports) {
+    errors_list <- character(0L)
+    for (iu in names(plant_reports)) {
+        if (plant_reports[[iu]]$health == "failed") {
+            errors_list <- c(errors_list, sprintf(
+                "Usina %s: processamento falhou", iu
+            ))
+        }
+    }
+    errors_list
+}

@@ -4,7 +4,7 @@
 
 This plan upgrades the mhpfv R package (v0.1.1) from its current state to enterprise-grade MLOps standards. The package, operated by ONS (Brazilian national power grid operator), consolidates historical solar photovoltaic generation data through a train/predict pipeline using linear regression models.
 
-The upgrade is organized into 6 epics covering quality, extensibility, performance, MLOps, infrastructure, and observability. Epics 1-4 are completed. Epic 5 tickets have been refined with learnings from Epics 1-4 and are ready for implementation. Epic 6 has outline tickets that will be refined after Epic 5.
+The upgrade is organized into 6 epics covering quality, extensibility, performance, MLOps, infrastructure, and observability. Epics 1-5 are completed. Epic 6 tickets have been refined with learnings from Epics 1-5 and are ready for implementation.
 
 ## Decision Log
 
@@ -27,8 +27,8 @@ The upgrade is organized into 6 epics covering quality, extensibility, performan
 | 02   | Extensibility Refactor          | 6       | completed | Detailed     |
 | 03   | Performance and Parallelization | 5       | completed | Refined      |
 | 04   | MLOps and Provenance            | 4       | completed | Refined      |
-| 05   | Infrastructure Hardening        | 3       | executing | Refined      |
-| 06   | Observability and Monitoring    | 3       | pending   | Outline      |
+| 05   | Infrastructure Hardening        | 3       | completed | Refined      |
+| 06   | Observability and Monitoring    | 3       | completed | Refined      |
 
 ## Dependency Graph
 
@@ -60,10 +60,10 @@ Epic 04: MLOps (completed)
     E04-T001 (artifact metadata) -----> E04-T002 (run provenance)
     E04-T002 (run provenance) --------> E04-T003 (pipeline resume)
 
-Epic 05: Infrastructure (refined, ready for execution)
+Epic 05: Infrastructure (completed)
     E05-T001, E05-T002, E05-T003 are largely independent
 
-Epic 06: Observability (outline)
+Epic 06: Observability (refined, ready for execution)
     E06-T001, E06-T002 --> E06-T003
 ```
 
@@ -107,7 +107,10 @@ All three Epic 05 tickets are independent and can be executed in parallel:
 - **Dev 2**: E05-T002 (CI quality gates)
 - **Dev 3**: E05-T003 (resource configuration)
 
-Then refine and execute Epic 06 outline tickets.
+Then execute Epic 06:
+
+- **Dev 1**: E06-T001 (structured logging) and E06-T002 (pipeline metrics) can run in parallel
+- **Dev 2**: E06-T003 (health report) after E06-T002 completes
 
 ## Ticket Status Tracking
 
@@ -139,6 +142,6 @@ Then refine and execute Epic 06 outline tickets.
 | E05-T001 | Optimize Docker image              | epic-05 | completed | Refined      |
 | E05-T002 | Enhance CI/CD quality gates        | epic-05 | completed | Refined      |
 | E05-T003 | Add resource configuration         | epic-05 | completed | Refined      |
-| E06-T001 | Enhance structured logging         | epic-06 | pending   | Outline      |
-| E06-T002 | Add pipeline metrics collection    | epic-06 | pending   | Outline      |
-| E06-T003 | Create pipeline health report      | epic-06 | pending   | Outline      |
+| E06-T001 | Enhance structured logging         | epic-06 | completed | Refined      |
+| E06-T002 | Add pipeline metrics collection    | epic-06 | completed | Refined      |
+| E06-T003 | Create pipeline health report      | epic-06 | completed | Refined      |

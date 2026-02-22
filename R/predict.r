@@ -37,6 +37,10 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
     parallel = FALSE, resume = FALSE) {
 
     provenance <- create_provenance(args, "predict", parallel)
+    metrics <- create_metrics(provenance$run_id, "predict")
+    set_log_context(provenance$run_id, "predict")
+    on.exit(clear_log_context(), add = TRUE)
+    lg <- lgr::get_logger("mhpfv")
     completed_plants <- character(0L)
 
     if (resume) {
@@ -60,6 +64,10 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
             provenance <- finalize_provenance(provenance, "failed")
         }
         write_provenance(provenance, args$output)
+        metrics <- finalize_metrics(metrics)
+        write_metrics(metrics, args$output)
+        report <- build_health_report(provenance, metrics)
+        write_health_report(report, args$output)
     }, add = TRUE)
 
     conn <- conectamock_pfv(args$input)
@@ -92,16 +100,40 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
         if (parallel) {
             old_plan <- setup_parallel_plan()
             on.exit(reset_parallel_plan(old_plan), add = TRUE)
+            batch_start <- proc.time()[["elapsed"]]
             resultados_new <- do.call(future.apply::future_lapply,
                 c(apply_args, list(future.seed = TRUE)))
+            batch_elapsed <- proc.time()[["elapsed"]] - batch_start
+            est_per_plant <- round(batch_elapsed / length(v_usinas_pending), 2L)
+            for (iu in v_usinas_pending) {
+                metrics <- record_plant_timing(metrics, iu, est_per_plant)
+            }
         } else {
-            resultados_new <- do.call(lapply, apply_args)
+            extra_args <- apply_args[-(1L:2L)]
+            resultados_new <- lapply(v_usinas_pending, function(iu) {
+                t0 <- proc.time()[["elapsed"]]
+                result <- do.call(processar_usina, c(list(iu), extra_args))
+                # <<- necessario para atualizar metrics no escopo da funcao pai
+                metrics <<- record_plant_timing(
+                    metrics, iu, round(proc.time()[["elapsed"]] - t0, 2L)
+                )
+                result
+            })
         }
 
+        n_total <- length(v_usinas_pending)
         for (i in seq_along(v_usinas_pending)) {
+            result <- resultados_new[[i]]
+            n_rows <- nrow(result$com_cortes)
+            n_na <- sum(is.na(result$com_cortes$valor))
+            n_total_vals <- length(result$com_cortes$valor)
+            metrics <- record_plant_data_volume(
+                metrics, v_usinas_pending[i],
+                as.numeric(n_rows), as.numeric(n_na), as.numeric(n_total_vals)
+            )
             if (resume) {
                 write_plant_result(
-                    resultados_new[[i]], v_usinas_pending[i], args$output
+                    result, v_usinas_pending[i], args$output
                 )
             }
             # <<- necessario para atualizar provenance no escopo da funcao pai
@@ -109,6 +141,7 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
                 provenance, v_usinas_pending[i], "completed"
             )
             if (resume) write_checkpoint(provenance, args$output)
+            lg$info("Usina %s concluida (%d/%d)", v_usinas_pending[i], i, n_total)
         }
     }
 

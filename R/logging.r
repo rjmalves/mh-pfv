@@ -1,15 +1,32 @@
+get_ctx_filter_name <- function() "mhpfv_ctx"
+
+configure_json_logging <- function(lg) {
+    fmt <- Sys.getenv("MHPFV_LOG_FORMAT", unset = "")
+    if (tolower(trimws(fmt)) != "json") return(invisible(NULL))
+
+    tryCatch({
+        lg$appenders$console$set_layout(LayoutJson$new())
+    }, error = function(e) {
+        warning(
+            "Falha ao configurar log JSON: ", conditionMessage(e),
+            call. = FALSE
+        )
+    })
+
+    invisible(NULL)
+}
+
 logger_setup <- function() {
     lg <- get_logger()
     lg$set_threshold(Sys.getenv("LOG_LEVEL", unset = "info"))
     layout <- LayoutFormat$new(timestamp_fmt = "%Y-%m-%d %H:%M:%S")
     lg$appenders$console$set_layout(layout)
+    configure_json_logging(lg)
 
     lg
 }
 
 #' Getter Do Objeto Logger
-#'
-#' Funcao auxiliar para acesso do logger do pacote
 #'
 #' @return objeto `Logger` como retornado por `lgr::get_logger()`
 #'
@@ -17,4 +34,54 @@ logger_setup <- function() {
 
 get_pkg_logger <- function() {
     get("lg", envir = asNamespace("mhpfv"))
+}
+
+#' Define Contexto Estruturado no Logger
+#'
+#' Injeta campos `run_id`, `mode` e `stage` (opcional) em todos os eventos
+#' de log subsequentes via `lgr::FilterInject`. Substitui filtro existente
+#' de mesmo nome, se houver.
+#'
+#' @param run_id character escalar, identificador unico da execucao
+#' @param mode character escalar, `"train"` ou `"predict"`
+#' @param stage character escalar ou `NULL`
+#'
+#' @return `invisible(NULL)`
+#'
+#' @seealso [clear_log_context()]
+
+set_log_context <- function(run_id, mode, stage = NULL) {
+    lg <- lgr::get_logger("mhpfv")
+    ctx_name <- get_ctx_filter_name()
+
+    if (ctx_name %in% names(lg$filters)) {
+        lg$remove_filter(ctx_name)
+    }
+
+    fields <- list(run_id = run_id, mode = mode)
+    if (!is.null(stage)) fields$stage <- stage
+
+    fi <- do.call(lgr::FilterInject$new, fields)
+    lg$add_filter(fi, name = ctx_name)
+
+    invisible(NULL)
+}
+
+#' Remove Contexto Estruturado do Logger
+#'
+#' Remove o filtro `"mhpfv_ctx"` do logger. No-op se o filtro nao existir.
+#'
+#' @return `invisible(NULL)`
+#'
+#' @seealso [set_log_context()]
+
+clear_log_context <- function() {
+    lg <- lgr::get_logger("mhpfv")
+    ctx_name <- get_ctx_filter_name()
+
+    if (ctx_name %in% names(lg$filters)) {
+        lg$remove_filter(ctx_name)
+    }
+
+    invisible(NULL)
 }

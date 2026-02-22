@@ -103,6 +103,18 @@ cli_main <- function(datadir = "./data", parallel = FALSE, resume = FALSE,
         workers <- NULL
     }
 
+    lg$info(
+        paste0(
+            "Parametros resolvidos: parallel=%s, resume=%s, workers=%s | ",
+            "ENV: MHPFV_PARALLEL='%s', MHPFV_RESUME='%s', MHPFV_WORKERS='%s'"
+        ),
+        parallel, resume,
+        if (is.null(workers)) "auto" else workers,
+        Sys.getenv("MHPFV_PARALLEL", unset = ""),
+        Sys.getenv("MHPFV_RESUME", unset = ""),
+        Sys.getenv("MHPFV_WORKERS", unset = "")
+    )
+
     conn <- conectamock_pfv(datadir)
     config <- get_config(conn)
     config <- parse_config(config, conn)

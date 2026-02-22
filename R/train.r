@@ -39,6 +39,10 @@ train_main <- function(args, strategy = linear_regression_strategy(),
     parallel = FALSE, resume = FALSE) {
 
     provenance <- create_provenance(args, "train", parallel)
+    metrics <- create_metrics(provenance$run_id, "train")
+    set_log_context(provenance$run_id, "train")
+    on.exit(clear_log_context(), add = TRUE)
+    lg <- lgr::get_logger("mhpfv")
     completed_plants <- character(0L)
 
     if (resume) {
@@ -59,6 +63,10 @@ train_main <- function(args, strategy = linear_regression_strategy(),
             provenance <- finalize_provenance(provenance, "failed")
         }
         write_provenance(provenance, args$artifact)
+        metrics <- finalize_metrics(metrics)
+        write_metrics(metrics, args$artifact)
+        report <- build_health_report(provenance, metrics)
+        write_health_report(report, args$artifact)
     }, add = TRUE)
 
     v_usinas <- setdiff(args$ids_usinas, completed_plants)
@@ -81,6 +89,7 @@ train_main <- function(args, strategy = linear_regression_strategy(),
     if (parallel) {
         old_plan <- setup_parallel_plan()
         on.exit(reset_parallel_plan(old_plan), add = TRUE)
+        batch_start <- proc.time()[["elapsed"]]
         models <- future.apply::future_lapply(v_usinas, ajustar_usina,
             dt_usinas = dt_usinas,
             dt_ger_obs = dataset$ger_obs,
@@ -92,26 +101,46 @@ train_main <- function(args, strategy = linear_regression_strategy(),
             config = args,
             future.seed = TRUE
         )
+        batch_elapsed <- proc.time()[["elapsed"]] - batch_start
+        est_per_plant <- round(batch_elapsed / length(v_usinas), 2L)
+        for (iu in v_usinas) {
+            metrics <- record_plant_timing(metrics, iu, est_per_plant)
+        }
     } else {
-        models <- lapply(v_usinas, ajustar_usina,
-            dt_usinas = dt_usinas,
-            dt_ger_obs = dataset$ger_obs,
-            dt_irrad_prev_filt = dt_irrad_prev_filt,
-            dt_corte_obs = dataset$corte,
-            fonte = args$ordem_prioridade_fontes,
-            fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
-            strategy = strategy,
-            config = args
-        )
+        models <- lapply(v_usinas, function(iu) {
+            t0 <- proc.time()[["elapsed"]]
+            result <- ajustar_usina(iu,
+                dt_usinas = dt_usinas,
+                dt_ger_obs = dataset$ger_obs,
+                dt_irrad_prev_filt = dt_irrad_prev_filt,
+                dt_corte_obs = dataset$corte,
+                fonte = args$ordem_prioridade_fontes,
+                fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+                strategy = strategy,
+                config = args
+            )
+            # <<- necessario para atualizar metrics no escopo da funcao pai
+            metrics <<- record_plant_timing(
+                metrics, iu, round(proc.time()[["elapsed"]] - t0, 2L)
+            )
+            result
+        })
     }
 
+    n_total <- length(v_usinas)
     lapply(seq_along(v_usinas), function(i) {
         write_model_artifact(models[[i]], v_usinas[i], args$artifact)
-        # <<- necessario para atualizar provenance no escopo da funcao pai
+        # <<- necessario para atualizar provenance e metrics no escopo pai
         provenance <<- update_plant_status(
             provenance, v_usinas[i], "completed"
         )
+        if ("metadata" %in% names(models[[i]])) {
+            metrics <<- record_model_quality(
+                metrics, v_usinas[i], models[[i]]$metadata
+            )
+        }
         if (resume) write_checkpoint(provenance, args$artifact)
+        lg$info("Usina %s concluida (%d/%d)", v_usinas[i], i, n_total)
     })
 
     provenance <- finalize_provenance(provenance, "completed")

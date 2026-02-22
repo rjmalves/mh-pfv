@@ -256,3 +256,48 @@ test_that("predict_main writes valid provenance JSON", {
     expect_equal(parsed$n_plants, 2L)
     expect_equal(parsed$mode, "predict")
 })
+
+test_that("predict_main writes valid metrics JSON", {
+    skip_if_not(dir.exists(test_path("data")))
+    temp_artifact <- withr::local_tempdir()
+    temp_output <- withr::local_tempdir()
+
+    conn <- conectamock_pfv(test_path("data"))
+    config_train <- gen_config(
+        mode = "train",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_train$input <- test_path("data")
+    config_train$artifact <- temp_artifact
+    config_train <- parse_config(config_train, conn)
+
+    train_main(config_train)
+
+    config_predict <- gen_config(
+        mode = "predict",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_predict$input <- test_path("data")
+    config_predict$artifact <- temp_artifact
+    config_predict$output <- temp_output
+    config_predict <- parse_config(config_predict, conn)
+
+    predict_main(config_predict)
+
+    metrics_files <- list.files(
+        temp_output, pattern = "^metrics-.*\\.json$", full.names = TRUE
+    )
+    expect_equal(length(metrics_files), 1L)
+
+    parsed <- jsonlite::fromJSON(metrics_files[1])
+    plants <- parsed$plants
+
+    for (plant_name in names(plants)) {
+        plant <- plants[[plant_name]]
+        expect_true(is.numeric(plant$duration_seconds))
+        expect_true(!is.null(plant$data_volume))
+        expect_true(!is.null(plant$data_volume$n_rows))
+        expect_true(!is.null(plant$data_volume$n_na))
+        expect_true(!is.null(plant$data_volume$na_rate))
+    }
+})
