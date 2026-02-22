@@ -41,7 +41,6 @@ train_main <- function(args, strategy = linear_regression_strategy(),
     provenance <- create_provenance(args, "train", parallel)
     metrics <- create_metrics(provenance$run_id, "train")
     set_log_context(provenance$run_id, "train")
-    on.exit(clear_log_context(), add = TRUE)
     lg <- lgr::get_logger("mhpfv")
     completed_plants <- character(0L)
 
@@ -67,6 +66,7 @@ train_main <- function(args, strategy = linear_regression_strategy(),
         write_metrics(metrics, args$artifact)
         report <- build_health_report(provenance, metrics)
         write_health_report(report, args$artifact)
+        clear_log_context()
     }, add = TRUE)
 
     v_usinas <- setdiff(args$ids_usinas, completed_plants)

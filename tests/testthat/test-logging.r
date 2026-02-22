@@ -7,6 +7,16 @@ test_that("logger_setup", {
         expect_true(inherits(lg, "Logger"))
     })
 
+    test_that("logger_setup retorna o logger mhpfv nao o root", {
+        lg <- f()
+        expect_equal(lg$name, "mhpfv")
+    })
+
+    test_that("logger_setup desativa propagacao para o root", {
+        lg <- f()
+        expect_false(lg$propagate)
+    })
+
     test_that("logger_setup usa threshold info por padrao", {
         withr::local_envvar(LOG_LEVEL = NA)
         lg <- f()
@@ -25,6 +35,11 @@ test_that("logger_setup", {
         expect_equal(lg$threshold, 300L)
     })
 
+    test_that("logger_setup configura appender console nomeado no logger mhpfv", {
+        lg <- f()
+        expect_true("console" %in% names(lg$appenders))
+    })
+
     test_that("logger_setup configura layout LayoutFormat por padrao", {
         withr::local_envvar(MHPFV_LOG_FORMAT = NA)
         lg <- f()
@@ -32,14 +47,14 @@ test_that("logger_setup", {
         expect_true(inherits(layout, "LayoutFormat"))
     })
 
-    test_that("logger_setup configura layout LayoutJson quando MHPFV_LOG_FORMAT=json", {
-        root <- lgr::get_logger()
-        original_layout <- root$appenders$console$layout
-        withr::defer(root$appenders$console$set_layout(original_layout))
+    test_that("logger_setup configura layout LayoutJson no logger mhpfv quando MHPFV_LOG_FORMAT=json", {
+        mhpfv_lg <- lgr::get_logger("mhpfv")
+        original_layout <- mhpfv_lg$appenders$console$layout
+        withr::defer(mhpfv_lg$appenders$console$set_layout(original_layout))
 
         withr::local_envvar(MHPFV_LOG_FORMAT = "json")
         f()
-        expect_true(inherits(root$appenders$console$layout, "LayoutJson"))
+        expect_true(inherits(mhpfv_lg$appenders$console$layout, "LayoutJson"))
     })
 })
 

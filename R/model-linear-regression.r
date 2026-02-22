@@ -91,7 +91,7 @@ model_metadata.linear_regression <- function(strategy, model, ...) {
         type = "linear_regression",
         n_slots = nrow(model),
         n_valid_slots = length(valid_a),
-        mean_coefficient = mean(valid_a),
+        mean_coefficient = if (length(valid_a) > 0L) mean(valid_a) else NA_real_,
         timestamp = Sys.time()
     )
 }

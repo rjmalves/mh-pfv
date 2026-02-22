@@ -39,7 +39,6 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
     provenance <- create_provenance(args, "predict", parallel)
     metrics <- create_metrics(provenance$run_id, "predict")
     set_log_context(provenance$run_id, "predict")
-    on.exit(clear_log_context(), add = TRUE)
     lg <- lgr::get_logger("mhpfv")
     completed_plants <- character(0L)
 
@@ -68,6 +67,7 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
         write_metrics(metrics, args$output)
         report <- build_health_report(provenance, metrics)
         write_health_report(report, args$output)
+        clear_log_context()
     }, add = TRUE)
 
     conn <- conectamock_pfv(args$input)

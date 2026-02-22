@@ -295,4 +295,20 @@ test_that("model_metadata.linear_regression", {
         expect_error(f(s, list(a = 1:3)))
         expect_error(f(s, "not a data.frame"))
     })
+
+    test_that("BUG FIX: model_metadata.linear_regression retorna NA_real_ quando todos coeficientes sao NA", {
+        model <- data.frame(
+            a = c(NA_real_, NA_real_, NA_real_),
+            b = rep(0, 3),
+            row.names = c("06:00", "06:30", "07:00")
+        )
+        s <- linear_regression_strategy()
+
+        meta <- f(s, model)
+
+        expect_equal(meta$n_slots, 3L)
+        expect_equal(meta$n_valid_slots, 0L)
+        expect_true(is.na(meta$mean_coefficient))
+        expect_false(is.nan(meta$mean_coefficient))
+    })
 })

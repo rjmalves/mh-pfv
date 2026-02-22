@@ -17,10 +17,15 @@ configure_json_logging <- function(lg) {
 }
 
 logger_setup <- function() {
-    lg <- get_logger()
+    lg <- lgr::get_logger("mhpfv")
     lg$set_threshold(Sys.getenv("LOG_LEVEL", unset = "info"))
-    layout <- LayoutFormat$new(timestamp_fmt = "%Y-%m-%d %H:%M:%S")
-    lg$appenders$console$set_layout(layout)
+    lg$set_propagate(FALSE)
+    lg$add_appender(
+        lgr::AppenderConsole$new(
+            layout = LayoutFormat$new(timestamp_fmt = "%Y-%m-%d %H:%M:%S")
+        ),
+        name = "console"
+    )
     configure_json_logging(lg)
 
     lg

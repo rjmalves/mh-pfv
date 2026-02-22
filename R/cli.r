@@ -103,6 +103,10 @@ cli_main <- function(datadir = "./data", parallel = FALSE, resume = FALSE,
         workers <- NULL
     }
 
+    if (!is.null(workers)) {
+        Sys.setenv(MHPFV_WORKERS = as.character(workers))
+    }
+
     lg$info(
         paste0(
             "Parametros resolvidos: parallel=%s, resume=%s, workers=%s | ",

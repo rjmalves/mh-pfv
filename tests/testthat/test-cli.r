@@ -197,6 +197,38 @@ test_that("cli_main", {
         expect_no_error(f(datadir = "./data", parallel = FALSE, workers = 4L))
     })
 
+    test_that("cli_main define MHPFV_WORKERS quando parallel=TRUE e workers e fornecido", {
+        withr::local_envvar(MHPFV_PARALLEL = NA, MHPFV_RESUME = NA, MHPFV_WORKERS = NA)
+        workers_env_capturado <- NULL
+        local_mocked_bindings(
+            conectamock_pfv = function(...) list(),
+            get_config = function(...) list(),
+            parse_config = function(...) list(mode = "train"),
+            train_main = function(config, parallel = FALSE, resume = FALSE, ...) {
+                workers_env_capturado <<- Sys.getenv("MHPFV_WORKERS", unset = "")
+            },
+            .package = "mhpfv"
+        )
+        f(datadir = "./data", parallel = TRUE, workers = 4L)
+        expect_equal(workers_env_capturado, "4")
+    })
+
+    test_that("cli_main nao define MHPFV_WORKERS quando workers e NULL", {
+        withr::local_envvar(MHPFV_PARALLEL = NA, MHPFV_RESUME = NA, MHPFV_WORKERS = NA)
+        workers_env_capturado <- NULL
+        local_mocked_bindings(
+            conectamock_pfv = function(...) list(),
+            get_config = function(...) list(),
+            parse_config = function(...) list(mode = "train"),
+            train_main = function(config, parallel = FALSE, resume = FALSE, ...) {
+                workers_env_capturado <<- Sys.getenv("MHPFV_WORKERS", unset = "UNSET")
+            },
+            .package = "mhpfv"
+        )
+        f(datadir = "./data", parallel = TRUE, workers = NULL)
+        expect_equal(workers_env_capturado, "UNSET")
+    })
+
     test_that("cli_main passa parallel e resume para predict_main", {
         withr::local_envvar(MHPFV_PARALLEL = NA, MHPFV_RESUME = NA)
         parallel_recebido <- NULL
