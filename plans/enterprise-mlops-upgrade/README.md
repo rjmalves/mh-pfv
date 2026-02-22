@@ -4,7 +4,7 @@
 
 This plan upgrades the mhpfv R package (v0.1.1) from its current state to enterprise-grade MLOps standards. The package, operated by ONS (Brazilian national power grid operator), consolidates historical solar photovoltaic generation data through a train/predict pipeline using linear regression models.
 
-The upgrade is organized into 6 epics covering quality, extensibility, performance, MLOps, infrastructure, and observability. Epics 1-3 are completed. Epics 4-6 have outline tickets that will be refined with learnings from earlier epics.
+The upgrade is organized into 6 epics covering quality, extensibility, performance, MLOps, infrastructure, and observability. Epics 1-3 are completed. Epic 4 tickets have been refined with learnings from Epics 1-3 and are ready for implementation. Epics 5-6 have outline tickets that will be refined after Epic 4.
 
 ## Decision Log
 
@@ -26,7 +26,7 @@ The upgrade is organized into 6 epics covering quality, extensibility, performan
 | 01   | Quality Foundation              | 8       | completed | Detailed     |
 | 02   | Extensibility Refactor          | 6       | completed | Detailed     |
 | 03   | Performance and Parallelization | 5       | completed | Refined      |
-| 04   | MLOps and Provenance            | 4       | pending   | Outline      |
+| 04   | MLOps and Provenance            | 4       | executing | Refined      |
 | 05   | Infrastructure Hardening        | 3       | pending   | Outline      |
 | 06   | Observability and Monitoring    | 3       | pending   | Outline      |
 
@@ -51,13 +51,14 @@ Epic 02: Extensibility Refactor
     E02-T005 (validation) ------------> E02-T006
     E02-T006 (strategy tests) --------> (none)
 
-Epic 03: Performance (refined)
+Epic 03: Performance (completed)
     E03-T001 --> E03-T002 --> E03-T003 --> E03-T005
     E03-T004 (cache) is independent
 
-Epic 04: MLOps (outline)
-    E04-T001 --> E04-T004
-    E04-T002 --> E04-T003
+Epic 04: MLOps (refined, ready for execution)
+    E04-T001 (artifact metadata) -----> E04-T004 (model comparison)
+    E04-T001 (artifact metadata) -----> E04-T002 (run provenance)
+    E04-T002 (run provenance) --------> E04-T003 (pipeline resume)
 
 Epic 05: Infrastructure (outline)
     E05-T001, E05-T002, E05-T003 are largely independent
@@ -91,9 +92,16 @@ Sequential parallelization chain, with cache in parallel:
 - **Dev 1**: E03-T001 -> E03-T002 -> E03-T003 -> E03-T005 (parallel infrastructure chain)
 - **Dev 2**: E03-T004 (cache haversine, independent)
 
-### Phase D (Weeks 7-11): Epics 4-6
+### Phase D (Weeks 7-9): MLOps and Provenance -- Epic 04
 
-Refine outline tickets using learnings from Epics 1-3, then execute.
+Two parallel chains:
+
+- **Dev 1**: E04-T001 (artifact metadata) -> E04-T004 (model comparison)
+- **Dev 2**: E04-T001 (must wait) -> E04-T002 (run provenance) -> E04-T003 (pipeline resume)
+
+### Phase E (Weeks 9-11): Epics 5-6
+
+Refine outline tickets using learnings from Epics 1-4, then execute.
 
 ## Ticket Status Tracking
 
@@ -118,10 +126,10 @@ Refine outline tickets using learnings from Epics 1-3, then execute.
 | E03-T003 | Parallelize predict_main           | epic-03 | completed | Refined      |
 | E03-T004 | Cache Haversine distances          | epic-03 | completed | Refined      |
 | E03-T005 | Add benchmarking infrastructure    | epic-03 | completed | Refined      |
-| E04-T001 | Enrich artifacts with metadata     | epic-04 | pending   | Outline      |
-| E04-T002 | Add run provenance tracking        | epic-04 | pending   | Outline      |
-| E04-T003 | Implement pipeline resume          | epic-04 | pending   | Outline      |
-| E04-T004 | Add model comparison utilities     | epic-04 | pending   | Outline      |
+| E04-T001 | Enrich artifacts with metadata     | epic-04 | completed | Refined      |
+| E04-T002 | Add run provenance tracking        | epic-04 | completed | Refined      |
+| E04-T003 | Implement pipeline resume          | epic-04 | completed | Refined      |
+| E04-T004 | Add model comparison utilities     | epic-04 | completed | Refined      |
 | E05-T001 | Optimize Docker image              | epic-05 | pending   | Outline      |
 | E05-T002 | Enhance CI/CD quality gates        | epic-05 | pending   | Outline      |
 | E05-T003 | Add resource configuration         | epic-05 | pending   | Outline      |

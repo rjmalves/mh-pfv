@@ -4,7 +4,12 @@
 \alias{predict_main}
 \title{Funcao Principal de Consolidacao dos dados}
 \usage{
-predict_main(args, strategy = linear_regression_strategy(), parallel = FALSE)
+predict_main(
+  args,
+  strategy = linear_regression_strategy(),
+  parallel = FALSE,
+  resume = FALSE
+)
 }
 \arguments{
 \item{args}{Lista de argumentos necessarios para o processamento. Os campos esperados sao:
@@ -33,6 +38,10 @@ comportamento identico ao original.}
 
 \item{parallel}{logico, se \code{TRUE} usa \code{future_lapply} para processar
 usinas em paralelo. Padrao \code{FALSE} para compatibilidade.}
+
+\item{resume}{logico, se \code{TRUE} busca um checkpoint valido no diretorio
+de saida e reprocessa apenas as usinas pendentes. Resultados intermediarios
+de usinas concluidas sao carregados do disco. Padrao \code{FALSE}.}
 }
 \value{
 Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos
@@ -53,5 +62,6 @@ A funcao executa o fluxo completo para cada usina:
 }
 \seealso{
 \code{\link[=organiza_resultados]{organiza_resultados()}}, \code{\link[=write_melhor_historico_geracao]{write_melhor_historico_geracao()}},
-\code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, \code{\link[=setup_parallel_plan]{setup_parallel_plan()}}
+\code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, \code{\link[=setup_parallel_plan]{setup_parallel_plan()}},
+\code{\link[=write_checkpoint]{write_checkpoint()}}, \code{\link[=read_checkpoint]{read_checkpoint()}}, \code{\link[=write_plant_result]{write_plant_result()}}
 }

@@ -3,87 +3,126 @@
 #' Executa o processamento completo de consistencia dos dados observados para um conjunto de usinas,
 #' considerando diferentes fontes e modelos em ordem de prioridade.
 #'
-#' @param args Lista de argumentos necessarios para o processamento. Os campos esperados sao:
-#' \itemize{
-#'   \item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-#'   \item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd",
-#'                             indicando o inicio do periodo de analise.
-#'   \item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
-#'   \item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia
-#'                                                          aplicado ao limite superior de geracao observada.
-#'   \item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas
-#'                            disponiveis serao utilizadas.
-#'   \item \code{input}: caminho para a pasta onde estao localizados os dados de entrada
-#'                       (ex: dados de SCADA, modelos NWP, cortes, etc.).
-#'   \item \code{mode}: string que define o modo de operacao. Deve ser "predict" para rodar o fluxo de consistencia.
-#'   \item \code{ordem_prioridade_fontes}: string com os nomes das fontes de dados separados por virgula,
-#'                                         indicando a ordem de prioridade para uso dos dados historicos.
-#'   \item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula,
-#'                                             em ordem de prioridade.
-#'   \item \code{output}: caminho para a pasta onde os arquivos de saida serao escritos.
-#' }
-#'
-#' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos
-#'         na pasta de saida especificada.
-#'
-#' @details
-#' A funcao executa o fluxo completo para cada usina:
-#' \enumerate{
-#'   \item Leitura da configuracao e dados de entrada (usinas, geracao observada, modelos NWP, cortes, etc).
-#'   \item Aplicacao da funcao \code{processar_usina} para cada usina de forma individual.
-#'   \item Organizacao dos resultados com e sem consideracao de cortes.
-#'   \item Escrita dos melhores historicos de geracao observada nos formatos de saida esperados.
-#' }
-#'
+#' @param args lista de argumentos necessarios para o processamento. Os campos
+#'   esperados sao:
+#'   - `artifact`: caminho onde artefatos adicionais serao armazenados.
+#'   - `data_inicio`: string com a data inicial no formato `"yyyy-mm-dd"`.
+#'   - `data_fim`: string com a data final no formato `"yyyy-mm-dd"`.
+#'   - `fator_tolerancia_limite_superior_geracao`: fator de tolerancia aplicado
+#'     ao limite superior de geracao observada.
+#'   - `ids_usinas`: vetor com os IDs das usinas a serem processadas.
+#'   - `input`: caminho para os dados de entrada (SCADA, NWP, cortes, etc.).
+#'   - `mode`: deve ser `"predict"`.
+#'   - `ordem_prioridade_fontes`: fontes de dados em ordem de prioridade.
+#'   - `ordem_prioridade_modelosNWP`: modelos NWP em ordem de prioridade.
+#'   - `output`: caminho para a pasta de saida.
 #' @param strategy objeto [new_model_strategy()] definindo o tipo de modelo a
 #'   usar na previsao. Por padrao usa [linear_regression_strategy()], mantendo
 #'   comportamento identico ao original.
 #' @param parallel logico, se `TRUE` usa `future_lapply` para processar
 #'   usinas em paralelo. Padrao `FALSE` para compatibilidade.
+#' @param resume logico, se `TRUE` busca um checkpoint valido no diretorio
+#'   de saida e reprocessa apenas as usinas pendentes. Resultados intermediarios
+#'   de usinas concluidas sao carregados do disco. Padrao `FALSE`.
+#'
+#' @return Nenhum valor e retornado. Os resultados sao gravados em arquivos na
+#'   pasta de saida especificada.
 #'
 #' @seealso [organiza_resultados()], [write_melhor_historico_geracao()],
-#'   [linear_regression_strategy()], [setup_parallel_plan()]
+#'   [linear_regression_strategy()], [setup_parallel_plan()],
+#'   [write_checkpoint()], [read_checkpoint()], [write_plant_result()]
 #'
 #' @export
-
 predict_main <- function(args, strategy = linear_regression_strategy(),
-    parallel = FALSE) {
+    parallel = FALSE, resume = FALSE) {
+
+    provenance <- create_provenance(args, "predict", parallel)
+    completed_plants <- character(0L)
+
+    if (resume) {
+        checkpoint <- read_checkpoint(args$output, args)
+        if (!is.null(checkpoint)) {
+            candidate_completed <- setdiff(
+                args$ids_usinas,
+                get_pending_plants(checkpoint)
+            )
+            completed_plants <- Filter(function(iu) {
+                !is.null(read_plant_result(iu, args$output))
+            }, candidate_completed)
+            for (iu in completed_plants) {
+                provenance <- update_plant_status(provenance, iu, "completed")
+            }
+        }
+    }
+
+    on.exit({
+        if (provenance$status == "running") {
+            provenance <- finalize_provenance(provenance, "failed")
+        }
+        write_provenance(provenance, args$output)
+    }, add = TRUE)
 
     conn <- conectamock_pfv(args$input)
 
-    v_usinas <- args$ids_usinas
-    dt_usinas <- get_usinas(conn, id_usina = v_usinas)
+    dt_usinas <- get_usinas(conn, id_usina = args$ids_usinas)
 
     dataset <- get_dataset(args, conn)
 
     dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dataset$irrad_prev)
     dt_irrad_prev_filt <- adicionar_passo_previsao(dt_irrad_prev_filt)
 
-    apply_args <- list(v_usinas, processar_usina,
-        dt_usinas = dt_usinas,
-        dt_ger_obs = dataset$ger_obs,
-        dt_mhg = dataset$mhg,
-        dt_mhg_sem_cortes = dataset$mhg_sem_cortes,
-        dt_irrad_prev_filt = dt_irrad_prev_filt,
-        dt_corte_obs = dataset$corte,
-        fonte = args$ordem_prioridade_fontes,
-        fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
-        artifact_dir = args$artifact,
-        strategy = strategy
-    )
+    v_usinas_pending <- setdiff(args$ids_usinas, completed_plants)
 
-    if (parallel) {
-        old_plan <- setup_parallel_plan()
-        on.exit(reset_parallel_plan(old_plan), add = TRUE)
-        resultados <- do.call(future.apply::future_lapply,
-            c(apply_args, list(future.seed = TRUE)))
-    } else {
-        resultados <- do.call(lapply, apply_args)
+    resultados_new <- list()
+
+    if (length(v_usinas_pending) > 0L) {
+        apply_args <- list(v_usinas_pending, processar_usina,
+            dt_usinas = dt_usinas,
+            dt_ger_obs = dataset$ger_obs,
+            dt_mhg = dataset$mhg,
+            dt_mhg_sem_cortes = dataset$mhg_sem_cortes,
+            dt_irrad_prev_filt = dt_irrad_prev_filt,
+            dt_corte_obs = dataset$corte,
+            fonte = args$ordem_prioridade_fontes,
+            fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+            artifact_dir = args$artifact,
+            strategy = strategy
+        )
+
+        if (parallel) {
+            old_plan <- setup_parallel_plan()
+            on.exit(reset_parallel_plan(old_plan), add = TRUE)
+            resultados_new <- do.call(future.apply::future_lapply,
+                c(apply_args, list(future.seed = TRUE)))
+        } else {
+            resultados_new <- do.call(lapply, apply_args)
+        }
+
+        for (i in seq_along(v_usinas_pending)) {
+            if (resume) {
+                write_plant_result(
+                    resultados_new[[i]], v_usinas_pending[i], args$output
+                )
+            }
+            # <<- necessario para atualizar provenance no escopo da funcao pai
+            provenance <<- update_plant_status(
+                provenance, v_usinas_pending[i], "completed"
+            )
+            if (resume) write_checkpoint(provenance, args$output)
+        }
     }
+
+    resultados <- lapply(args$ids_usinas, function(iu) {
+        if (iu %in% v_usinas_pending) {
+            resultados_new[[match(iu, v_usinas_pending)]]
+        } else {
+            read_plant_result(iu, args$output)
+        }
+    })
 
     resultados_organizados <- organiza_resultados(
         resultados = resultados,
-        v_usinas = v_usinas
+        v_usinas = args$ids_usinas
     )
 
     geracao_usina_preenchida_com_cortes <- coloca_na_antes_inicio(
@@ -105,6 +144,9 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
         dt = geracao_usina_preenchida_sem_cortes,
         output_dir = args$output
     )
+
+    provenance <- finalize_provenance(provenance, "completed")
+    if (resume) cleanup_checkpoint(args$output)
 }
 
 get_dataset <- function(args, conn) {
@@ -200,32 +242,6 @@ processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg,
     )
 }
 
-
-#' Organiza Resultados de Previsao por Usina
-#'
-#' Agrupa os resultados processados individualmente por usina em dois data.tables:
-#' um com consideracao de cortes e outro sem.
-#'
-#' @param resultados Lista contendo, para cada usina, um sub-lista com dois elementos:
-#'   \itemize{
-#'     \item \code{com_cortes}: data.table com os dados considerando os efeitos de corte.
-#'     \item \code{sem_cortes}: data.table com os dados sem considerar os cortes.
-#'   }
-#' @param v_usinas Vetor de caracteres com os IDs das usinas, na mesma ordem da lista \code{resultados}.
-#'
-#' @return Uma lista com dois data.tables:
-#'   \itemize{
-#'     \item \code{com_cortes}: dados de todas as usinas, concatenados e com a coluna \code{id_usina} preenchida.
-#'     \item \code{sem_cortes}: dados das mesmas usinas sem considerar cortes, tambem com \code{id_usina}.
-#'   }
-#'
-#' @details
-#' A funcao percorre os elementos da lista \code{resultados}, adiciona a identificacao da usina correspondente,
-#' e empacota os dados finais em dois data.tables: um com cortes e outro sem. Util para consolidar os resultados
-#' apos o processamento individual de cada usina.
-#'
-#' @seealso processar_usina, predict_main
-#'
 organiza_resultados <- function(resultados, v_usinas) {
     dt_com_cortes <- data.table::rbindlist(lapply(seq_along(resultados), function(i) {
         resultados[[i]]$com_cortes[, id_usina := v_usinas[i]]

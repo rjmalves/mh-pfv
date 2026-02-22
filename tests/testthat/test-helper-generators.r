@@ -194,9 +194,11 @@ test_that("gen_mhg id_fonte_observacao is Consis", {
 test_that("gen_model_artifact returns correct structure", {
     art <- gen_model_artifact()
     expect_type(art, "list")
+    expect_true(all(c("id_usina", "parametros", "metadata") %in% names(art)))
     expect_equal(art$id_usina, "USI1")
     expect_true(is.data.frame(art$parametros))
     expect_true(all(c("a", "b") %in% names(art$parametros)))
+    expect_true(is.list(art$metadata))
 })
 
 test_that("gen_model_artifact has 28 half-hour slots", {
@@ -216,4 +218,31 @@ test_that("gen_model_artifact coefficients are in expected range", {
 test_that("gen_model_artifact respects id_usina argument", {
     art <- gen_model_artifact(id_usina = "CUSTOM1")
     expect_equal(art$id_usina, "CUSTOM1")
+})
+
+test_that("gen_model_artifact metadata has expected fields", {
+    art <- gen_model_artifact()
+    meta <- art$metadata
+    expected_fields <- c(
+        "type", "n_slots", "n_valid_slots",
+        "mean_coefficient", "timestamp", "package_version", "config_hash"
+    )
+    expect_true(all(expected_fields %in% names(meta)))
+    expect_equal(meta$type, "linear_regression")
+    expect_equal(meta$n_slots, 28L)
+    expect_true(inherits(meta$timestamp, "POSIXct"))
+})
+
+test_that("gen_model_artifact_legacy returns old format without metadata", {
+    art <- gen_model_artifact_legacy()
+    expect_type(art, "list")
+    expect_equal(names(art), c("id_usina", "parametros"))
+    expect_equal(art$id_usina, "USI1")
+    expect_true(is.data.frame(art$parametros))
+    expect_false("metadata" %in% names(art))
+})
+
+test_that("gen_model_artifact_legacy respects id_usina argument", {
+    art <- gen_model_artifact_legacy(id_usina = "OLD1")
+    expect_equal(art$id_usina, "OLD1")
 })

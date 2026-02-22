@@ -27,7 +27,7 @@ test_that("ajustar_usina returns list with id_usina and parametros", {
     )
 
     expect_true(is.list(result))
-    expect_named(result, c("id_usina", "parametros"), ignore.order = TRUE)
+    expect_true(all(c("id_usina", "parametros", "metadata") %in% names(result)))
     expect_true(is.character(result$id_usina))
     expect_equal(result$id_usina, iu)
     expect_true(is.data.frame(result$parametros))

@@ -25,36 +25,53 @@
 #'   comportamento identico ao original.
 #' @param parallel logico, se `TRUE` usa `future_lapply` para processar
 #'   usinas em paralelo. Padrao `FALSE` para compatibilidade.
+#' @param resume logico, se `TRUE` busca um checkpoint valido no diretorio
+#'   de artefatos e reprocessa apenas as usinas pendentes. Padrao `FALSE`.
 #'
 #' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados
 #'   diretamente em arquivos na pasta de saida especificada.
 #'
-#' @details
-#' A funcao executa o treinamento do modelo para cada usina:
-#'
-#' 1. Leitura da configuracao e dados de entrada (usinas, geracao observada,
-#'    modelos NWP, cortes, etc).
-#' 2. Associacao das coordenadas NWP a cada usina e calculo do passo de
-#'    previsao (computados uma unica vez antes do loop).
-#' 3. Aplicacao da funcao `ajustar_usina()` para cada usina de forma
-#'    individual (sequencial ou paralela), usando a estrategia de modelo
-#'    fornecida.
-#' 4. Gravacao sequencial dos artefatos de modelo em disco.
-#'
-#' Quando `parallel = TRUE`, o plano de execucao paralela e configurado via
-#' [setup_parallel_plan()] e restaurado ao final com [reset_parallel_plan()].
-#'
 #' @seealso [fit_model()], [linear_regression_strategy()],
-#'   [setup_parallel_plan()]
+#'   [setup_parallel_plan()], [write_checkpoint()], [read_checkpoint()]
 #'
 #' @export
 train_main <- function(args, strategy = linear_regression_strategy(),
-    parallel = FALSE) {
+    parallel = FALSE, resume = FALSE) {
+
+    provenance <- create_provenance(args, "train", parallel)
+    completed_plants <- character(0L)
+
+    if (resume) {
+        checkpoint <- read_checkpoint(args$artifact, args)
+        if (!is.null(checkpoint)) {
+            completed_plants <- setdiff(
+                args$ids_usinas,
+                get_pending_plants(checkpoint)
+            )
+            for (iu in completed_plants) {
+                provenance <- update_plant_status(provenance, iu, "completed")
+            }
+        }
+    }
+
+    on.exit({
+        if (provenance$status == "running") {
+            provenance <- finalize_provenance(provenance, "failed")
+        }
+        write_provenance(provenance, args$artifact)
+    }, add = TRUE)
+
+    v_usinas <- setdiff(args$ids_usinas, completed_plants)
+
+    if (length(v_usinas) == 0L) {
+        provenance <- finalize_provenance(provenance, "completed")
+        cleanup_checkpoint(args$artifact)
+        return(invisible(NULL))
+    }
 
     conn <- conectamock_pfv(args$input)
 
-    v_usinas <- args$ids_usinas
-    dt_usinas <- get_usinas(conn, id_usina = v_usinas)
+    dt_usinas <- get_usinas(conn, id_usina = args$ids_usinas)
 
     dataset <- get_dataset(args, conn)
 
@@ -72,6 +89,7 @@ train_main <- function(args, strategy = linear_regression_strategy(),
             fonte = args$ordem_prioridade_fontes,
             fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
             strategy = strategy,
+            config = args,
             future.seed = TRUE
         )
     } else {
@@ -82,18 +100,27 @@ train_main <- function(args, strategy = linear_regression_strategy(),
             dt_corte_obs = dataset$corte,
             fonte = args$ordem_prioridade_fontes,
             fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
-            strategy = strategy
+            strategy = strategy,
+            config = args
         )
     }
 
     lapply(seq_along(v_usinas), function(i) {
         write_model_artifact(models[[i]], v_usinas[i], args$artifact)
+        # <<- necessario para atualizar provenance no escopo da funcao pai
+        provenance <<- update_plant_status(
+            provenance, v_usinas[i], "completed"
+        )
+        if (resume) write_checkpoint(provenance, args$artifact)
     })
+
+    provenance <- finalize_provenance(provenance, "completed")
+    if (resume) cleanup_checkpoint(args$artifact)
 }
 
 ajustar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_irrad_prev_filt,
     dt_corte_obs, fonte, fator_tolerancia,
-    strategy = linear_regression_strategy(), ...) {
+    strategy = linear_regression_strategy(), config = list(), ...) {
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
     corte_obs <- dt_corte_obs[id_usina == iu]
@@ -127,50 +154,8 @@ ajustar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_irrad_prev_filt,
         dty_bruta = geracao_usina_bruta
     )
 
-    list(id_usina = iu, parametros = regressoes)
+    build_model_artifact(iu, regressoes, strategy, config)
 }
-
-
-#' Ajusta Regressao Linear entre Geracao Observada e Irradiacao Prevista
-#'
-#' Estima coeficientes de regressao linear para cada horario de meia em meia hora,
-#' usando dados de geracao observada e irradiacao prevista.
-#'
-#' @param dty data.table com dados de geracao observada. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_observacao}: data e hora da geracao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da geracao.
-#'   }
-#' @param dtx data.table com dados de irradiacao prevista. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_previsao}: data e hora da irradiacao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da irradiacao.
-#'   }
-#' @param dty_bruta data.table com dados de geracao observada bruta. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_observacao}: data e hora da geracao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da geracao.
-#'   }
-#'
-#' @return Um data.frame com os coeficientes de regressao por horario, com:
-#'   \itemize{
-#'     \item \code{a}: coeficiente angular da regressao (inclinacao da reta).
-#'     \item \code{b}: coeficiente linear, sempre zero neste ajuste.
-#'     \item Nomes das linhas indicando o horario no formato "HH:MM".
-#'   }
-#'
-#' @details
-#' A funcao percorre os horarios do dia entre 05:00 e 18:30 com passos de 30 minutos.
-#' Para cada horario, filtra os dados de geracao e irradiacao correspondentes e realiza um
-#' ajuste linear sem intercepto (\code{lm(y ~ x + 0)}). Apenas pares com mais de 5 observacoes validas
-#' sao considerados. Quando ha dados insuficientes, o coeficiente angular e definido como zero.
-#'
-#' Valores iguais a zero sao tratados como ausentes (NA) antes do ajuste.
-#'
-#' @seealso substitui_por_estimativas
 
 ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
     dty[valor == 0, valor := NA]

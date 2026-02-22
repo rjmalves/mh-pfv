@@ -123,6 +123,38 @@ test_that("predict_main accepts custom strategy", {
     expect_no_error(predict_main(config_predict, strategy = strategy))
 })
 
+test_that("predict_main handles legacy artifacts without metadata", {
+    skip_if_not(dir.exists(test_path("data")))
+    temp_artifact <- withr::local_tempdir()
+    temp_output <- withr::local_tempdir()
+
+    conn <- conectamock_pfv(test_path("data"))
+
+    config_predict <- gen_config(
+        mode = "predict",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_predict$input <- test_path("data")
+    config_predict$artifact <- temp_artifact
+    config_predict$output <- temp_output
+    config_predict <- parse_config(config_predict, conn)
+
+    plant_ids <- config_predict$ids_usinas
+    for (iu in plant_ids) {
+        artifact <- gen_model_artifact_legacy(id_usina = iu)
+        saveRDS(artifact, file.path(temp_artifact, paste0(iu, ".rds")))
+    }
+
+    expect_no_error(predict_main(config_predict))
+
+    expected_files <- c(
+        "melhor_historico_geracao.parquet",
+        "melhor_historico_geracao_sem_cortes.parquet"
+    )
+    output_paths <- file.path(temp_output, expected_files)
+    expect_true(all(file.exists(output_paths)))
+})
+
 test_that("predict_main parallel produces identical output to sequential", {
     skip_if_not(dir.exists(test_path("data")))
 
@@ -185,4 +217,42 @@ test_that("predict_main parallel produces identical output to sequential", {
         expect_equal(dt_seq$data_hora_observacao, dt_par$data_hora_observacao)
         expect_equal(dt_seq$valor, dt_par$valor, tolerance = 1e-10)
     }
+})
+
+test_that("predict_main writes valid provenance JSON", {
+    skip_if_not(dir.exists(test_path("data")))
+    temp_artifact <- withr::local_tempdir()
+    temp_output <- withr::local_tempdir()
+
+    conn <- conectamock_pfv(test_path("data"))
+    config_train <- gen_config(
+        mode = "train",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_train$input <- test_path("data")
+    config_train$artifact <- temp_artifact
+    config_train <- parse_config(config_train, conn)
+
+    train_main(config_train)
+
+    config_predict <- gen_config(
+        mode = "predict",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config_predict$input <- test_path("data")
+    config_predict$artifact <- temp_artifact
+    config_predict$output <- temp_output
+    config_predict <- parse_config(config_predict, conn)
+
+    predict_main(config_predict)
+
+    prov_files <- list.files(
+        temp_output, "^provenance-.*\\.json$", full.names = TRUE
+    )
+    expect_equal(length(prov_files), 1L)
+
+    parsed <- jsonlite::fromJSON(prov_files[1])
+    expect_equal(parsed$status, "completed")
+    expect_equal(parsed$n_plants, 2L)
+    expect_equal(parsed$mode, "predict")
 })

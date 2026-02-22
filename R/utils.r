@@ -188,7 +188,8 @@ make_coord_key <- function(dt_usinas, coord_prev) {
         sort(paste(coord_prev$latitude, coord_prev$longitude)),
         collapse = "|"
     )
-    paste(plant_part, nwp_part, sep = "##")
+    raw_key <- paste(plant_part, nwp_part, sep = "##")
+    digest::digest(raw_key, algo = "sha256")
 }
 
 

@@ -49,7 +49,7 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
     }
 
     geracao_usina_completo <- predict_model(strategy,
-        model = model[[2]],
+        model = model$parametros,
         df_ger_usi = copy(geracao_usina),
         df_irrad_prev = copy(irrad_prev),
         lim_dados = limite_dados

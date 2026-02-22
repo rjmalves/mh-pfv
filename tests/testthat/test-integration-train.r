@@ -88,3 +88,29 @@ test_that("train_main produces valid model artifacts", {
         expect_true(all(is.numeric(non_na_a)))
     }
 })
+
+test_that("train_main writes valid provenance JSON", {
+    skip_if_not(dir.exists(test_path("data")))
+    temp_artifact <- withr::local_tempdir()
+
+    conn <- conectamock_pfv(test_path("data"))
+    config <- gen_config(
+        mode = "train",
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config$input <- test_path("data")
+    config$artifact <- temp_artifact
+    config <- parse_config(config, conn)
+
+    train_main(config)
+
+    prov_files <- list.files(
+        temp_artifact, "^provenance-.*\\.json$", full.names = TRUE
+    )
+    expect_equal(length(prov_files), 1L)
+
+    parsed <- jsonlite::fromJSON(prov_files[1])
+    expect_equal(parsed$status, "completed")
+    expect_equal(parsed$n_plants, 2L)
+    expect_equal(parsed$mode, "train")
+})

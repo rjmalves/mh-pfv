@@ -192,5 +192,29 @@ gen_model_artifact <- function(id_usina = "USI1") {
         b = rep(0, length(hour_names)),
         row.names = hour_names
     )
+    metadata <- list(
+        type = "linear_regression",
+        n_slots = length(hour_names),
+        n_valid_slots = length(hour_names),
+        mean_coefficient = mean(a_values),
+        timestamp = as.POSIXct("2025-07-01 00:00:00", tz = "UTC"),
+        package_version = as.character(utils::packageVersion("mhpfv")),
+        config_hash = "test-hash-placeholder"
+    )
+    list(id_usina = id_usina, parametros = parametros, metadata = metadata)
+}
+
+gen_model_artifact_legacy <- function(id_usina = "USI1") {
+    hour_names <- sprintf(
+        "%02d:%02d",
+        rep(5:18, each = 2),
+        rep(c(0, 30), times = 14)
+    )
+    a_values <- seq(0.01, 0.05, length.out = length(hour_names))
+    parametros <- data.frame(
+        a = a_values,
+        b = rep(0, length(hour_names)),
+        row.names = hour_names
+    )
     list(id_usina = id_usina, parametros = parametros)
 }

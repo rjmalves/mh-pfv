@@ -4,7 +4,12 @@
 \alias{train_main}
 \title{Funcao Principal de Treinamento dos Modelos para Consistencia dos Dados}
 \usage{
-train_main(args, strategy = linear_regression_strategy(), parallel = FALSE)
+train_main(
+  args,
+  strategy = linear_regression_strategy(),
+  parallel = FALSE,
+  resume = FALSE
+)
 }
 \arguments{
 \item{args}{lista de argumentos necessarios para o processamento. Os campos
@@ -33,6 +38,9 @@ comportamento identico ao original.}
 
 \item{parallel}{logico, se \code{TRUE} usa \code{future_lapply} para processar
 usinas em paralelo. Padrao \code{FALSE} para compatibilidade.}
+
+\item{resume}{logico, se \code{TRUE} busca um checkpoint valido no diretorio
+de artefatos e reprocessa apenas as usinas pendentes. Padrao \code{FALSE}.}
 }
 \value{
 Nenhum valor e retornado pela funcao. Os resultados sao gravados
@@ -52,13 +60,18 @@ previsao (computados uma unica vez antes do loop).
 \item Aplicacao da funcao \code{ajustar_usina()} para cada usina de forma
 individual (sequencial ou paralela), usando a estrategia de modelo
 fornecida.
-\item Gravacao sequencial dos artefatos de modelo em disco.
+\item Gravacao sequencial dos artefatos de modelo em disco, com escrita de
+checkpoint apos cada usina quando \code{resume = TRUE}.
 }
 
 Quando \code{parallel = TRUE}, o plano de execucao paralela e configurado via
 \code{\link[=setup_parallel_plan]{setup_parallel_plan()}} e restaurado ao final com \code{\link[=reset_parallel_plan]{reset_parallel_plan()}}.
+
+Quando \code{resume = TRUE}, o pipeline verifica se existe um checkpoint valido
+no diretorio de artefatos. Usinas ja concluidas sao ignoradas. Ao final
+bem-sucedido, o checkpoint e removido.
 }
 \seealso{
 \code{\link[=fit_model]{fit_model()}}, \code{\link[=linear_regression_strategy]{linear_regression_strategy()}},
-\code{\link[=setup_parallel_plan]{setup_parallel_plan()}}
+\code{\link[=setup_parallel_plan]{setup_parallel_plan()}}, \code{\link[=write_checkpoint]{write_checkpoint()}}, \code{\link[=read_checkpoint]{read_checkpoint()}}
 }
