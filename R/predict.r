@@ -33,6 +33,23 @@
 #'   [write_checkpoint()], [read_checkpoint()], [write_plant_result()]
 #'
 #' @export
+load_predict_resume_state <- function(args, provenance) {
+    checkpoint <- read_checkpoint(args$output, args)
+    if (is.null(checkpoint)) {
+        return(list(provenance = provenance, completed = character(0L)))
+    }
+    candidate_completed <- setdiff(
+        args$ids_usinas, get_pending_plants(checkpoint)
+    )
+    completed_plants <- Filter(function(iu) {
+        !is.null(read_plant_result(iu, args$output))
+    }, candidate_completed)
+    for (iu in completed_plants) {
+        provenance <- update_plant_status(provenance, iu, "completed")
+    }
+    list(provenance = provenance, completed = completed_plants)
+}
+
 predict_main <- function(args, strategy = linear_regression_strategy(),
     parallel = FALSE, resume = FALSE) {
 
@@ -43,19 +60,9 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
     completed_plants <- character(0L)
 
     if (resume) {
-        checkpoint <- read_checkpoint(args$output, args)
-        if (!is.null(checkpoint)) {
-            candidate_completed <- setdiff(
-                args$ids_usinas,
-                get_pending_plants(checkpoint)
-            )
-            completed_plants <- Filter(function(iu) {
-                !is.null(read_plant_result(iu, args$output))
-            }, candidate_completed)
-            for (iu in completed_plants) {
-                provenance <- update_plant_status(provenance, iu, "completed")
-            }
-        }
+        state <- load_predict_resume_state(args, provenance)
+        provenance <- state$provenance
+        completed_plants <- state$completed
     }
 
     on.exit({
@@ -131,16 +138,16 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
                 metrics, v_usinas_pending[i],
                 as.numeric(n_rows), as.numeric(n_na), as.numeric(n_total_vals)
             )
-            if (resume) {
-                write_plant_result(
-                    result, v_usinas_pending[i], args$output
-                )
-            }
             # <<- necessario para atualizar provenance no escopo da funcao pai
             provenance <<- update_plant_status(
                 provenance, v_usinas_pending[i], "completed"
             )
-            if (resume) write_checkpoint(provenance, args$output)
+            if (resume) {
+                write_plant_result(
+                    result, v_usinas_pending[i], args$output
+                )
+                write_checkpoint(provenance, args$output)
+            }
             lg$info("Usina %s concluida (%d/%d)", v_usinas_pending[i], i, n_total)
         }
     }

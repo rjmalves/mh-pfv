@@ -118,17 +118,19 @@ read_env_workers_fallback <- function() {
     parsed
 }
 
+is_valid_worker_count <- function(workers) {
+    is.numeric(workers) && length(workers) == 1L &&
+        !is.na(workers) && workers >= 1L && workers == as.integer(workers)
+}
+
 validate_workers <- function(workers) {
     if (is.null(workers)) return(invisible(NULL))
-
-    if (!is.numeric(workers) || length(workers) != 1L ||
-        is.na(workers) || workers < 1L || workers != as.integer(workers)) {
+    if (!is_valid_worker_count(workers)) {
         stop(
             "workers deve ser NULL ou um inteiro positivo, recebido: ",
             deparse(workers),
             call. = FALSE
         )
     }
-
     invisible(NULL)
 }

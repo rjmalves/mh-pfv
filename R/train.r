@@ -35,6 +35,20 @@
 #'   [setup_parallel_plan()], [write_checkpoint()], [read_checkpoint()]
 #'
 #' @export
+load_train_resume_state <- function(args, provenance) {
+    checkpoint <- read_checkpoint(args$artifact, args)
+    if (is.null(checkpoint)) {
+        return(list(provenance = provenance, completed = character(0L)))
+    }
+    completed_plants <- setdiff(
+        args$ids_usinas, get_pending_plants(checkpoint)
+    )
+    for (iu in completed_plants) {
+        provenance <- update_plant_status(provenance, iu, "completed")
+    }
+    list(provenance = provenance, completed = completed_plants)
+}
+
 train_main <- function(args, strategy = linear_regression_strategy(),
     parallel = FALSE, resume = FALSE) {
 
@@ -45,16 +59,9 @@ train_main <- function(args, strategy = linear_regression_strategy(),
     completed_plants <- character(0L)
 
     if (resume) {
-        checkpoint <- read_checkpoint(args$artifact, args)
-        if (!is.null(checkpoint)) {
-            completed_plants <- setdiff(
-                args$ids_usinas,
-                get_pending_plants(checkpoint)
-            )
-            for (iu in completed_plants) {
-                provenance <- update_plant_status(provenance, iu, "completed")
-            }
-        }
+        state <- load_train_resume_state(args, provenance)
+        provenance <- state$provenance
+        completed_plants <- state$completed
     }
 
     on.exit({

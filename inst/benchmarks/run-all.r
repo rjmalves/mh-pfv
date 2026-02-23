@@ -1,5 +1,51 @@
 library(data.table)
 
+print_benchmark_summary <- function(results) {
+    for (name in names(results)) {
+        if (is.null(results[[name]])) {
+            cat(sprintf("%-12s: SKIPPED (data unavailable)\n", name))
+            next
+        }
+        res <- results[[name]]
+        medians <- vapply(res$median, as.numeric, numeric(1))
+        labels <- as.character(res$expression)
+        cat(sprintf("%-12s:\n", name))
+        for (j in seq_along(labels)) {
+            cat(sprintf("  %-15s median = %.3f ms\n",
+                    labels[j], medians[j] * 1000))
+        }
+    }
+}
+
+generate_benchmark_report <- function(results) {
+    report_lines <- c(
+        "mhpfv Performance Benchmark Report",
+        paste("Generated:", format(Sys.time())),
+        paste("R version:", R.version.string),
+        paste("Platform:", Sys.info()[["sysname"]], Sys.info()[["release"]]),
+        paste("CPU cores:", parallel::detectCores()),
+        ""
+    )
+    for (name in names(results)) {
+        if (is.null(results[[name]])) {
+            report_lines <- c(report_lines,
+                paste0(name, ": SKIPPED"), "")
+            next
+        }
+        res <- results[[name]]
+        medians <- vapply(res$median, as.numeric, numeric(1))
+        labels <- as.character(res$expression)
+        report_lines <- c(report_lines, paste0(name, ":"))
+        for (j in seq_along(labels)) {
+            report_lines <- c(report_lines,
+                sprintf("  %-15s median = %.3f ms", labels[j],
+                    medians[j] * 1000))
+        }
+        report_lines <- c(report_lines, "")
+    }
+    report_lines
+}
+
 run_all_benchmarks <- function(data_dir = NULL) {
     pkg_root <- pkgload::pkg_path()
     pkgload::load_all(pkg_root, quiet = TRUE)
@@ -39,53 +85,14 @@ run_all_benchmarks <- function(data_dir = NULL) {
     cat("  Summary\n")
     cat("============================================\n\n")
 
-    for (name in names(results)) {
-        if (is.null(results[[name]])) {
-            cat(sprintf("%-12s: SKIPPED (data unavailable)\n", name))
-            next
-        }
-        res <- results[[name]]
-        medians <- vapply(res$median, as.numeric, numeric(1))
-        labels <- as.character(res$expression)
-        cat(sprintf("%-12s:\n", name))
-        for (j in seq_along(labels)) {
-            cat(sprintf("  %-15s median = %.3f ms\n",
-                labels[j], medians[j] * 1000))
-        }
-    }
+    print_benchmark_summary(results)
 
     rds_path <- file.path(output_dir, "benchmark_results.rds")
     saveRDS(results, rds_path)
     cat("\nRDS saved to:", rds_path, "\n")
 
     report_path <- file.path(output_dir, "benchmark_report.txt")
-    report_lines <- c(
-        "mhpfv Performance Benchmark Report",
-        paste("Generated:", format(Sys.time())),
-        paste("R version:", R.version.string),
-        paste("Platform:", Sys.info()[["sysname"]], Sys.info()[["release"]]),
-        paste("CPU cores:", parallel::detectCores()),
-        ""
-    )
-
-    for (name in names(results)) {
-        if (is.null(results[[name]])) {
-            report_lines <- c(report_lines,
-                paste0(name, ": SKIPPED"), "")
-            next
-        }
-        res <- results[[name]]
-        medians <- vapply(res$median, as.numeric, numeric(1))
-        labels <- as.character(res$expression)
-        report_lines <- c(report_lines, paste0(name, ":"))
-        for (j in seq_along(labels)) {
-            report_lines <- c(report_lines,
-                sprintf("  %-15s median = %.3f ms", labels[j],
-                    medians[j] * 1000))
-        }
-        report_lines <- c(report_lines, "")
-    }
-
+    report_lines <- generate_benchmark_report(results)
     writeLines(report_lines, report_path)
     cat("Report saved to:", report_path, "\n")
 

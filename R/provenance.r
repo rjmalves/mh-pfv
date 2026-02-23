@@ -389,9 +389,12 @@ cleanup_checkpoint <- function(output_dir, run_id = NULL) {
     if (length(all_files) > 0L) {
         tryCatch(
             file.remove(all_files),
-            error = function(e) lg$warn(
-                "Falha ao remover arquivos de checkpoint: %s", conditionMessage(e)
-            )
+            error = function(e) {
+                lg$warn(
+                    "Falha ao remover arquivos de checkpoint: %s",
+                    conditionMessage(e)
+                )
+            }
         )
         lg$debug("Removidos %d arquivos de checkpoint/intermediarios", length(all_files))
     }

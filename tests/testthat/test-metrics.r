@@ -264,7 +264,7 @@ test_that("finalize_metrics", {
     test_that("finalize_metrics returns NA aggregates when no plant has timing", {
         m <- create_metrics("test-run", "train")
         m <- record_model_quality(m, "USI1", list(n_slots = 28L, n_valid_slots = 28L,
-            mean_coefficient = 0.02))
+                mean_coefficient = 0.02))
         result <- f(m)
 
         expect_equal(result$pipeline$n_plants, 1L)

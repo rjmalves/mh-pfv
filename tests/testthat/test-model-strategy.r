@@ -69,16 +69,16 @@ test_that("model_metadata", {
 test_that("dispatch S3 funciona para subclasse customizada", {
     s <- new_model_strategy("test_model")
 
-    fit_model.test_model <- function(strategy, dty, dtx, dty_bruta, ...) {
+    fit_model.test_model <- function(strategy, dty, dtx, dty_bruta, ...) { # nolint: object_name_linter.
         list(fitted = TRUE, type = strategy$type)
     }
 
-    predict_model.test_model <- function(strategy, model, df_ger_usi,
+    predict_model.test_model <- function(strategy, model, df_ger_usi, # nolint: object_name_linter.
         df_irrad_prev, lim_dados, ...) {
         list(predicted = TRUE)
     }
 
-    model_metadata.test_model <- function(strategy, model, ...) {
+    model_metadata.test_model <- function(strategy, model, ...) { # nolint: object_name_linter.
         list(name = "test")
     }
 

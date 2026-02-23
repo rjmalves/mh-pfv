@@ -1,4 +1,4 @@
-fit_model.test_strategy <- function(strategy, dty, dtx, dty_bruta, ...) {
+fit_model.test_strategy <- function(strategy, dty, dtx, dty_bruta, ...) { # nolint: object_name_linter.
     horas <- seq(5.0, 18.5, by = 0.5)
     nomes <- sprintf(
         "%02d:%02d",
@@ -12,12 +12,12 @@ fit_model.test_strategy <- function(strategy, dty, dtx, dty_bruta, ...) {
     )
 }
 
-predict_model.test_strategy <- function(strategy, model, df_ger_usi,
+predict_model.test_strategy <- function(strategy, model, df_ger_usi, # nolint: object_name_linter.
     df_irrad_prev, lim_dados, ...) {
     substitui_por_estimativas(df_ger_usi, df_irrad_prev, model, lim_dados)
 }
 
-model_metadata.test_strategy <- function(strategy, model, ...) {
+model_metadata.test_strategy <- function(strategy, model, ...) { # nolint: object_name_linter.
     list(
         type = "test_strategy",
         n_slots = nrow(model),

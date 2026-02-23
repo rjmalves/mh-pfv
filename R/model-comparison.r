@@ -124,7 +124,7 @@ validate_comparison_input <- function(artifact, label) {
     }
     if (!is.data.frame(artifact$parametros)) {
         stop(sprintf("Artefato %s: 'parametros' deve ser um data.frame",
-            label), call. = FALSE)
+                label), call. = FALSE)
     }
     invisible(TRUE)
 }
@@ -150,6 +150,21 @@ warn_cross_type <- function(artifact_a, artifact_b) {
     invisible(NULL)
 }
 
+compute_metadata_field_diffs <- function(meta_a, meta_b) {
+    fields <- setdiff(union(names(meta_a), names(meta_b)), "timestamp")
+    diffs <- list()
+    for (field in fields) {
+        val_a <- meta_a[[field]]
+        val_b <- meta_b[[field]]
+        if (!identical(val_a, val_b)) {
+            diffs[[length(diffs) + 1L]] <- list(
+                field = field, value_a = val_a, value_b = val_b
+            )
+        }
+    }
+    diffs
+}
+
 compare_metadata <- function(artifact_a, artifact_b) {
     has_a <- has_metadata(artifact_a)
     has_b <- has_metadata(artifact_b)
@@ -164,29 +179,11 @@ compare_metadata <- function(artifact_a, artifact_b) {
         return(list(note = "Metadados nao disponiveis no artefato B"))
     }
 
-    meta_a <- artifact_a$metadata
-    meta_b <- artifact_b$metadata
-
-    fields <- setdiff(
-        union(names(meta_a), names(meta_b)),
-        "timestamp"
+    diffs <- compute_metadata_field_diffs(
+        artifact_a$metadata, artifact_b$metadata
     )
-
-    diffs <- list()
-    for (field in fields) {
-        val_a <- meta_a[[field]]
-        val_b <- meta_b[[field]]
-        if (!identical(val_a, val_b)) {
-            diffs[[length(diffs) + 1L]] <- list(
-                field = field,
-                value_a = val_a,
-                value_b = val_b
-            )
-        }
-    }
-
-    attr(diffs, "timestamp_a") <- meta_a$timestamp
-    attr(diffs, "timestamp_b") <- meta_b$timestamp
+    attr(diffs, "timestamp_a") <- artifact_a$metadata$timestamp
+    attr(diffs, "timestamp_b") <- artifact_b$metadata$timestamp
 
     diffs
 }
@@ -258,7 +255,7 @@ format_comparison_metadata <- function(metadata_diff) {
     } else {
         for (d in metadata_diff) {
             lines <- c(lines, sprintf("  %s: %s -> %s",
-                d$field, as.character(d$value_a), as.character(d$value_b)))
+                    d$field, as.character(d$value_a), as.character(d$value_b)))
         }
     }
 
@@ -299,7 +296,7 @@ format_comparison_top_diffs <- function(coeff_dt) {
         r <- top[i]
         pct_str <- if (!is.na(r$pct_change)) sprintf(" (%+.1f%%)", r$pct_change) else ""
         lines <- c(lines, sprintf("  %s  %.4f -> %.4f%s",
-            r$slot, r$a_artifact_a, r$a_artifact_b, pct_str))
+                r$slot, r$a_artifact_a, r$a_artifact_b, pct_str))
     }
 
     lines
