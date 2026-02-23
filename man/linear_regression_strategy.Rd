@@ -16,8 +16,8 @@ objeto S3 com classe \code{c("linear_regression", "model_strategy")}
 Cria um objeto \code{model_strategy} especializado para regressao linear,
 com classe dupla \code{c("linear_regression", "model_strategy")}.
 Os metodos \code{\link[=fit_model]{fit_model()}}, \code{\link[=predict_model]{predict_model()}} e \code{\link[=model_metadata]{model_metadata()}} delegam
-para as funcoes existentes \code{\link[=ajusta_regressao_ger_irrad]{ajusta_regressao_ger_irrad()}} e
-\code{\link[=substitui_por_estimativas]{substitui_por_estimativas()}}.
+para as funcoes existentes \code{ajusta_regressao_ger_irrad()} e
+\code{substitui_por_estimativas()}.
 }
 \examples{
 s <- linear_regression_strategy()

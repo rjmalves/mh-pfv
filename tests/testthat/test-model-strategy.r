@@ -146,6 +146,7 @@ test_that("fit_model.linear_regression", {
 
     test_that("fit_model.linear_regression com dados de teste reais", {
         skip_if_not(dir.exists(test_path("data")))
+        skip_if_no_zstd()
 
         conn <- conectamock_pfv(test_path("data"))
         config <- gen_config(

@@ -15,8 +15,8 @@ character com o run ID
 \description{
 Produz um ID unico no formato \verb{\{mode\}-\{YYYYMMDD\}-\{HHMMSS\}-\{4hex\}},
 adequado para identificar execucoes do pipeline de forma nao ambigua.
-O sufixo hexadecimal usa o PID como parte do seed para garantir
-unicidade entre execucoes concorrentes.
+O sufixo hexadecimal e gerado por amostragem aleatoria do estado global
+do RNG, reduzindo colisoes entre execucoes concorrentes no mesmo segundo.
 }
 \examples{
 generate_run_id("train")

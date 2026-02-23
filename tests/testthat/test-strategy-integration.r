@@ -65,6 +65,7 @@ test_that("model_metadata dispatches to test_strategy mock", {
 
 test_that("train_main with test_strategy produces mock artifacts", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -101,6 +102,7 @@ test_that("train_main with test_strategy produces mock artifacts", {
 
 test_that("train_main with parallel = TRUE produces identical artifacts", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_seq <- withr::local_tempdir()
     temp_par <- withr::local_tempdir()
 
@@ -118,7 +120,14 @@ test_that("train_main with parallel = TRUE produces identical artifacts", {
     train_main(config, strategy = strategy, parallel = FALSE)
 
     config$artifact <- temp_par
-    withr::defer(future::plan("sequential"))
+    # Mock setup_parallel_plan to use sequential strategy so that
+    # dynamically registered test S3 methods are available in the worker
+    local_mocked_bindings(
+        setup_parallel_plan = function(...) {
+            old <- future::plan("sequential")
+            invisible(old)
+        }
+    )
     train_main(config, strategy = strategy, parallel = TRUE)
 
     expected_ids <- config$ids_usinas
@@ -134,6 +143,7 @@ test_that("train_main with parallel = TRUE produces identical artifacts", {
 
 test_that("test_strategy lifecycle: fit -> artifact -> predict_model", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))

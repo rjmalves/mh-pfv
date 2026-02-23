@@ -48,7 +48,7 @@ Executa o processamento completo de consistencia dos dados observados para um co
 considerando diferentes fontes e modelos em ordem de prioridade.
 }
 \seealso{
-\code{\link[=organiza_resultados]{organiza_resultados()}}, \code{\link[=write_melhor_historico_geracao]{write_melhor_historico_geracao()}},
+\code{organiza_resultados()}, \code{\link[=write_melhor_historico_geracao]{write_melhor_historico_geracao()}},
 \code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, \code{\link[=setup_parallel_plan]{setup_parallel_plan()}},
 \code{\link[=write_checkpoint]{write_checkpoint()}}, \code{\link[=read_checkpoint]{read_checkpoint()}}, \code{\link[=write_plant_result]{write_plant_result()}}
 }

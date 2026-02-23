@@ -10,21 +10,10 @@ finalize_metrics(metrics)
 \item{metrics}{lista de metricas criada por \code{\link[=create_metrics]{create_metrics()}}}
 }
 \value{
-lista de metricas com \code{pipeline} e \code{created_at} preenchidos:
-\describe{
-\item{\code{n_plants}}{numero total de entradas em \code{plants}}
-\item{\code{n_plants_completed}}{numero de usinas com \code{duration_seconds}}
-\item{\code{mean_plant_duration_seconds}}{media das duracoes por usina}
-\item{\code{max_plant_duration_seconds}}{duracao maxima por usina}
-\item{\code{min_plant_duration_seconds}}{duracao minima por usina}
-}
+lista de metricas com \code{pipeline} e \code{created_at} preenchidos
 }
 \description{
-Computa estatisticas agregadas a partir das metricas por usina e preenche
-\code{metrics$pipeline}. Define \code{created_at} com o timestamp UTC atual.
-}
-\details{
-Caso nenhuma usina tenha \code{duration_seconds} registrado (ex: todas falharam),
-os campos de duracao media/max/min sao \code{NA_real_}, que o \code{jsonlite::toJSON}
-serializa como \code{null} com \code{null = "null"}.
+Computa estatisticas agregadas das metricas por usina e preenche
+\code{metrics$pipeline}. Campos de duracao sao \code{NA_real_} quando nenhuma
+usina tem \code{duration_seconds} registrado.
 }

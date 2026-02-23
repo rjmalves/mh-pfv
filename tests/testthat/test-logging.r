@@ -2,6 +2,10 @@ test_that("logger_setup", {
     f <- logger_setup
     expect_true(is.function(f))
 
+    lg_ref <- lgr::get_logger("mhpfv")
+    saved_threshold <- lg_ref$threshold
+    withr::defer(lg_ref$set_threshold(saved_threshold))
+
     test_that("logger_setup retorna objeto Logger", {
         lg <- f()
         expect_true(inherits(lg, "Logger"))

@@ -28,7 +28,7 @@
 #' @return Nenhum valor e retornado. Os resultados sao gravados em arquivos na
 #'   pasta de saida especificada.
 #'
-#' @seealso [organiza_resultados()], [write_melhor_historico_geracao()],
+#' @seealso `organiza_resultados()`, [write_melhor_historico_geracao()],
 #'   [linear_regression_strategy()], [setup_parallel_plan()],
 #'   [write_checkpoint()], [read_checkpoint()], [write_plant_result()]
 #'

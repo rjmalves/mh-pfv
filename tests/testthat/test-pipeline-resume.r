@@ -1,5 +1,6 @@
 test_that("train_main resume skips completed plants", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     tmp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -34,6 +35,7 @@ test_that("train_main resume skips completed plants", {
 
 test_that("train_main resume with config mismatch runs from scratch", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     tmp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -67,6 +69,7 @@ test_that("train_main resume with config mismatch runs from scratch", {
 
 test_that("train_main cleans up checkpoint after successful run", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     tmp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -89,6 +92,7 @@ test_that("train_main cleans up checkpoint after successful run", {
 
 test_that("train_main without resume runs normally and does not create checkpoint", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     tmp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -108,6 +112,7 @@ test_that("train_main without resume runs normally and does not create checkpoin
 
 test_that("train_main resume with no existing checkpoint runs from scratch", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     tmp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -128,6 +133,7 @@ test_that("train_main resume with no existing checkpoint runs from scratch", {
 
 test_that("predict_main resume combines old and new results", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     tmp_artifact <- withr::local_tempdir()
     tmp_output <- withr::local_tempdir()
 
@@ -205,6 +211,7 @@ test_that("predict_main resume combines old and new results", {
 
 test_that("predict_main cleans up checkpoint after successful resume run", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     tmp_artifact <- withr::local_tempdir()
     tmp_output <- withr::local_tempdir()
 
@@ -241,6 +248,7 @@ test_that("predict_main cleans up checkpoint after successful resume run", {
 
 test_that("predict_main resume with missing plant result reprocesses that plant", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     tmp_artifact <- withr::local_tempdir()
     tmp_output <- withr::local_tempdir()
 

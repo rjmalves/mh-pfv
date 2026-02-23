@@ -7,8 +7,7 @@
 write_health_report(report, output_dir)
 }
 \arguments{
-\item{report}{lista com o relatorio de saude (gerada por
-\code{\link[=build_health_report]{build_health_report()}})}
+\item{report}{lista gerada por \code{\link[=build_health_report]{build_health_report()}}}
 
 \item{output_dir}{character, diretorio de saida}
 }
@@ -16,8 +15,6 @@ write_health_report(report, output_dir)
 caminho do arquivo escrito (invisivelmente)
 }
 \description{
-Serializa o relatorio de saude como JSON e escreve \verb{health-\{run_id\}.json}
-no diretorio informado. Segue o mesmo padrao de tratamento de erro de
-\code{\link[=write_provenance]{write_provenance()}}: envolvido em \code{tryCatch}, falhas de I/O geram apenas
-um aviso no log e nunca interrompem o pipeline.
+Serializa o relatorio como \verb{health-\{run_id\}.json} no diretorio informado.
+Falhas de I/O geram apenas aviso no log e nunca interrompem o pipeline.
 }

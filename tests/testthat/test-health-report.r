@@ -572,7 +572,9 @@ test_that("write_health_report", {
         prov <- gen_provenance_completed(c("USI1"))
         report <- build_health_report(prov)
 
-        expect_no_error(f(report, "/proc/nonexistent/path/that/cannot/be/created"))
+        suppressWarnings(
+            expect_no_error(f(report, "/proc/nonexistent/path/that/cannot/be/created"))
+        )
     })
 
     test_that("write_health_report returns filepath invisibly", {

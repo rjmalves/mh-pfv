@@ -1,5 +1,6 @@
 test_that("predict_main completes without error after training", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
     temp_output <- withr::local_tempdir()
 
@@ -28,6 +29,7 @@ test_that("predict_main completes without error after training", {
 
 test_that("predict_main produces valid output files", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
     temp_output <- withr::local_tempdir()
 
@@ -96,6 +98,7 @@ test_that("predict_main produces valid output files", {
 
 test_that("predict_main accepts custom strategy", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
     temp_output <- withr::local_tempdir()
 
@@ -125,6 +128,7 @@ test_that("predict_main accepts custom strategy", {
 
 test_that("predict_main handles legacy artifacts without metadata", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
     temp_output <- withr::local_tempdir()
 
@@ -157,6 +161,7 @@ test_that("predict_main handles legacy artifacts without metadata", {
 
 test_that("predict_main parallel produces identical output to sequential", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
 
     temp_artifact <- withr::local_tempdir()
     temp_output_seq <- withr::local_tempdir()
@@ -221,6 +226,7 @@ test_that("predict_main parallel produces identical output to sequential", {
 
 test_that("predict_main writes valid provenance JSON", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
     temp_output <- withr::local_tempdir()
 
@@ -259,6 +265,7 @@ test_that("predict_main writes valid provenance JSON", {
 
 test_that("predict_main writes valid metrics JSON", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
     temp_output <- withr::local_tempdir()
 

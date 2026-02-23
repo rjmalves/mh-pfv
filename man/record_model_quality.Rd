@@ -11,21 +11,12 @@ record_model_quality(metrics, id_usina, metadata)
 
 \item{id_usina}{character escalar, identificador da usina}
 
-\item{metadata}{lista de metadados do artefato (retornada por
-\code{\link[=build_artifact_metadata]{build_artifact_metadata()}})}
+\item{metadata}{lista de metadados do artefato (de \code{\link[=build_artifact_metadata]{build_artifact_metadata()}})}
 }
 \value{
-lista de metricas com \code{model_quality} adicionado para a usina:
-\describe{
-\item{\code{n_slots}}{numero total de horarios no modelo}
-\item{\code{n_valid_slots}}{numero de horarios com coeficiente valido}
-\item{\code{mean_coefficient}}{media dos coeficientes angulares validos}
-}
+lista de metricas com \code{model_quality} adicionado para a usina
 }
 \description{
-Extrai indicadores de qualidade dos metadados do artefato de modelo e os
-adiciona ao registro da usina. Chamada exclusivamente no modo train apos
-o ajuste de cada usina. Os campos extraidos sao \code{n_slots},
-\code{n_valid_slots} e \code{mean_coefficient}, produzidos por
-\code{\link[=build_artifact_metadata]{build_artifact_metadata()}}.
+Extrai \code{n_slots}, \code{n_valid_slots} e \code{mean_coefficient} dos metadados do
+artefato e os adiciona ao registro da usina.
 }

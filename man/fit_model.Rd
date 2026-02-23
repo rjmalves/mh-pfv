@@ -33,7 +33,7 @@ deve implementar seu proprio metodo de ajuste.
 \details{
 \subsection{Metodo \code{linear_regression}}{
 
-Delega para \code{\link[=ajusta_regressao_ger_irrad]{ajusta_regressao_ger_irrad()}}, ajustando regressoes lineares
+Delega para \code{ajusta_regressao_ger_irrad()}, ajustando regressoes lineares
 sem intercepto por horario de meia hora entre geracao observada e
 irradiacao prevista. O resultado e um \code{data.frame} com coeficientes
 \code{a} (angular) e \code{b} (sempre zero) indexados por horario \code{"HH:MM"}.

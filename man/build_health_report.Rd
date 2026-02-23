@@ -7,28 +7,16 @@
 build_health_report(provenance, metrics = NULL)
 }
 \arguments{
-\item{provenance}{lista de proveniencia finalizada (gerada por
-\code{\link[=create_provenance]{create_provenance()}} e finalizada por \code{\link[=finalize_provenance]{finalize_provenance()}})}
+\item{provenance}{lista de proveniencia finalizada por \code{\link[=finalize_provenance]{finalize_provenance()}}}
 
-\item{metrics}{lista de metricas finalizada (gerada por \code{\link[=create_metrics]{create_metrics()}}
-e finalizada por \code{\link[=finalize_metrics]{finalize_metrics()}}), ou \code{NULL}}
+\item{metrics}{lista de metricas finalizada por \code{\link[=finalize_metrics]{finalize_metrics()}}, ou \code{NULL}}
 }
 \value{
-lista com o relatorio de saude completo:
-\describe{
-\item{\code{run_id}}{character, identificador da execucao}
-\item{\code{mode}}{character, modo de execucao}
-\item{\code{created_at}}{character, timestamp ISO 8601 UTC de geracao}
-\item{\code{overall_health}}{character, \code{"healthy"}, \code{"degraded"} ou \code{"failed"}}
-\item{\code{summary}}{lista com agregados do pipeline}
-\item{\code{plants}}{lista nomeada com saude por usina}
-\item{\code{warnings}}{character vector, avisos em portugues}
-\item{\code{errors}}{character vector, erros em portugues}
-}
+lista com \code{run_id}, \code{mode}, \code{created_at}, \code{overall_health},
+\code{summary}, \code{plants}, \code{warnings} e \code{errors}
 }
 \description{
 Agrega dados de proveniencia e metricas em um relatorio estruturado com
-classificacao de saude por usina e do pipeline como um todo. Se a
-proveniencia ainda estiver com status \code{"running"}, registra aviso e trata
-como falha.
+classificacao de saude por usina e do pipeline. Registra aviso se a
+proveniencia ainda estiver com status \code{"running"}.
 }

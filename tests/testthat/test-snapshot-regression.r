@@ -1,5 +1,6 @@
 test_that("snapshot_train_model_coefficients", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -38,6 +39,7 @@ test_that("snapshot_train_model_coefficients", {
 
 test_that("snapshot_predict_output_summary", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
     temp_output <- withr::local_tempdir()
 

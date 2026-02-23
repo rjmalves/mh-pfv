@@ -17,12 +17,5 @@ record_plant_timing(metrics, id_usina, duration_secs)
 lista de metricas com \code{duration_seconds} adicionado para a usina
 }
 \description{
-Adiciona \code{duration_seconds} ao registro da usina dentro de \code{metrics$plants}.
-Segue o padrao copy-on-modify: retorna a lista atualizada, nao modifica
-no lugar. Quando chamado dentro de \code{lapply}, use \verb{<<-} para propagar
-a atualizacao ao escopo pai.
-}
-\details{
-Use \code{proc.time()[["elapsed"]]} para medir o tempo de parede antes e apos
-o processamento e passe a diferenca como \code{duration_secs}.
+Registra Tempo de Processamento de Uma Usina
 }

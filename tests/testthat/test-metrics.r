@@ -347,7 +347,9 @@ test_that("write_metrics", {
         m <- create_metrics("test-error", "train")
         m <- finalize_metrics(m)
 
-        expect_no_error(f(m, "/proc/nonexistent/path/that/cannot/be/created"))
+        suppressWarnings(
+            expect_no_error(f(m, "/proc/nonexistent/path/that/cannot/be/created"))
+        )
     })
 
     test_that("write_metrics returns filepath invisibly", {

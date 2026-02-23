@@ -7,24 +7,13 @@
 create_metrics(run_id, mode)
 }
 \arguments{
-\item{run_id}{character escalar, identificador da execucao (gerado por
-\code{\link[=generate_run_id]{generate_run_id()}})}
+\item{run_id}{character escalar, identificador da execucao}
 
 \item{mode}{character escalar, \code{"train"} ou \code{"predict"}}
 }
 \value{
-lista com estrutura de metricas vazia:
-\describe{
-\item{\code{run_id}}{character, identificador da execucao}
-\item{\code{mode}}{character, modo de execucao}
-\item{\code{created_at}}{\code{NULL}, preenchido na finalizacao}
-\item{\code{pipeline}}{lista vazia, preenchida na finalizacao}
-\item{\code{plants}}{lista vazia, preenchida pelos \verb{record_*} durante execucao}
-}
+lista com estrutura de metricas vazia
 }
 \description{
-Inicializa a estrutura de metricas para coleta durante a execucao do pipeline.
-Metricas sao acumuladas por usina e agregadas na finalizacao via
-\code{\link[=finalize_metrics]{finalize_metrics()}}. O registro e complementar ao de proveniencia
-(\code{\link[=create_provenance]{create_provenance()}}), capturando dados de desempenho mais granulares.
+Cria Registro de Metricas de Execucao
 }

@@ -251,7 +251,9 @@ test_that("write_provenance", {
         prov <- create_provenance(cfg, "train", FALSE)
         prov <- finalize_provenance(prov, "completed")
 
-        expect_no_error(f(prov, "/proc/nonexistent/path"))
+        suppressWarnings(
+            expect_no_error(f(prov, "/proc/nonexistent/path"))
+        )
     })
 
     test_that("write_provenance serializes timestamps as ISO 8601", {
@@ -356,7 +358,9 @@ test_that("write_checkpoint", {
         )
         prov <- create_provenance(cfg, "train", FALSE)
 
-        expect_no_error(f(prov, "/proc/nonexistent/path"))
+        suppressWarnings(
+            expect_no_error(f(prov, "/proc/nonexistent/path"))
+        )
     })
 
     test_that("write_checkpoint creates directory if missing", {
@@ -534,7 +538,9 @@ test_that("write_plant_result", {
             sem_cortes = data.table::data.table(valor = 4:6)
         )
 
-        expect_no_error(f(result, "USI1", "/proc/nonexistent/path"))
+        suppressWarnings(
+            expect_no_error(f(result, "USI1", "/proc/nonexistent/path"))
+        )
     })
 })
 

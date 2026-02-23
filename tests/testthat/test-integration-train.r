@@ -1,5 +1,6 @@
 test_that("train_main completes without error", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -16,6 +17,7 @@ test_that("train_main completes without error", {
 
 test_that("train_main accepts custom strategy", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -33,6 +35,7 @@ test_that("train_main accepts custom strategy", {
 
 test_that("train_main produces valid model artifacts", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -91,6 +94,7 @@ test_that("train_main produces valid model artifacts", {
 
 test_that("train_main writes valid provenance JSON", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -117,6 +121,7 @@ test_that("train_main writes valid provenance JSON", {
 
 test_that("train_main writes valid metrics JSON", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))

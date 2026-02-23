@@ -1,5 +1,6 @@
 test_that("ajustar_usina returns list with id_usina and parametros", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
 
     conn <- conectamock_pfv(test_path("data"))
     config <- gen_config(
@@ -35,6 +36,7 @@ test_that("ajustar_usina returns list with id_usina and parametros", {
 
 test_that("ajustar_usina parametros has expected structure", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
 
     conn <- conectamock_pfv(test_path("data"))
     config <- gen_config(

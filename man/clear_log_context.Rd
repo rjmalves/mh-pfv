@@ -10,9 +10,7 @@ clear_log_context()
 \code{invisible(NULL)}
 }
 \description{
-Remove o filtro de contexto \code{"mhpfv_ctx"} do logger do pacote,
-eliminando os campos \code{run_id}, \code{mode} e \code{stage} de todos os eventos
-subsequentes. Se o filtro nao estiver presente, a funcao e um no-op.
+Remove o filtro \code{"mhpfv_ctx"} do logger. No-op se o filtro nao existir.
 }
 \seealso{
 \code{\link[=set_log_context]{set_log_context()}}

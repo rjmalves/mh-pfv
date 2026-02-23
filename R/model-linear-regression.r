@@ -3,8 +3,8 @@
 #' Cria um objeto `model_strategy` especializado para regressao linear,
 #' com classe dupla `c("linear_regression", "model_strategy")`.
 #' Os metodos [fit_model()], [predict_model()] e [model_metadata()] delegam
-#' para as funcoes existentes [ajusta_regressao_ger_irrad()] e
-#' [substitui_por_estimativas()].
+#' para as funcoes existentes `ajusta_regressao_ger_irrad()` e
+#' `substitui_por_estimativas()`.
 #'
 #' @param ... parametros adicionais repassados a [new_model_strategy()]
 #'
@@ -28,7 +28,7 @@ linear_regression_strategy <- function(...) {
 #' @details
 #' ## Metodo `linear_regression`
 #'
-#' Delega para [ajusta_regressao_ger_irrad()], ajustando regressoes lineares
+#' Delega para `ajusta_regressao_ger_irrad()`, ajustando regressoes lineares
 #' sem intercepto por horario de meia hora entre geracao observada e
 #' irradiacao prevista. O resultado e um `data.frame` com coeficientes
 #' `a` (angular) e `b` (sempre zero) indexados por horario `"HH:MM"`.

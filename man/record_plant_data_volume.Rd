@@ -13,22 +13,13 @@ record_plant_data_volume(metrics, id_usina, n_rows, n_na, n_total)
 
 \item{n_rows}{numeric escalar, total de linhas processadas}
 
-\item{n_na}{numeric escalar, numero de valores \code{NA} na coluna de valor}
+\item{n_na}{numeric escalar, numero de valores \code{NA}}
 
-\item{n_total}{numeric escalar, numero total de valores (denominador para
-calculo da taxa de NA)}
+\item{n_total}{numeric escalar, denominador para calculo da taxa de NA}
 }
 \value{
-lista de metricas com \code{data_volume} adicionado para a usina:
-\describe{
-\item{\code{n_rows}}{inteiro, numero de linhas}
-\item{\code{n_na}}{inteiro, numero de NAs}
-\item{\code{na_rate}}{numeric, proporcao de NAs; \code{NA} se \code{n_total == 0}}
-}
+lista de metricas com \code{data_volume} adicionado para a usina
 }
 \description{
-Adiciona um sub-registro \code{data_volume} ao registro da usina dentro de
-\code{metrics$plants}, contendo contagem de linhas, valores ausentes e taxa
-de NA. Tipicamente chamado no modo predict apos cada usina processar
-seu resultado.
+Registra Volume de Dados Processados de Uma Usina
 }

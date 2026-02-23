@@ -216,6 +216,7 @@ test_that("validate_all_inputs", {
     })
 
     test_that("validate_all_inputs com dados de teste do disco", {
+        skip_if_no_zstd()
         conn <- conectamock_pfv(testthat::test_path("data"))
         usinas_ids <- get_usinas(conn)$id_usina
         dt_usinas <- get_usinas(conn)

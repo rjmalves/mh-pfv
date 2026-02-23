@@ -9,23 +9,18 @@ set_log_context(run_id, mode, stage = NULL)
 \arguments{
 \item{run_id}{character escalar, identificador unico da execucao}
 
-\item{mode}{character escalar, modo do pipeline (\code{"train"} ou \code{"predict"})}
+\item{mode}{character escalar, \code{"train"} ou \code{"predict"}}
 
-\item{stage}{character escalar ou \code{NULL}, estagio atual do pipeline.
-Quando \code{NULL}, o campo nao e definido}
+\item{stage}{character escalar ou \code{NULL}}
 }
 \value{
 \code{invisible(NULL)}
 }
 \description{
-Injeta campos de contexto (\code{run_id}, \code{mode}, \code{stage}) em todos os
-eventos de log subsequentes do logger \code{mhpfv}, via \code{lgr::FilterInject}.
-Um filtro nomeado \code{"mhpfv_ctx"} e adicionado ao logger; se ja existir
-um filtro com esse nome, ele e substituido.
-}
-\details{
-O campo \code{stage} e opcional: quando \code{NULL}, nao e incluido no contexto.
+Injeta campos \code{run_id}, \code{mode} e \code{stage} (opcional) em todos os eventos
+de log subsequentes via \code{lgr::FilterInject}. Substitui filtro existente
+de mesmo nome, se houver.
 }
 \seealso{
-\code{\link[=clear_log_context]{clear_log_context()}}, \code{\link[=get_pkg_logger]{get_pkg_logger()}}
+\code{\link[=clear_log_context]{clear_log_context()}}
 }

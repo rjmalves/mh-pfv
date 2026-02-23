@@ -1,5 +1,6 @@
 test_that("get_dataset returns named list with all components", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
 
     conn <- conectamock_pfv(test_path("data"))
     config <- gen_config(
@@ -20,6 +21,7 @@ test_that("get_dataset returns named list with all components", {
 
 test_that("get_dataset components are data.tables with rows", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
 
     conn <- conectamock_pfv(test_path("data"))
     config <- gen_config(
@@ -41,6 +43,7 @@ test_that("get_dataset components are data.tables with rows", {
 
 test_that("processar_usina returns list with com_cortes and sem_cortes", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
 
     temp_artifact <- withr::local_tempdir()
     conn <- conectamock_pfv(test_path("data"))
@@ -91,6 +94,7 @@ test_that("processar_usina returns list with com_cortes and sem_cortes", {
 
 test_that("processar_usina output data.tables have rows and expected columns", {
     skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
 
     temp_artifact <- withr::local_tempdir()
     conn <- conectamock_pfv(test_path("data"))

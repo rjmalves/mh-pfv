@@ -7,8 +7,7 @@
 write_metrics(metrics, output_dir)
 }
 \arguments{
-\item{metrics}{lista de metricas (preferencialmente finalizada por
-\code{\link[=finalize_metrics]{finalize_metrics()}})}
+\item{metrics}{lista de metricas finalizada por \code{\link[=finalize_metrics]{finalize_metrics()}}}
 
 \item{output_dir}{character, diretorio de saida}
 }
@@ -16,12 +15,6 @@ write_metrics(metrics, output_dir)
 caminho do arquivo escrito (invisivelmente)
 }
 \description{
-Serializa as metricas como JSON e escreve \verb{metrics-\{run_id\}.json} no
-diretorio informado. Segue o mesmo padrao de tratamento de erro de
-\code{\link[=write_provenance]{write_provenance()}}: envolvido em \code{tryCatch}, falhas de I/O geram apenas
-um aviso no log e nunca interrompem o pipeline.
-}
-\details{
-\code{NA_real_} nos campos de agregacao e serializado como \code{null} via
-\code{jsonlite::toJSON(..., null = "null")}.
+Serializa as metricas como \verb{metrics-\{run_id\}.json} no diretorio informado.
+Falhas de I/O geram apenas aviso no log e nunca interrompem o pipeline.
 }
