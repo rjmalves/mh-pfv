@@ -2,7 +2,7 @@
 
 Obrigado pelo interesse em contribuir! Este documento fornece diretrizes para contribuições ao projeto.
 
-## 📋 Índice
+## Índice
 
 - [Como Contribuir](#como-contribuir)
 - [Configuração do Ambiente](#configuração-do-ambiente)
@@ -13,7 +13,7 @@ Obrigado pelo interesse em contribuir! Este documento fornece diretrizes para co
 
 ---
 
-## 🤝 Como Contribuir
+## Como Contribuir
 
 ### Reportando Bugs
 
@@ -45,7 +45,7 @@ Obrigado pelo interesse em contribuir! Este documento fornece diretrizes para co
 
 ---
 
-## 🛠️ Configuração do Ambiente
+## Configuração do Ambiente
 
 ### Pré-requisitos
 
@@ -67,7 +67,7 @@ git remote add upstream https://github.com/rjmalves/mh-pfv.git
 Rscript -e "renv::restore()"
 
 # Instale dependências de desenvolvimento
-Rscript -e "install.packages(c('devtools', 'testthat', 'lintr', 'roxygen2', 'covr', 'cyclocomp'))"
+Rscript -e "install.packages(c('devtools', 'testthat', 'lintr', 'roxygen2', 'covr', 'cyclocomp', 'withr'))"
 ```
 
 ### Verificando a Instalação
@@ -81,28 +81,39 @@ devtools::check()      # Verificação completa
 
 ---
 
-## 📐 Padrões de Código
+## Padrões de Código
 
 ### Estilo
 
-Seguimos o [tidyverse style guide](https://style.tidyverse.org/) com algumas customizações definidas em `.lintr`:
+Seguimos o [tidyverse style guide](https://style.tidyverse.org/) com customizações definidas em `.lintr`:
 
 ```r
-# Configurações principais:
+# Configurações principais (.lintr):
 # - Linha máxima: 120 caracteres
-# - Indentação: 4 espaços
-# - Nomes: snake_case
+# - Indentação: 4 espaços (block style, sem hanging indent)
+# - Nomes: snake_case ou symbols
+# - Complexidade ciclomática máxima: 12 por função
+# - object_usage_linter desabilitado
+# - return_linter desabilitado
 ```
 
 ### Verificação de Estilo
 
 ```r
-# Executar linter
+# Executar linter completo (inclui complexidade ciclomática)
 lintr::lint_package()
 
-# Ou para um arquivo específico
+# Para um arquivo específico
 lintr::lint("R/meu_arquivo.r")
 ```
+
+### Complexidade Ciclomática
+
+Funções com complexidade ciclomática acima de 12 falham no lint. Para reduzir a complexidade:
+
+- Extraia condições compostas em funções predicado (ex: `has_high_na_rate()`)
+- Mova blocos de lógica independente para helpers privadas
+- Combine múltiplas verificações `if` idênticas em um único bloco
 
 ### Boas Práticas R
 
@@ -111,7 +122,7 @@ Seguimos os princípios do [Advanced R](https://adv-r.hadley.nz/):
 #### 1. Funções Puras e Pequenas
 
 ```r
-# ✅ Bom: função focada, sem efeitos colaterais
+# Bom: função focada, sem efeitos colaterais
 calcular_mae <- function(observado, previsto) {
     stopifnot(
         is.numeric(observado),
@@ -121,15 +132,20 @@ calcular_mae <- function(observado, previsto) {
     mean(abs(observado - previsto), na.rm = TRUE)
 }
 
-# ❌ Evitar: funções grandes com múltiplas responsabilidades
+# Evitar: funções grandes com múltiplas responsabilidades
 ```
 
 #### 2. Validação de Entrada
 
+O pacote inclui um framework de validação contra schemas tipados (`R/validation.r`). Use `validate_input()` para dados de entrada e `validate_artifact()` para artefatos de modelo.
+
 ```r
-# ✅ Bom: validar tipos e dimensões
+# Validação via schema
+validate_input(dt, "geracao_observada")
+
+# Validação manual para funções simples
 processar_dados <- function(dt, coluna) {
-    if (!is.data.table(dt)) {
+    if (!data.table::is.data.table(dt)) {
         stop("'dt' deve ser um data.table")
     }
     if (!coluna %in% names(dt)) {
@@ -139,56 +155,113 @@ processar_dados <- function(dt, coluna) {
 }
 ```
 
-#### 3. Operações Vetorizadas
+#### 3. Strategy Pattern (S3)
+
+Novos modelos devem implementar a interface `model_strategy`:
 
 ```r
-# ✅ Bom: vetorizado
+# Criar construtor
+meu_modelo_strategy <- function(...) {
+    new_model_strategy("meu_modelo", ...)
+}
+
+# Implementar métodos obrigatórios
+fit_model.meu_modelo <- function(strategy, dty, dtx, dty_bruta, ...) { ... }
+predict_model.meu_modelo <- function(strategy, model, df_ger_usi,
+    df_irrad_prev, lim_dados, ...) { ... }
+model_metadata.meu_modelo <- function(strategy, model, ...) { ... }
+```
+
+Em testes, definições locais de métodos S3 (ex: `fit_model.test_model`) devem usar `# nolint: object_name_linter.` para suprimir o linter de nomes.
+
+#### 4. Operações Vetorizadas
+
+```r
+# Bom: vetorizado
 valores_normalizados <- (valores - min(valores)) / (max(valores) - min(valores))
 
-# ❌ Evitar: loops explícitos quando desnecessários
+# Evitar: loops explícitos quando desnecessários
 for (i in seq_along(valores)) {
     valores_normalizados[i] <- (valores[i] - min(valores)) / (max(valores) - min(valores))
 }
 ```
 
-#### 4. data.table Idiomático
+#### 5. data.table Idiomático
 
 ```r
-# ✅ Bom: sintaxe data.table
+# Bom: sintaxe data.table
 dt[, valor_ajustado := valor * fator, by = id_usina]
 dt[is.na(valor), valor := 0]
 
-# ❌ Evitar: misturar com dplyr ou base R desnecessariamente
+# Evitar: misturar com dplyr ou base R desnecessariamente
 ```
 
-#### 5. Tratamento de Erros
+#### 6. Tratamento de Erros
 
 ```r
-# ✅ Bom: mensagens informativas
-if (nrow(dados) == 0) {
-    stop(
-        "Nenhum dado encontrado para a usina '", id_usina, "' ",
-        "no período de ", data_inicio, " a ", data_fim
-    )
+# Bom: mensagens informativas com coleta de erros
+errors <- character(0L)
+errors <- check_required_columns(errors, dt, schema)
+errors <- check_column_types(errors, dt, schema)
+if (length(errors) > 0L) {
+    stop(paste0("- ", errors, collapse = "\n"), call. = FALSE)
 }
 ```
 
 ---
 
-## 🧪 Testes
+## Testes
 
 ### Estrutura de Testes
 
 ```
 tests/
-├── testthat.r           # Runner principal
+├── testthat.r                          # Runner principal
+├── coverage-baseline.md                # Baseline de cobertura
 └── testthat/
-    ├── data/            # Dados de teste
-    ├── test-config-file.r
-    ├── test-consistencia-dados.r
-    ├── test-predict.r
-    ├── test-train.r
-    └── test-utils.r
+    ├── data/                           # Dados de teste (Parquet/CSV)
+    ├── _snaps/                         # Snapshots de regressão
+    ├── setup.r                         # Setup global (skip helpers)
+    ├── helper-generators.r             # Geradores de dados de teste
+    ├── test-artifact.r                 # Artefatos de modelo
+    ├── test-cli.r                      # Entry point CLI
+    ├── test-config-file.r              # Configuração
+    ├── test-consistencia-dados.r       # Consistência de dados
+    ├── test-escrita.r                  # Escrita de resultados
+    ├── test-health-report.r            # Relatórios de saúde
+    ├── test-helper-generators.r        # Testes dos próprios geradores
+    ├── test-integration-predict.r      # Integração do predict
+    ├── test-integration-train.r        # Integração do train
+    ├── test-logging.r                  # Logging estruturado
+    ├── test-metrics.r                  # Métricas de pipeline
+    ├── test-model-comparison.r         # Comparação de artefatos
+    ├── test-model-strategy.r           # Strategy pattern S3
+    ├── test-parallel.r                 # Infraestrutura paralela
+    ├── test-parser-expanded.r          # Parser de argumentos
+    ├── test-pipeline-resume.r          # Retomada de pipeline
+    ├── test-predict.r                  # Pipeline predict
+    ├── test-preenchimento-dados-faltantes.r  # Imputação
+    ├── test-provenance.r               # Proveniência
+    ├── test-snapshot-regression.r      # Testes de snapshot
+    ├── test-strategy-integration.r     # Integração strategy+pipeline
+    ├── test-train.r                    # Pipeline train
+    ├── test-utils.r                    # Utilitários
+    └── test-validation.r              # Validação de entrada
+```
+
+### Geradores de Dados de Teste
+
+O arquivo `helper-generators.r` fornece funções `gen_*()` para criar dados de teste consistentes:
+
+```r
+# Gera configuração padrão
+config <- gen_config(mode = "train", janela = list("2025-07-01", "2025-09-30"))
+
+# Gera artefato de modelo
+artifact <- gen_model_artifact(id_usina = "USI1")
+
+# Gera proveniência
+prov <- gen_provenance(mode = "train", n_plants = 3L)
 ```
 
 ### Escrevendo Testes
@@ -204,6 +277,16 @@ test_that("funcao_exemplo retorna resultado esperado", {
     # Assert: verificar resultado
     expect_equal(nrow(resultado), 5)
     expect_true(all(!is.na(resultado$valor)))
+})
+```
+
+Testes que dependem de dados de teste (diretório `data/`) ou de ferramentas opcionais devem usar `skip_if_not()`:
+
+```r
+test_that("integração com dados reais", {
+    skip_if_not(dir.exists(test_path("data")))
+    skip_if_no_zstd()
+    # ...
 })
 ```
 
@@ -225,10 +308,11 @@ covr::package_coverage()
 - Novas funções públicas devem ter testes
 - Casos de borda (NA, vazios, tipos errados) devem ser testados
 - Testes devem ser independentes e reprodutíveis
+- CI exige passagem do R-CMD-check, lint e cobertura de testes
 
 ---
 
-## 📝 Documentação
+## Documentação
 
 ### Roxygen2
 
@@ -275,7 +359,7 @@ devtools::check_man()
 
 ---
 
-## 🔄 Processo de Pull Request
+## Processo de Pull Request
 
 ### Antes de Abrir o PR
 
@@ -324,6 +408,7 @@ Breve descrição das mudanças.
 - [ ] Testes adicionados/atualizados
 - [ ] Documentação atualizada
 - [ ] `devtools::check()` passa sem erros
+- [ ] `lintr::lint_package()` sem avisos
 - [ ] Código segue os padrões do projeto
 
 ## Issues Relacionadas
@@ -334,12 +419,12 @@ Closes #123
 ### Revisão
 
 - PRs requerem pelo menos 1 aprovação
-- CI deve passar (testes, lint, check)
+- CI deve passar (testes, lint, R-CMD-check, cobertura)
 - Discussões devem ser resolvidas antes do merge
 
 ---
 
-## 🏷️ Versionamento
+## Versionamento
 
 Seguimos [Semantic Versioning](https://semver.org/):
 
@@ -351,10 +436,10 @@ Atualize o `DESCRIPTION` e `CHANGELOG.md` ao lançar versões.
 
 ---
 
-## ❓ Dúvidas?
+## Dúvidas?
 
 - Abra uma [Discussion](https://github.com/rjmalves/mh-pfv/discussions) para perguntas gerais
 - Use [Issues](https://github.com/rjmalves/mh-pfv/issues) para bugs e features
 - Consulte a documentação existente
 
-Obrigado por contribuir! 🎉
+Obrigado por contribuir!

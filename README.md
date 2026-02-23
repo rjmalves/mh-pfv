@@ -10,15 +10,17 @@ Desenvolvido pelo [Operador Nacional do Sistema Elétrico (ONS)](https://www.ons
 
 ---
 
-## 📋 Visão Geral
+## Visão Geral
 
 Este pacote implementa um pipeline de processamento de dados que:
 
 1. **Valida e consiste** dados de geração observada de múltiplas fontes (PI-ONS, CCEE, etc.)
 2. **Detecta e trata** valores anômalos (congelados, fora de limites físicos)
-3. **Preenche lacunas** usando modelos de regressão linear calibrados com previsões de irradiância (NWP)
+3. **Preenche lacunas** usando modelos plugáveis via S3 Strategy Pattern (padrão: regressão linear com NWP)
 4. **Combina fontes** por ordem de prioridade configurável
 5. **Gera históricos consolidados** com e sem consideração de cortes de geração
+6. **Rastreia proveniência** com run IDs, checksums de configuração e checkpoints para retomada
+7. **Coleta métricas** de desempenho por usina e gera relatórios de saúde do pipeline
 
 ### Casos de Uso
 
@@ -26,10 +28,11 @@ Este pacote implementa um pipeline de processamento de dados que:
 - Preparação de dados de treinamento para modelos de previsão de geração solar
 - Auditoria e validação de dados de medição de usinas fotovoltaicas
 - Análise de desempenho histórico de plantas solares
+- Comparação entre execuções de modelos e artefatos
 
 ---
 
-## 🏗️ Arquitetura
+## Arquitetura
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -41,51 +44,55 @@ Este pacote implementa um pipeline de processamento de dados que:
          │                 │                 │                    │
          ▼                 ▼                 ▼                    ▼
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                         MODO: TRAIN (train_main)                           │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐  │
-│  │ Consistência     │  │ Aplicação de     │  │ Ajuste de Regressão      │  │
-│  │ de Dados         │→ │ Cortes           │→ │ Geração ~ Irradiância    │  │
-│  │ (por usina)      │  │                  │  │ (por hora do dia)        │  │
-│  └──────────────────┘  └──────────────────┘  └───────────┬──────────────┘  │
-│                                                          │                 │
-│                                                          ▼                 │
-│                                              ┌──────────────────────────┐  │
-│                                              │ Artefato: modelo.rds     │  │
-│                                              │ (coeficientes por hora)  │  │
-│                                              └──────────────────────────┘  │
-└────────────────────────────────────────────────────────────────────────────┘
-
+│                  VALIDAÇÃO DE ENTRADA (validate_all_inputs)                │
+└────────────────────────────────┬───────────────────────────────────────────┘
+                                 │
+                 ┌───────────────┴────────────┐
+                 │                            │
+                 ▼                            ▼
+┌────────────────────────────────┐ ┌────────────────────────────────┐
+│     MODO: TRAIN (train_main)   │ │   MODO: PREDICT (predict_main) │
+│                                │ │                                │
+│  Consistência → Cortes →       │ │  Consistência → Preenchimento  │
+│  fit_model(strategy) →         │ │  predict_model(strategy) →     │
+│  Artefato c/ metadados         │ │  MH Geração (com/sem cortes)   │
+└────────────┬───────────────────┘ └────────────┬───────────────────┘
+             │                                  │
+             └──────────────┬───────────────────┘
+                            │
+                            ▼
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                        MODO: PREDICT (predict_main)                        │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐  │
-│  │ Consistência     │  │ Preenchimento    │  │ Combinação com           │  │
-│  │ de Dados         │→ │ por Estimativas  │→ │ MH Anterior              │  │
-│  │ (por usina)      │  │ (modelo + NWP)   │  │                          │  │
-│  └──────────────────┘  └──────────────────┘  └───────────┬──────────────┘  │
-│                                                          │                 │
-│                                                          ▼                 │
-│                                              ┌──────────────────────────┐  │
-│                                              │ Saída: MH Geração        │  │
-│                                              │ (com/sem cortes)         │  │
-│                                              └──────────────────────────┘  │
+│                         OBSERVABILIDADE                                    │
+│  Proveniência (JSON) │ Métricas (JSON) │ Relatório de Saúde (JSON)         │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Componentes Principais
 
-| Módulo                            | Descrição                                                          |
-| --------------------------------- | ------------------------------------------------------------------ |
-| `config-file.r`                   | Parsing e validação do arquivo de configuração                     |
-| `consistencia-dados.r`            | Detecção de valores congelados, outliers, combinação de fontes     |
-| `train.r`                         | Treinamento de modelos de regressão linear (geração ~ irradiância) |
-| `predict.r`                       | Pipeline de consolidação e geração do melhor histórico             |
-| `preenchimento-dados-faltantes.r` | Imputação de dados faltantes usando NWP                            |
-| `utils.r`                         | Funções auxiliares (interpolação, associação NWP-usina)            |
-| `escrita.r`                       | Exportação de resultados em CSV/Parquet                            |
+| Módulo                            | Descrição                                                         |
+| --------------------------------- | ----------------------------------------------------------------- |
+| `cli.r`                           | Entry point do pacote (`cli_main`), parsing de flags e env vars   |
+| `config-file.r`                   | Parsing e validação do arquivo de configuração                    |
+| `validation.r`                    | Validação de dados de entrada contra schemas tipados              |
+| `consistencia-dados.r`            | Detecção de valores congelados, outliers, combinação de fontes    |
+| `model-strategy.r`                | Interface S3 plugável para modelos (`fit_model`, `predict_model`) |
+| `model-linear-regression.r`       | Implementação da estratégia de regressão linear                   |
+| `train.r`                         | Pipeline de treinamento com suporte a paralelismo e retomada      |
+| `predict.r`                       | Pipeline de consolidação com suporte a paralelismo e retomada     |
+| `preenchimento-dados-faltantes.r` | Imputação de dados faltantes usando NWP                           |
+| `parallel.r`                      | Gestão do backend paralelo (`future`/`future.apply`)              |
+| `artifact.r`                      | Construção e validação de artefatos de modelo enriquecidos        |
+| `provenance.r`                    | Rastreabilidade de execução, checkpoints e retomada               |
+| `metrics.r`                       | Coleta de métricas por usina e agregados do pipeline              |
+| `health-report.r`                 | Classificação de saúde por usina e do pipeline                    |
+| `model-comparison.r`              | Comparação pairwise de artefatos de modelo                        |
+| `logging.r`                       | Logging estruturado com contexto (run_id, mode)                   |
+| `utils.r`                         | Funções auxiliares (interpolação, associação NWP-usina)           |
+| `escrita.r`                       | Exportação de resultados em CSV/Parquet                           |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Pré-requisitos
 
@@ -116,6 +123,16 @@ Rscript main.r --datadir ./data
 Rscript main.r --datadir ./data
 ```
 
+### Execução com Paralelismo e Retomada
+
+```bash
+# Treinamento paralelo com 4 workers
+Rscript main.r --datadir ./data --parallel --workers 4
+
+# Retomada após falha (reprocessa apenas usinas pendentes)
+Rscript main.r --datadir ./data --parallel --resume
+```
+
 ### Usando Docker
 
 ```bash
@@ -124,21 +141,49 @@ docker build -t mhpfv .
 
 # Execução com volumes montados
 docker run -v $(pwd)/data:/app/data -v $(pwd)/out:/app/out mhpfv --datadir /app/data
+
+# Execução paralela com variáveis de ambiente
+docker run \
+  -e MHPFV_PARALLEL=true \
+  -e MHPFV_WORKERS=4 \
+  -e MHPFV_RESUME=true \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/out:/app/out \
+  mhpfv --datadir /app/data
 ```
 
 ---
 
-## 📖 Uso Detalhado
+## Uso Detalhado
 
 ### Linha de Comando
 
 ```bash
-Rscript main.r --datadir <DIRETÓRIO>
+Rscript main.r --datadir <DIRETÓRIO> [--parallel] [--resume] [--workers N]
 ```
 
-| Argumento   | Descrição                                            | Default  |
-| ----------- | ---------------------------------------------------- | -------- |
-| `--datadir` | Diretório contendo dados de entrada e `config.jsonc` | `./data` |
+| Argumento    | Descrição                                            | Default  |
+| ------------ | ---------------------------------------------------- | -------- |
+| `--datadir`  | Diretório contendo dados de entrada e `config.jsonc` | `./data` |
+| `--parallel` | Habilita processamento paralelo de usinas            | `FALSE`  |
+| `--resume`   | Retoma execução a partir do último checkpoint        | `FALSE`  |
+| `--workers`  | Número de workers paralelos (requer `--parallel`)    | auto     |
+
+### Variáveis de Ambiente
+
+| Variável           | Descrição                    | Valores                          |
+| ------------------ | ---------------------------- | -------------------------------- |
+| `LOG_LEVEL`        | Nível de log                 | `debug`, `info`, `warn`, `error` |
+| `MHPFV_LOG_FORMAT` | Formato de saída do log      | `text` (padrão), `json`          |
+| `MHPFV_PARALLEL`   | Habilita paralelismo via env | `true`/`false`                   |
+| `MHPFV_RESUME`     | Habilita retomada via env    | `true`/`false`                   |
+| `MHPFV_WORKERS`    | Número de workers via env    | inteiro positivo                 |
+
+A resolução de prioridade para flags é: **argumento CLI** > **variável de ambiente** > **valor padrão**.
+
+```bash
+LOG_LEVEL=debug MHPFV_LOG_FORMAT=json Rscript main.r --datadir ./data
+```
 
 ### Arquivo de Configuração (`config.jsonc`)
 
@@ -165,23 +210,13 @@ Rscript main.r --datadir <DIRETÓRIO>
   "ordem_prioridade_modelosNWP": ["GFS"],
 
   // Fator multiplicador da capacidade instalada para limite superior
-  "fator_tolerancia_limite_superior_geracao": 1.1
+  "fator_tolerancia_limite_superior_geracao": 1.1,
 }
-```
-
-### Variáveis de Ambiente
-
-| Variável    | Descrição    | Valores                          |
-| ----------- | ------------ | -------------------------------- |
-| `LOG_LEVEL` | Nível de log | `debug`, `info`, `warn`, `error` |
-
-```bash
-LOG_LEVEL=debug Rscript main.r --datadir ./data
 ```
 
 ---
 
-## 📁 Dados de Entrada
+## Dados de Entrada
 
 O diretório de dados deve conter os seguintes arquivos:
 
@@ -226,12 +261,14 @@ PI,USINA_A,2024-01-01 00:00:00,45.2,0
 ```
 
 ### `melhor_historico_geracao.parquet`
+
 ```
 id_fonte_observacao,id_usina,data_hora_observacao,valor,status
 Consis,USINA_A,2024-01-01 00:00:00,45.2,1
 ```
 
 ### `melhor_historico_geracao_sem_cortes.parquet`
+
 ```
 id_fonte_observacao,id_usina,data_hora_observacao,valor,status
 Consis,USINA_A,2024-01-01 00:00:00,45.2,1
@@ -239,9 +276,11 @@ Consis,USINA_A,2024-01-01 00:00:00,45.2,1
 
 ---
 
-## 📊 Saídas
+## Saídas
 
-O modelo gera dois arquivos no diretório de saída:
+O pipeline gera os seguintes artefatos no diretório de saída:
+
+### Dados de Resultado
 
 | Arquivo                                       | Descrição                                                                |
 | --------------------------------------------- | ------------------------------------------------------------------------ |
@@ -262,9 +301,21 @@ Consis,USINA_A,2024-01-01 00:00:00,45.2,1
 | 3      | Dado de fonte terciária                |
 | 4      | Estimado pelo modelo (NWP + regressão) |
 
+### Artefatos de Observabilidade
+
+Cada execução do pipeline produz adicionalmente:
+
+| Arquivo                    | Descrição                                                                 |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `{id_usina}.rds`           | Artefato de modelo com metadados (tipo, versão, config hash) — modo train |
+| `provenance-{run_id}.json` | Registro de proveniência com status por usina e timestamps                |
+| `metrics-{run_id}.json`    | Métricas por usina (duração, volume de dados, qualidade do modelo)        |
+| `health-{run_id}.json`     | Relatório de saúde (healthy/degraded/failed) com avisos e erros por usina |
+| `checkpoint-{run_id}.json` | Checkpoint para retomada (removido após conclusão bem-sucedida)           |
+
 ---
 
-## 🔬 Metodologia
+## Metodologia
 
 ### Detecção de Valores Congelados
 
@@ -273,9 +324,22 @@ Valores são considerados "congelados" quando uma janela deslizante de N valores
 - Janela de 5 valores com limiar de 0.01
 - Janela de 8 valores com limiar de 0.1
 
-### Modelo de Regressão
+### Modelo de Regressão (Strategy Pattern)
 
-Para cada hora do dia (05:00 às 18:30, intervalos de 30min), ajusta-se uma regressão linear sem intercepto:
+O pipeline usa um sistema de estratégias plugáveis via S3:
+
+```r
+# Estratégia padrão: regressão linear sem intercepto
+strategy <- linear_regression_strategy()
+
+# Usar em treinamento
+train_main(config, strategy = strategy)
+
+# Ou em previsão
+predict_main(config, strategy = strategy)
+```
+
+Para cada hora do dia (05:00 às 18:30, intervalos de 30min), ajusta-se:
 
 ```
 Geração = α × Irradiância
@@ -289,9 +353,18 @@ Requer mínimo de 10 pares válidos por hora para ajuste.
 2. Estimativas fora dos limites físicos (0 a capacidade × fator) são descartadas
 3. Dados do MH anterior são combinados com novos dados
 
+### Retomada de Execução
+
+Quando `--resume` está habilitado:
+
+1. O pipeline verifica checkpoints existentes no diretório de saída
+2. Valida o hash da configuração (rejeita checkpoints de configurações diferentes)
+3. Reprocessa apenas usinas pendentes, carregando resultados intermediários do disco
+4. Remove checkpoints e resultados intermediários após conclusão bem-sucedida
+
 ---
 
-## 🧪 Testes
+## Testes
 
 ```bash
 # Executar testes unitários
@@ -300,13 +373,23 @@ Rscript -e "devtools::test()"
 # Verificação completa do pacote
 Rscript -e "devtools::check()"
 
-# Linting
+# Linting (inclui complexidade ciclomática)
 Rscript -e "lintr::lint_package()"
+
+# Cobertura de testes
+Rscript -e "covr::package_coverage()"
+```
+
+### Benchmarks
+
+```bash
+# Executar suite de benchmarks
+Rscript inst/benchmarks/run-all.r [data_dir]
 ```
 
 ---
 
-## 🤝 Contribuindo
+## Contribuindo
 
 Contribuições são bem-vindas! Por favor, leia o [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes sobre:
 
@@ -316,20 +399,20 @@ Contribuições são bem-vindas! Por favor, leia o [CONTRIBUTING.md](CONTRIBUTIN
 
 ---
 
-## 📜 Licença
+## Licença
 
 Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 ---
 
-## 📚 Documentação Adicional
+## Documentação Adicional
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Detalhes da arquitetura da aplicação
 - [CHANGELOG.md](CHANGELOG.md) - Histórico de versões
 
 ---
 
-## 📞 Contato
+## Contato
 
 - **Organização**: [ONS - Operador Nacional do Sistema Elétrico](https://www.ons.org.br/)
 - **Issues**: [GitHub Issues](https://github.com/rjmalves/mh-pfv/issues)
@@ -342,6 +425,6 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
   title = {mhpfv: Consolidação de Histórico de Geração Solar},
   year = {2025},
   url = {https://github.com/rjmalves/mh-pfv},
-  version = {0.1.0}
+  version = {0.1.1}
 }
 ```
