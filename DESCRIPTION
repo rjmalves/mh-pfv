@@ -1,6 +1,6 @@
 Package: mhpfv
 Title: Construcao do melhor historico de insumos observados para previsao de solar fotovoltaica
-Version: 0.1.1
+Version: 0.1.1.9999
 Authors@R: 
     person("Paulo", "Nascimento", , "pnascimento@ons.org.br", role = c("aut", "cre"))
 Description: Este pacote contem as funcionalidades necessarias para tratamento de dados de geracao,
