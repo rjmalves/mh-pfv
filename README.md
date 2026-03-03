@@ -191,7 +191,7 @@ O diretório de dados deve conter os seguintes arquivos:
 | `usinas.parquet`                              | Parquet ou CSV | Cadastro de usinas (id, lat, lon, capacidade)                    |
 | `geracao_observada.parquet`                   | Parquet ou CSV | Série temporal de geração por fonte                              |
 | `irradiancia_prevista.parquet`                | Parquet ou CSV | Previsões NWP de irradiância                                     |
-| `corte_observado.parquet`                     | Parquet ou CSV | Registro de cortes de geração                                    |
+| `corte_observado.parquet`                     | Parquet ou CSV | Registro da existência de cortes de geração (binário)            |
 | `melhor_historico_geracao.parquet`            | Parquet ou CSV | Versão existente do MHG sem estimar valores em momento de cortes |
 | `melhor_historico_geracao_sem_cortes.parquet` | Parquet ou CSV | Registro de cortes de geração com estimativas durante cortes     |
 
@@ -222,7 +222,7 @@ GFS,-23.5,-46.5,2024-01-01 00:00:00,2024-01-01 12:00:00,850.5
 
 ```
 id_fonte_observacao,id_usina,data_hora_observacao,valor,status
-PI,USINA_A,2024-01-01 00:00:00,45.2,0
+PI,USINA_A,2024-01-01 00:00:00,1,0
 ```
 
 ### `melhor_historico_geracao.parquet`
