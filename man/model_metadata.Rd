@@ -25,7 +25,6 @@ Para \code{linear_regression}, lista com:
 \item{\code{type}}{\code{"linear_regression"}}
 \item{\code{n_slots}}{numero total de horarios no modelo}
 \item{\code{n_valid_slots}}{numero de horarios com coeficiente \code{a} nao-\code{NA}}
-\item{\code{mean_coefficient}}{media dos coeficientes \code{a} validos}
 \item{\code{timestamp}}{momento da extracao (\code{Sys.time()})}
 }
 

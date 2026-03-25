@@ -170,13 +170,12 @@ test_that("record_model_quality", {
 
     expect_true(is.function(f))
 
-    test_that("record_model_quality extracts n_slots, n_valid_slots, mean_coefficient", {
+    test_that("record_model_quality extracts n_slots and n_valid_slots", {
         m <- create_metrics("test-run", "train")
         meta <- list(
             type = "linear_regression",
             n_slots = 28L,
             n_valid_slots = 26L,
-            mean_coefficient = 0.031,
             timestamp = Sys.time(),
             package_version = "0.1.0",
             config_hash = "abc123"
@@ -185,13 +184,12 @@ test_that("record_model_quality", {
 
         expect_equal(result$plants$USI1$model_quality$n_slots, 28L)
         expect_equal(result$plants$USI1$model_quality$n_valid_slots, 26L)
-        expect_equal(result$plants$USI1$model_quality$mean_coefficient, 0.031)
     })
 
     test_that("record_model_quality preserves existing plant fields", {
         m <- create_metrics("test-run", "train")
         m$plants$USI1 <- list(duration_seconds = 4.2)
-        meta <- list(n_slots = 28L, n_valid_slots = 28L, mean_coefficient = 0.02)
+        meta <- list(n_slots = 28L, n_valid_slots = 28L)
         result <- f(m, "USI1", meta)
 
         expect_equal(result$plants$USI1$duration_seconds, 4.2)
@@ -200,12 +198,11 @@ test_that("record_model_quality", {
 
     test_that("record_model_quality handles NULL metadata fields gracefully", {
         m <- create_metrics("test-run", "train")
-        meta <- list(n_slots = 28L, n_valid_slots = NULL, mean_coefficient = NULL)
+        meta <- list(n_slots = 28L, n_valid_slots = NULL)
         result <- f(m, "USI1", meta)
 
         expect_equal(result$plants$USI1$model_quality$n_slots, 28L)
         expect_null(result$plants$USI1$model_quality$n_valid_slots)
-        expect_null(result$plants$USI1$model_quality$mean_coefficient)
     })
 
     test_that("record_model_quality rejects non-list metadata", {
@@ -263,8 +260,7 @@ test_that("finalize_metrics", {
 
     test_that("finalize_metrics returns NA aggregates when no plant has timing", {
         m <- create_metrics("test-run", "train")
-        m <- record_model_quality(m, "USI1", list(n_slots = 28L, n_valid_slots = 28L,
-                mean_coefficient = 0.02))
+        m <- record_model_quality(m, "USI1", list(n_slots = 28L, n_valid_slots = 28L))
         result <- f(m)
 
         expect_equal(result$pipeline$n_plants, 1L)

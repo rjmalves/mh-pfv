@@ -33,38 +33,19 @@ gen_metrics_healthy <- function(ids = c("USI1", "USI2"), mode = "train") {
         m <- record_plant_data_volume(m, iu, 1440, 100, 1440)
         if (mode == "train") {
             m <- record_model_quality(m, iu, list(
-                n_slots = 28L, n_valid_slots = 26L, mean_coefficient = 0.031
+                n_slots = 28L, n_valid_slots = 26L
             ))
         }
     }
     finalize_metrics(m)
 }
 
-gen_metrics_high_na <- function(ids = c("USI1", "USI2"), mode = "train",
-    bad_id = NULL) {
-
-    if (is.null(bad_id)) bad_id <- ids[1L]
+gen_metrics_with_data <- function(ids = c("USI1", "USI2"), mode = "train") {
     run_id <- paste0(mode, "-20260101-120000-abcd")
     m <- create_metrics(run_id, mode)
     for (iu in ids) {
         m <- record_plant_timing(m, iu, 5.0)
-        n_na <- if (iu == bad_id) 900 else 100
-        m <- record_plant_data_volume(m, iu, 1440, n_na, 1440)
-    }
-    finalize_metrics(m)
-}
-
-gen_metrics_low_slots <- function(ids = c("USI1", "USI2"), bad_id = NULL) {
-    if (is.null(bad_id)) bad_id <- ids[1L]
-    run_id <- "train-20260101-120000-abcd"
-    m <- create_metrics(run_id, "train")
-    for (iu in ids) {
-        m <- record_plant_timing(m, iu, 5.0)
         m <- record_plant_data_volume(m, iu, 1440, 100, 1440)
-        n_valid <- if (iu == bad_id) 5L else 26L
-        m <- record_model_quality(m, iu, list(
-            n_slots = 28L, n_valid_slots = n_valid, mean_coefficient = 0.02
-        ))
     }
     finalize_metrics(m)
 }
@@ -93,60 +74,10 @@ test_that("classify_plant_health", {
         expect_equal(result, "healthy")
     })
 
-    test_that("classify_plant_health returns healthy for completed plant with good metrics", {
+    test_that("classify_plant_health returns healthy for completed plant with metrics", {
         plant_metrics <- list(
             duration_seconds = 5.0,
-            data_volume = list(n_rows = 1440L, n_na = 100L, na_rate = 0.069),
-            model_quality = list(n_slots = 28L, n_valid_slots = 26L, mean_coefficient = 0.031)
-        )
-        result <- f("completed", plant_metrics)
-        expect_equal(result, "healthy")
-    })
-
-    test_that("classify_plant_health returns warning for na_rate > 0.5", {
-        plant_metrics <- list(
-            data_volume = list(n_rows = 1440L, n_na = 900L, na_rate = 0.625)
-        )
-        result <- f("completed", plant_metrics)
-        expect_equal(result, "warning")
-    })
-
-    test_that("classify_plant_health returns healthy for na_rate exactly 0.5", {
-        plant_metrics <- list(
-            data_volume = list(n_rows = 100L, n_na = 50L, na_rate = 0.5)
-        )
-        result <- f("completed", plant_metrics)
-        expect_equal(result, "healthy")
-    })
-
-    test_that("classify_plant_health returns warning for n_valid_slots < n_slots * 0.5", {
-        plant_metrics <- list(
-            model_quality = list(n_slots = 28L, n_valid_slots = 5L, mean_coefficient = 0.02)
-        )
-        result <- f("completed", plant_metrics)
-        expect_equal(result, "warning")
-    })
-
-    test_that("classify_plant_health returns healthy for n_valid_slots >= n_slots * 0.5", {
-        plant_metrics <- list(
-            model_quality = list(n_slots = 28L, n_valid_slots = 14L, mean_coefficient = 0.02)
-        )
-        result <- f("completed", plant_metrics)
-        expect_equal(result, "healthy")
-    })
-
-    test_that("classify_plant_health returns warning when only data_volume triggers it", {
-        plant_metrics <- list(
-            data_volume = list(n_rows = 1440L, n_na = 900L, na_rate = 0.625),
-            model_quality = list(n_slots = 28L, n_valid_slots = 26L, mean_coefficient = 0.031)
-        )
-        result <- f("completed", plant_metrics)
-        expect_equal(result, "warning")
-    })
-
-    test_that("classify_plant_health handles NA na_rate gracefully", {
-        plant_metrics <- list(
-            data_volume = list(n_rows = 0L, n_na = 0L, na_rate = NA_real_)
+            data_volume = list(n_rows = 1440L, n_na = 100L, na_rate = 0.069)
         )
         result <- f("completed", plant_metrics)
         expect_equal(result, "healthy")
@@ -205,84 +136,13 @@ test_that("collect_warnings", {
     f <- mhpfv:::collect_warnings
     expect_true(is.function(f))
 
-    test_that("collect_warnings returns empty vector for all healthy plants", {
+    test_that("collect_warnings always returns empty vector", {
         reports <- list(
-            USI1 = list(health = "healthy", data_quality = list(na_rate = 0.05, n_rows = 1440L),
-                model_quality = list(n_slots = 28L, n_valid_slots = 26L)),
-            USI2 = list(health = "healthy", data_quality = NULL, model_quality = NULL)
+            USI1 = list(health = "healthy", data_quality = list(na_rate = 0.05, n_rows = 1440L)),
+            USI2 = list(health = "healthy", data_quality = NULL)
         )
         result <- f(reports)
         expect_equal(result, character(0L))
-        expect_equal(length(result), 0L)
-    })
-
-    test_that("collect_warnings returns Portuguese message for high NA rate", {
-        reports <- list(
-            USI1 = list(
-                health = "warning",
-                data_quality = list(na_rate = 0.833, n_rows = 1440L),
-                model_quality = NULL
-            )
-        )
-        result <- f(reports)
-        expect_equal(length(result), 1L)
-        expect_true(grepl("USI1", result[1L]))
-        expect_true(grepl("NA", result[1L]))
-        expect_true(grepl("83.3", result[1L]))
-    })
-
-    test_that("collect_warnings returns Portuguese message for low valid slots", {
-        reports <- list(
-            USI1 = list(
-                health = "warning",
-                data_quality = NULL,
-                model_quality = list(n_slots = 28L, n_valid_slots = 5L)
-            )
-        )
-        result <- f(reports)
-        expect_equal(length(result), 1L)
-        expect_true(grepl("USI1", result[1L]))
-        expect_true(grepl("5", result[1L]))
-        expect_true(grepl("28", result[1L]))
-    })
-
-    test_that("collect_warnings emits both messages when plant has two quality issues", {
-        reports <- list(
-            USI1 = list(
-                health = "warning",
-                data_quality = list(na_rate = 0.9, n_rows = 1440L),
-                model_quality = list(n_slots = 28L, n_valid_slots = 3L)
-            )
-        )
-        result <- f(reports)
-        expect_equal(length(result), 2L)
-    })
-
-    test_that("collect_warnings skips failed plants", {
-        reports <- list(
-            USI1 = list(health = "failed", data_quality = NULL, model_quality = NULL)
-        )
-        result <- f(reports)
-        expect_equal(result, character(0L))
-    })
-
-    test_that("collect_warnings collects messages across multiple warning plants", {
-        reports <- list(
-            USI1 = list(
-                health = "warning",
-                data_quality = list(na_rate = 0.8, n_rows = 1440L),
-                model_quality = NULL
-            ),
-            USI2 = list(
-                health = "warning",
-                data_quality = list(na_rate = 0.7, n_rows = 1440L),
-                model_quality = NULL
-            )
-        )
-        result <- f(reports)
-        expect_equal(length(result), 2L)
-        expect_true(any(grepl("USI1", result)))
-        expect_true(any(grepl("USI2", result)))
     })
 })
 
@@ -346,15 +206,13 @@ test_that("build_plant_reports", {
         expect_true("provenance_status" %in% names(plant))
         expect_true("duration_seconds" %in% names(plant))
         expect_true("data_quality" %in% names(plant))
-        expect_true("model_quality" %in% names(plant))
     })
 
-    test_that("build_plant_reports sets data_quality and model_quality to NULL when metrics is NULL", {
+    test_that("build_plant_reports sets data_quality to NULL when metrics is NULL", {
         prov <- gen_provenance_completed(c("USI1"))
         result <- f(prov, NULL)
 
         expect_null(result$USI1$data_quality)
-        expect_null(result$USI1$model_quality)
         expect_null(result$USI1$duration_seconds)
     })
 
@@ -414,15 +272,6 @@ test_that("build_health_report", {
         expect_equal(result$overall_health, "healthy")
     })
 
-    test_that("build_health_report overall_health is degraded when plant has high NA", {
-        prov <- gen_provenance_completed(c("USI1", "USI2"))
-        metrics <- gen_metrics_high_na(c("USI1", "USI2"), bad_id = "USI1")
-        result <- f(prov, metrics)
-
-        expect_equal(result$overall_health, "degraded")
-        expect_equal(result$plants$USI1$health, "warning")
-    })
-
     test_that("build_health_report overall_health is failed when provenance failed", {
         prov <- gen_provenance_failed(c("USI1", "USI2"))
         metrics <- gen_metrics_healthy(c("USI1", "USI2"))
@@ -431,13 +280,13 @@ test_that("build_health_report", {
         expect_equal(result$overall_health, "failed")
     })
 
-    test_that("build_health_report summary counts are correct for mixed plant statuses", {
+    test_that("build_health_report summary counts are correct for all-completed plants", {
         prov <- gen_provenance_completed(c("USI1", "USI2", "USI3"))
-        metrics <- gen_metrics_high_na(c("USI1", "USI2", "USI3"), bad_id = "USI1")
+        metrics <- gen_metrics_with_data(c("USI1", "USI2", "USI3"))
         result <- f(prov, metrics)
 
         expect_equal(result$summary$n_plants, 3L)
-        expect_equal(result$summary$n_plants_warning, 1L)
+        expect_equal(result$summary$n_plants_warning, 0L)
         expect_equal(result$summary$n_plants_failed, 0L)
         expect_equal(result$summary$n_plants_completed, 3L)
     })
@@ -449,16 +298,14 @@ test_that("build_health_report", {
         expect_true(is.list(result))
         expect_equal(result$overall_health, "healthy")
         expect_null(result$plants$USI1$data_quality)
-        expect_null(result$plants$USI1$model_quality)
     })
 
-    test_that("build_health_report populates warnings array for high NA plants", {
+    test_that("build_health_report warnings is empty for completed plants", {
         prov <- gen_provenance_completed(c("USI1", "USI2"))
-        metrics <- gen_metrics_high_na(c("USI1", "USI2"), bad_id = "USI1")
+        metrics <- gen_metrics_with_data(c("USI1", "USI2"))
         result <- f(prov, metrics)
 
-        expect_true(length(result$warnings) > 0L)
-        expect_true(any(grepl("USI1", result$warnings)))
+        expect_equal(result$warnings, character(0L))
     })
 
     test_that("build_health_report populates errors array for failed plants", {
@@ -504,13 +351,13 @@ test_that("build_health_report", {
         expect_error(f(NULL))
     })
 
-    test_that("build_health_report overall_health degraded for low valid slots", {
+    test_that("build_health_report overall_health healthy for all completed plants", {
         prov <- gen_provenance_completed(c("USI1", "USI2"))
-        metrics <- gen_metrics_low_slots(c("USI1", "USI2"), bad_id = "USI1")
+        metrics <- gen_metrics_with_data(c("USI1", "USI2"))
         result <- f(prov, metrics)
 
-        expect_equal(result$overall_health, "degraded")
-        expect_equal(result$plants$USI1$health, "warning")
+        expect_equal(result$overall_health, "healthy")
+        expect_equal(result$plants$USI1$health, "healthy")
         expect_equal(result$plants$USI2$health, "healthy")
     })
 })
@@ -588,17 +435,16 @@ test_that("write_health_report", {
         expect_equal(result, expected)
     })
 
-    test_that("write_health_report roundtrip: warnings array serializes as JSON array", {
+    test_that("write_health_report roundtrip: warnings serializes as empty JSON array", {
         tmp <- withr::local_tempdir()
         prov <- gen_provenance_completed(c("USI1", "USI2"))
-        metrics <- gen_metrics_high_na(c("USI1", "USI2"), bad_id = "USI1")
+        metrics <- gen_metrics_with_data(c("USI1", "USI2"))
         report <- build_health_report(prov, metrics)
 
         filepath <- f(report, tmp)
-        parsed <- jsonlite::fromJSON(filepath)
+        raw_text <- paste(readLines(filepath), collapse = "\n")
 
-        expect_true(is.character(parsed$warnings))
-        expect_true(length(parsed$warnings) > 0L)
+        expect_true(grepl('"warnings":\\s*\\[\\s*\\]', raw_text))
     })
 
     test_that("write_health_report serializes empty warnings as JSON array", {

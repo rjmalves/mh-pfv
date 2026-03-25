@@ -74,7 +74,6 @@ predict_model.linear_regression <- function(strategy, model, df_ger_usi,
 #'   \item{`type`}{`"linear_regression"`}
 #'   \item{`n_slots`}{numero total de horarios no modelo}
 #'   \item{`n_valid_slots`}{numero de horarios com coeficiente `a` nao-`NA`}
-#'   \item{`mean_coefficient`}{media dos coeficientes `a` validos}
 #'   \item{`timestamp`}{momento da extracao (`Sys.time()`)}
 #' }
 #'
@@ -85,13 +84,10 @@ model_metadata.linear_regression <- function(strategy, model, ...) {
         "a" %in% names(model)
     )
 
-    valid_a <- model$a[!is.na(model$a)]
-
     list(
         type = "linear_regression",
         n_slots = nrow(model),
-        n_valid_slots = length(valid_a),
-        mean_coefficient = if (length(valid_a) > 0L) mean(valid_a) else NA_real_,
+        n_valid_slots = sum(!is.na(model$a)),
         timestamp = Sys.time()
     )
 }

@@ -69,8 +69,8 @@ record_plant_data_volume <- function(metrics, id_usina, n_rows, n_na, n_total) {
 
 #' Registra Qualidade do Modelo Ajustado para Uma Usina
 #'
-#' Extrai `n_slots`, `n_valid_slots` e `mean_coefficient` dos metadados do
-#' artefato e os adiciona ao registro da usina.
+#' Extrai `n_slots` e `n_valid_slots` dos metadados do artefato e os adiciona
+#' ao registro da usina.
 #'
 #' @param metrics lista de metricas criada por [create_metrics()]
 #' @param id_usina character escalar, identificador da usina
@@ -88,8 +88,7 @@ record_model_quality <- function(metrics, id_usina, metadata) {
     }
     metrics$plants[[id_usina]]$model_quality <- list(
         n_slots = metadata$n_slots,
-        n_valid_slots = metadata$n_valid_slots,
-        mean_coefficient = metadata$mean_coefficient
+        n_valid_slots = metadata$n_valid_slots
     )
     metrics
 }

@@ -225,7 +225,7 @@ test_that("gen_model_artifact metadata has expected fields", {
     meta <- art$metadata
     expected_fields <- c(
         "type", "n_slots", "n_valid_slots",
-        "mean_coefficient", "timestamp", "package_version", "config_hash"
+        "timestamp", "package_version", "config_hash"
     )
     expect_true(all(expected_fields %in% names(meta)))
     expect_equal(meta$type, "linear_regression")

@@ -119,19 +119,7 @@ Gerencia parsing e validação do arquivo de configuração.
 | `parsearg_janela()`     | Interpreta janela temporal (S3 generic)   |
 | `parsearg_ids_usinas()` | Interpreta lista de usinas                |
 
-### 3. Validação de Entrada (`validation.r`)
-
-Framework de validação schema-based para dados de entrada. Verifica presença de colunas, tipos corretos e ausência de NA em colunas-chave, coletando todos os erros antes de reportar.
-
-| Função                  | Descrição                                     |
-| ----------------------- | --------------------------------------------- |
-| `validate_input()`      | Valida um data.table contra um schema nomeado |
-| `validate_all_inputs()` | Valida dataset completo + usinas              |
-| `validate_artifact()`   | Valida estrutura de artefato de modelo        |
-
-Schemas suportados: `geracao_observada`, `irradiancia_prevista`, `corte_observado`, `usinas`, `melhor_historico_geracao`.
-
-### 4. Consistência de Dados (`consistencia-dados.r`)
+### 3. Consistência de Dados (`consistencia-dados.r`)
 
 Implementa validações e tratamentos de qualidade de dados.
 
@@ -236,7 +224,6 @@ list(
         type = "linear_regression",
         n_slots = 28L,
         n_valid_slots = 26L,
-        mean_coefficient = 0.031,
         timestamp = "2025-01-01T12:00:00Z",
         package_version = "0.1.1",
         config_hash = "sha256:abc123..."
@@ -358,21 +345,9 @@ Classificação de saúde por usina e do pipeline.
 Critérios de classificação:
 
 - **failed**: proveniência com status != "completed"
-- **warning**: taxa de NA > 50% ou menos da metade dos slots com coeficiente válido
 - **healthy**: caso contrário
 
-### 14. Comparação de Modelos (`model-comparison.r`)
-
-Comparação pairwise de artefatos de modelo.
-
-| Função                         | Descrição                                  |
-| ------------------------------ | ------------------------------------------ |
-| `compare_artifacts()`          | Compara dois artefatos (metadados + coefs) |
-| `compare_artifact_files()`     | Compara a partir de caminhos de arquivo    |
-| `compare_multiple_artifacts()` | Comparações pairwise para N artefatos      |
-| `format_comparison()`          | Formata relatório legível                  |
-
-### 15. Logging (`logging.r`)
+### 14. Logging (`logging.r`)
 
 Logging estruturado com contexto de execução.
 
@@ -541,4 +516,3 @@ arrow (>= 22.0.0) [Suggests]
 | `test-coverage` | Testes com relatório de cobertura (Codecov) |
 | `lint`          | lintr com complexidade ciclomática          |
 | `docker`        | Build e publicação da imagem Docker         |
-| `benchmark`     | Suite de benchmarks de performance          |

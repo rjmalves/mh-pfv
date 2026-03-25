@@ -149,6 +149,5 @@ test_that("train_main writes valid metrics JSON", {
         expect_true(!is.null(plant$model_quality))
         expect_true(!is.null(plant$model_quality$n_slots))
         expect_true(!is.null(plant$model_quality$n_valid_slots))
-        expect_true(!is.null(plant$model_quality$mean_coefficient))
     }
 })

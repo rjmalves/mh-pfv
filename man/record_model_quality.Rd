@@ -17,6 +17,6 @@ record_model_quality(metrics, id_usina, metadata)
 lista de metricas com \code{model_quality} adicionado para a usina
 }
 \description{
-Extrai \code{n_slots}, \code{n_valid_slots} e \code{mean_coefficient} dos metadados do
-artefato e os adiciona ao registro da usina.
+Extrai \code{n_slots} e \code{n_valid_slots} dos metadados do artefato e os adiciona
+ao registro da usina.
 }

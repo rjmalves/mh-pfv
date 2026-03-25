@@ -43,25 +43,8 @@ build_health_report <- function(provenance, metrics = NULL) {
     )
 }
 
-# Regras: "failed" se provenance != "completed"; "warning" se NA > 50% ou
-# menos da metade dos slots validos; "healthy" caso contrario.
-has_high_na_rate <- function(plant_metrics) {
-    if (is.null(plant_metrics$data_volume)) return(FALSE)
-    na_rate <- plant_metrics$data_volume$na_rate
-    !is.na(na_rate) && na_rate > 0.5
-}
-
-has_low_valid_slot_ratio <- function(plant_metrics) {
-    if (is.null(plant_metrics$model_quality)) return(FALSE)
-    mq <- plant_metrics$model_quality
-    !is.null(mq$n_slots) && !is.null(mq$n_valid_slots) &&
-        mq$n_valid_slots < mq$n_slots * 0.5
-}
-
 classify_plant_health <- function(provenance_status, plant_metrics) {
     if (provenance_status != "completed") return("failed")
-    if (has_high_na_rate(plant_metrics)) return("warning")
-    if (has_low_valid_slot_ratio(plant_metrics)) return("warning")
     "healthy"
 }
 
@@ -121,51 +104,18 @@ build_plant_reports <- function(provenance, metrics) {
             )
         }
 
-        model_quality <- plant_metrics$model_quality
-
         reports[[iu]] <- list(
             health = classify_plant_health(prov_status, plant_metrics),
             provenance_status = prov_status,
             duration_seconds = plant_metrics$duration_seconds,
-            data_quality = data_quality,
-            model_quality = model_quality
+            data_quality = data_quality
         )
     }
     reports
 }
 
-collect_plant_warnings <- function(iu, plant_report) {
-    warnings <- character(0L)
-    if (!is.null(plant_report$data_quality)) {
-        na_rate <- plant_report$data_quality$na_rate
-        if (!is.na(na_rate) && na_rate > 0.5) {
-            warnings <- c(warnings, sprintf(
-                "Usina %s: taxa de NA elevada (%.1f%%)", iu, na_rate * 100
-            ))
-        }
-    }
-    if (!is.null(plant_report$model_quality)) {
-        mq <- plant_report$model_quality
-        if (!is.null(mq$n_slots) && !is.null(mq$n_valid_slots) &&
-                mq$n_valid_slots < mq$n_slots * 0.5) {
-            warnings <- c(warnings, sprintf(
-                "Usina %s: apenas %d de %d slots com coeficiente valido",
-                iu, mq$n_valid_slots, mq$n_slots
-            ))
-        }
-    }
-    warnings
-}
-
 collect_warnings <- function(plant_reports) {
-    warnings_list <- character(0L)
-    for (iu in names(plant_reports)) {
-        if (plant_reports[[iu]]$health != "warning") next
-        warnings_list <- c(warnings_list, collect_plant_warnings(
-            iu, plant_reports[[iu]]
-        ))
-    }
-    warnings_list
+    character(0L)
 }
 
 collect_errors <- function(plant_reports) {

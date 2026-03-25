@@ -160,6 +160,10 @@ test_that("predict_main handles legacy artifacts without metadata", {
 })
 
 test_that("predict_main parallel produces identical output to sequential", {
+    skip_if(
+        !is.null(pkgload::dev_meta("mhpfv")),
+        "mhpfv loaded via devtools/pkgload (multisession workers need installed package)"
+    )
     skip_if_not(dir.exists(test_path("data")))
     skip_if_no_zstd()
 

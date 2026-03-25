@@ -19,7 +19,6 @@ lista com metadados completos do artefato:
 \item{\code{type}}{string com o tipo de modelo}
 \item{\code{n_slots}}{numero de horarios no modelo}
 \item{\code{n_valid_slots}}{numero de horarios com coeficiente valido}
-\item{\code{mean_coefficient}}{media dos coeficientes validos}
 \item{\code{timestamp}}{momento da extracao (\code{POSIXct})}
 \item{\code{package_version}}{versao do pacote \code{mhpfv}}
 \item{\code{config_hash}}{hash SHA-256 da configuracao normalizada}

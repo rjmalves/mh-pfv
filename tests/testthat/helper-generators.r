@@ -196,7 +196,6 @@ gen_model_artifact <- function(id_usina = "USI1") {
         type = "linear_regression",
         n_slots = length(hour_names),
         n_valid_slots = length(hour_names),
-        mean_coefficient = mean(a_values),
         timestamp = as.POSIXct("2025-07-01 00:00:00", tz = "UTC"),
         package_version = as.character(utils::packageVersion("mhpfv")),
         config_hash = "test-hash-placeholder"

@@ -270,7 +270,6 @@ test_that("model_metadata.linear_regression", {
         expect_equal(meta$type, "linear_regression")
         expect_equal(meta$n_slots, nrow(model))
         expect_equal(meta$n_valid_slots, sum(!is.na(model$a)))
-        expect_equal(meta$mean_coefficient, mean(model$a, na.rm = TRUE))
         expect_true(inherits(meta$timestamp, "POSIXct"))
     })
 
@@ -286,7 +285,6 @@ test_that("model_metadata.linear_regression", {
 
         expect_equal(meta$n_slots, 5L)
         expect_equal(meta$n_valid_slots, 3L)
-        expect_equal(meta$mean_coefficient, mean(c(0.1, 0.3, 0.5)))
     })
 
     test_that("model_metadata.linear_regression valida coluna a", {
@@ -297,7 +295,7 @@ test_that("model_metadata.linear_regression", {
         expect_error(f(s, "not a data.frame"))
     })
 
-    test_that("BUG FIX: model_metadata.linear_regression retorna NA_real_ quando todos coeficientes sao NA", {
+    test_that("model_metadata.linear_regression retorna 0 valid_slots quando todos coeficientes sao NA", {
         model <- data.frame(
             a = c(NA_real_, NA_real_, NA_real_),
             b = rep(0, 3),
@@ -309,7 +307,5 @@ test_that("model_metadata.linear_regression", {
 
         expect_equal(meta$n_slots, 3L)
         expect_equal(meta$n_valid_slots, 0L)
-        expect_true(is.na(meta$mean_coefficient))
-        expect_false(is.nan(meta$mean_coefficient))
     })
 })

@@ -12,7 +12,6 @@
 #'   \item{`type`}{string com o tipo de modelo}
 #'   \item{`n_slots`}{numero de horarios no modelo}
 #'   \item{`n_valid_slots`}{numero de horarios com coeficiente valido}
-#'   \item{`mean_coefficient`}{media dos coeficientes validos}
 #'   \item{`timestamp`}{momento da extracao (`POSIXct`)}
 #'   \item{`package_version`}{versao do pacote `mhpfv`}
 #'   \item{`config_hash`}{hash SHA-256 da configuracao normalizada}
@@ -101,8 +100,7 @@ build_model_artifact <- function(id_usina, parametros, strategy, config) {
 #' Verifica a estrutura de um artefato de modelo. Artefatos no formato
 #' antigo (sem metadados) sao aceitos com aviso via logger.
 #'
-#' Segue o padrao de coleta de erros de [validate_input()]: todas as falhas
-#' sao coletadas antes de levantar uma unica excecao.
+#' Todas as falhas sao coletadas antes de levantar uma unica excecao.
 #'
 #' @param artifact lista, artefato de modelo a ser validado
 #'

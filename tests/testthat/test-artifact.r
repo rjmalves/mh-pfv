@@ -12,8 +12,7 @@ test_that("build_artifact_metadata", {
         expect_true(is.list(meta))
         expected_fields <- c(
             "type", "n_slots", "n_valid_slots",
-            "mean_coefficient", "timestamp",
-            "package_version", "config_hash"
+            "timestamp", "package_version", "config_hash"
         )
         expect_true(all(expected_fields %in% names(meta)))
         expect_equal(meta$type, "linear_regression")
@@ -139,8 +138,7 @@ test_that("build_model_artifact", {
 
         expected_fields <- c(
             "type", "n_slots", "n_valid_slots",
-            "mean_coefficient", "timestamp",
-            "package_version", "config_hash"
+            "timestamp", "package_version", "config_hash"
         )
         expect_true(all(expected_fields %in% names(result$metadata)))
     })

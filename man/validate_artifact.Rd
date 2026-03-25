@@ -17,8 +17,7 @@ Verifica a estrutura de um artefato de modelo. Artefatos no formato
 antigo (sem metadados) sao aceitos com aviso via logger.
 }
 \details{
-Segue o padrao de coleta de erros de \code{\link[=validate_input]{validate_input()}}: todas as falhas
-sao coletadas antes de levantar uma unica excecao.
+Todas as falhas sao coletadas antes de levantar uma unica excecao.
 }
 \examples{
 art <- list(
