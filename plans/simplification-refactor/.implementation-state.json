@@ -2,7 +2,7 @@
   "plan": "simplification-refactor",
   "plan_name": "simplification-refactor",
   "created_at": "2026-03-31",
-  "last_updated": "2026-03-31T21:35:34Z",
+  "last_updated": "2026-03-31T21:35:49Z",
   "progressive": true,
   "epics": {
     "epic-01-per-plant-resilience": {
@@ -14,7 +14,7 @@
       "learning_extracted": false
     },
     "epic-03-model-strategy-simplification": {
-      "phase": "pending",
+      "phase": "outline",
       "learning_extracted": false
     }
   },
