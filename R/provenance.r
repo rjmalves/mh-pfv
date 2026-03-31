@@ -59,29 +59,27 @@ generate_run_id <- function(mode) {
 #' @export
 create_provenance <- function(config, mode, parallel = FALSE) {
     run_id <- generate_run_id(mode)
-
     plant_ids <- config$ids_usinas
-    plant_status <- as.list(rep("pending", length(plant_ids)))
-    names(plant_status) <- plant_ids
 
-    list(
-        run_id = run_id,
-        mode = mode,
-        package_version = as.character(utils::packageVersion("mhpfv")),
-        r_version = paste0(R.version$major, ".", R.version$minor),
-        start_time = Sys.time(),
-        end_time = NULL,
-        duration_seconds = NULL,
-        config_hash = digest::digest(
-            normalize_config_for_hash(config),
-            algo = "sha256"
-        ),
-        n_plants = length(plant_ids),
-        plant_ids = plant_ids,
-        plant_status = plant_status,
-        parallel = parallel,
-        status = "running"
+    prov <- new.env(parent = emptyenv())
+    prov$run_id <- run_id
+    prov$mode <- mode
+    prov$package_version <- as.character(utils::packageVersion("mhpfv"))
+    prov$r_version <- paste0(R.version$major, ".", R.version$minor)
+    prov$start_time <- Sys.time()
+    prov$end_time <- NULL
+    prov$duration_seconds <- NULL
+    prov$config_hash <- digest::digest(
+        normalize_config_for_hash(config), algo = "sha256"
     )
+    prov$n_plants <- length(plant_ids)
+    prov$plant_ids <- plant_ids
+    prov$plant_status <- new.env(parent = emptyenv())
+    for (iu in plant_ids) prov$plant_status[[iu]] <- "pending"
+    prov$parallel <- parallel
+    prov$status <- "running"
+
+    prov
 }
 
 #' Atualiza Status de Uma Usina no Registro de Proveniencia
@@ -105,13 +103,13 @@ create_provenance <- function(config, mode, parallel = FALSE) {
 update_plant_status <- function(provenance, id_usina, status) {
     valid_status <- c("completed", "failed", "skipped")
     stopifnot(
-        is.list(provenance),
+        is.environment(provenance),
         is.character(id_usina), length(id_usina) == 1L,
         is.character(status), length(status) == 1L,
         status %in% valid_status
     )
     provenance$plant_status[[id_usina]] <- status
-    provenance
+    invisible(provenance)
 }
 
 #' Finaliza Registro de Proveniencia
@@ -132,7 +130,7 @@ update_plant_status <- function(provenance, id_usina, status) {
 #' @export
 finalize_provenance <- function(provenance, status = "completed") {
     stopifnot(
-        is.list(provenance),
+        is.environment(provenance),
         status %in% c("completed", "failed")
     )
     provenance$end_time <- Sys.time()
@@ -140,7 +138,21 @@ finalize_provenance <- function(provenance, status = "completed") {
         difftime(provenance$end_time, provenance$start_time, units = "secs")
     )
     provenance$status <- status
-    provenance
+    invisible(provenance)
+}
+
+#' Converte Proveniencia de Ambiente para Lista
+#'
+#' Serializa um registro de proveniencia (environment) para lista plain,
+#' adequado para conversao em JSON.
+#'
+#' @param provenance environment de proveniencia
+#'
+#' @return lista com todos os campos, `plant_status` tambem como lista
+prov_as_list <- function(provenance) {
+    out <- as.list(provenance)
+    out$plant_status <- as.list(provenance$plant_status)
+    out
 }
 
 #' Escreve Registro de Proveniencia em JSON
@@ -175,7 +187,7 @@ write_provenance <- function(provenance, output_dir) {
             dir.create(output_dir, recursive = TRUE)
         }
 
-        prov_json <- format_provenance_timestamps(provenance)
+        prov_json <- format_provenance_timestamps(prov_as_list(provenance))
         json_str <- jsonlite::toJSON(
             prov_json, pretty = TRUE, auto_unbox = TRUE, null = "null"
         )
@@ -222,7 +234,7 @@ write_checkpoint <- function(provenance, output_dir) {
         if (!dir.exists(output_dir)) {
             dir.create(output_dir, recursive = TRUE)
         }
-        prov_json <- format_provenance_timestamps(provenance)
+        prov_json <- format_provenance_timestamps(prov_as_list(provenance))
         json_str <- jsonlite::toJSON(
             prov_json, pretty = TRUE, auto_unbox = TRUE, null = "null"
         )

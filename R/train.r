@@ -44,7 +44,7 @@ load_train_resume_state <- function(args, provenance) {
         args$ids_usinas, get_pending_plants(checkpoint)
     )
     for (iu in completed_plants) {
-        provenance <- update_plant_status(provenance, iu, "completed")
+        update_plant_status(provenance, iu, "completed")
     }
     list(provenance = provenance, completed = completed_plants)
 }
@@ -66,10 +66,10 @@ train_main <- function(args, strategy = linear_regression_strategy(),
 
     on.exit({
         if (provenance$status == "running") {
-            provenance <- finalize_provenance(provenance, "failed")
+            finalize_provenance(provenance, "failed")
         }
         write_provenance(provenance, args$artifact)
-        metrics <- finalize_metrics(metrics)
+        finalize_metrics(metrics)
         write_metrics(metrics, args$artifact)
         report <- build_health_report(provenance, metrics)
         write_health_report(report, args$artifact)
@@ -79,7 +79,7 @@ train_main <- function(args, strategy = linear_regression_strategy(),
     v_usinas <- setdiff(args$ids_usinas, completed_plants)
 
     if (length(v_usinas) == 0L) {
-        provenance <- finalize_provenance(provenance, "completed")
+        finalize_provenance(provenance, "completed")
         cleanup_checkpoint(args$artifact)
         return(invisible(NULL))
     }
@@ -115,7 +115,7 @@ train_main <- function(args, strategy = linear_regression_strategy(),
         batch_elapsed <- proc.time()[["elapsed"]] - batch_start
         est_per_plant <- round(batch_elapsed / length(v_usinas), 2L)
         for (iu in v_usinas) {
-            metrics <- record_plant_timing(metrics, iu, est_per_plant)
+            record_plant_timing(metrics, iu, est_per_plant)
         }
     } else {
         models <- lapply(v_usinas, function(iu) {
@@ -136,8 +136,7 @@ train_main <- function(args, strategy = linear_regression_strategy(),
                     plant_error(iu, e)
                 }
             )
-            # <<- necessario para atualizar metrics no escopo da funcao pai
-            metrics <<- record_plant_timing(
+            record_plant_timing(
                 metrics, iu, round(proc.time()[["elapsed"]] - t0, 2L)
             )
             result
@@ -146,31 +145,24 @@ train_main <- function(args, strategy = linear_regression_strategy(),
 
     n_failed <- 0L
     n_total <- length(v_usinas)
-    lapply(seq_along(v_usinas), function(i) {
+    for (i in seq_along(v_usinas)) {
         if (is_plant_error(models[[i]])) {
-            provenance <<- update_plant_status(
-                provenance, v_usinas[i], "failed"
-            )
-            n_failed <<- n_failed + 1L
+            update_plant_status(provenance, v_usinas[i], "failed")
+            n_failed <- n_failed + 1L
             lg$error("Usina %s falhou: %s", v_usinas[i], models[[i]]$error)
         } else {
             write_model_artifact(models[[i]], v_usinas[i], args$artifact)
-            # <<- necessario para atualizar provenance e metrics no escopo pai
-            provenance <<- update_plant_status(
-                provenance, v_usinas[i], "completed"
-            )
+            update_plant_status(provenance, v_usinas[i], "completed")
             if ("metadata" %in% names(models[[i]])) {
-                metrics <<- record_model_quality(
-                    metrics, v_usinas[i], models[[i]]$metadata
-                )
+                record_model_quality(metrics, v_usinas[i], models[[i]]$metadata)
             }
         }
         if (resume) write_checkpoint(provenance, args$artifact)
         lg$info("Usina %s processada (%d/%d)", v_usinas[i], i, n_total)
-    })
+    }
 
     final_status <- if (n_failed == 0L) "completed" else "failed"
-    provenance <- finalize_provenance(provenance, final_status)
+    finalize_provenance(provenance, final_status)
     if (resume) cleanup_checkpoint(args$artifact)
 }
 

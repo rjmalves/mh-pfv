@@ -45,7 +45,7 @@ load_predict_resume_state <- function(args, provenance) {
         !is.null(read_plant_result(iu, args$output))
     }, candidate_completed)
     for (iu in completed_plants) {
-        provenance <- update_plant_status(provenance, iu, "completed")
+        update_plant_status(provenance, iu, "completed")
     }
     list(provenance = provenance, completed = completed_plants)
 }
@@ -67,10 +67,10 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
 
     on.exit({
         if (provenance$status == "running") {
-            provenance <- finalize_provenance(provenance, "failed")
+            finalize_provenance(provenance, "failed")
         }
         write_provenance(provenance, args$output)
-        metrics <- finalize_metrics(metrics)
+        finalize_metrics(metrics)
         write_metrics(metrics, args$output)
         report <- build_health_report(provenance, metrics)
         write_health_report(report, args$output)
@@ -122,7 +122,7 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
             batch_elapsed <- proc.time()[["elapsed"]] - batch_start
             est_per_plant <- round(batch_elapsed / length(v_usinas_pending), 2L)
             for (iu in v_usinas_pending) {
-                metrics <- record_plant_timing(metrics, iu, est_per_plant)
+                record_plant_timing(metrics, iu, est_per_plant)
             }
         } else {
             resultados_new <- lapply(v_usinas_pending, function(iu) {
@@ -137,8 +137,7 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
                         plant_error(iu, e)
                     }
                 )
-                # <<- necessario para atualizar metrics no escopo da funcao pai
-                metrics <<- record_plant_timing(
+                record_plant_timing(
                     metrics, iu, round(proc.time()[["elapsed"]] - t0, 2L)
                 )
                 result
@@ -150,7 +149,7 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
         for (i in seq_along(v_usinas_pending)) {
             iu <- v_usinas_pending[i]
             if (is_plant_error(resultados_new[[i]])) {
-                provenance <- update_plant_status(provenance, iu, "failed")
+                update_plant_status(provenance, iu, "failed")
                 n_failed <- n_failed + 1L
                 lg$error("Usina %s falhou: %s", iu, resultados_new[[i]]$error)
             } else {
@@ -158,12 +157,12 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
                 n_rows <- nrow(result$com_cortes)
                 n_na <- sum(is.na(result$com_cortes$valor))
                 n_total_vals <- length(result$com_cortes$valor)
-                metrics <- record_plant_data_volume(
+                record_plant_data_volume(
                     metrics, iu,
                     as.numeric(n_rows), as.numeric(n_na),
                     as.numeric(n_total_vals)
                 )
-                provenance <- update_plant_status(provenance, iu, "completed")
+                update_plant_status(provenance, iu, "completed")
                 if (resume) {
                     write_plant_result(result, iu, args$output)
                     write_checkpoint(provenance, args$output)
@@ -216,7 +215,7 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
     }
 
     final_status <- if (n_failed == 0L) "completed" else "failed"
-    provenance <- finalize_provenance(provenance, final_status)
+    finalize_provenance(provenance, final_status)
     if (resume) cleanup_checkpoint(args$output)
 }
 

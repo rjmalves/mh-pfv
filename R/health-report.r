@@ -10,7 +10,7 @@
 #' @return lista com `run_id`, `mode`, `created_at`, `overall_health`,
 #'   `summary`, `plants`, `warnings` e `errors`
 build_health_report <- function(provenance, metrics = NULL) {
-    stopifnot(is.list(provenance))
+    stopifnot(is.environment(provenance) || is.list(provenance))
 
     lg <- lgr::get_logger("mhpfv")
     if (provenance$status == "running") {

@@ -5,14 +5,14 @@ test_that("create_metrics", {
     test_that("create_metrics returns correct structure", {
         result <- f("train-20260101-120000-abcd", "train")
 
-        expect_true(is.list(result))
+        expect_true(is.environment(result))
         expect_equal(result$run_id, "train-20260101-120000-abcd")
         expect_equal(result$mode, "train")
         expect_null(result$created_at)
         expect_true(is.list(result$pipeline))
         expect_equal(length(result$pipeline), 0L)
-        expect_true(is.list(result$plants))
-        expect_equal(length(result$plants), 0L)
+        expect_true(is.environment(result$plants))
+        expect_equal(length(ls(result$plants)), 0L)
     })
 
     test_that("create_metrics works for predict mode", {
@@ -93,16 +93,16 @@ test_that("record_plant_timing", {
         expect_error(f(m, 1L, 5.0))
     })
 
-    test_that("record_plant_timing rejects non-list metrics", {
-        expect_error(f("not-a-list", "USI1", 5.0))
+    test_that("record_plant_timing rejects non-environment metrics", {
+        expect_error(f("not-an-env", "USI1", 5.0))
     })
 
-    test_that("record_plant_timing returns updated copy without modifying original", {
+    test_that("record_plant_timing mutates in place", {
         m <- create_metrics("test-run", "train")
         result <- f(m, "USI1", 5.0)
 
-        expect_null(m$plants$USI1)
-        expect_equal(result$plants$USI1$duration_seconds, 5.0)
+        expect_identical(result, m)
+        expect_equal(m$plants[["USI1"]]$duration_seconds, 5.0)
     })
 })
 
@@ -278,17 +278,33 @@ test_that("finalize_metrics", {
 
     test_that("finalize_metrics counts only plants with duration_seconds", {
         m <- create_metrics("test-run", "train")
-        m <- record_plant_timing(m, "USI1", 3.0)
-        m$plants$USI2 <- list(model_quality = list(n_slots = 28L))
+        record_plant_timing(m, "USI1", 3.0)
+        m$plants[["USI2"]] <- list(model_quality = list(n_slots = 28L))
         result <- f(m)
 
         expect_equal(result$pipeline$n_plants, 2L)
         expect_equal(result$pipeline$n_plants_completed, 1L)
     })
 
-    test_that("finalize_metrics rejects non-list input", {
-        expect_error(f("not-a-list"))
+    test_that("finalize_metrics rejects non-environment input", {
+        expect_error(f("not-an-env"))
         expect_error(f(NULL))
+    })
+})
+
+test_that("metrics_as_list", {
+    f <- mhpfv:::metrics_as_list
+    expect_true(is.function(f))
+
+    test_that("metrics_as_list converts environment to list", {
+        m <- create_metrics("test-run", "train")
+        record_plant_timing(m, "USI1", 5.0)
+        m_list <- f(m)
+
+        expect_true(is.list(m_list))
+        expect_true(is.list(m_list$plants))
+        expect_equal(m_list$plants$USI1$duration_seconds, 5.0)
+        expect_equal(m_list$run_id, "test-run")
     })
 })
 

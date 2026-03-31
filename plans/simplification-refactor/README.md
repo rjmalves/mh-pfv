@@ -20,10 +20,10 @@ Epic 01 --> Epic 02 --> Epic 03
 | E01-T002 | 01-per-plant-resilience           | Train Pipeline Resilience         | completed | 0.90      | r-developer |
 | E01-T003 | 01-per-plant-resilience           | Predict Pipeline Resilience       | completed | 0.88      | r-developer |
 | E01-T004 | 01-per-plant-resilience           | Resilience Integration Tests      | completed | 0.86      | r-developer |
-| E02-T001 | 02-environment-provenance-metrics | Provenance as Environment         | pending   | 0.92      | r-developer |
-| E02-T002 | 02-environment-provenance-metrics | Metrics as Environment            | pending   | 0.90      | r-developer |
-| E02-T003 | 02-environment-provenance-metrics | Remove <<- from Pipelines         | pending   | 0.88      | r-developer |
-| E02-T004 | 02-environment-provenance-metrics | Environment Adaptation Tests      | pending   | 0.86      | r-developer |
+| E02-T001 | 02-environment-provenance-metrics | Provenance as Environment         | completed | 0.92      | r-developer |
+| E02-T002 | 02-environment-provenance-metrics | Metrics as Environment            | completed | 0.90      | r-developer |
+| E02-T003 | 02-environment-provenance-metrics | Remove <<- from Pipelines         | completed | 0.88      | r-developer |
+| E02-T004 | 02-environment-provenance-metrics | Environment Adaptation Tests      | completed | 0.86      | r-developer |
 | E03-T001 | 03-model-strategy-simplification  | Rewrite model-strategy.r          | pending   | --        | r-developer |
 | E03-T002 | 03-model-strategy-simplification  | Rewrite model-linear-regression.r | pending   | --        | r-developer |
 | E03-T003 | 03-model-strategy-simplification  | Update artifact + train + predict | pending   | --        | r-developer |

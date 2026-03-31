@@ -69,9 +69,13 @@ test_that("create_provenance", {
         )
         prov <- f(cfg, "predict", TRUE)
 
-        expect_true(is.list(prov$plant_status))
-        expect_equal(names(prov$plant_status), c("USI1", "USI2", "USI3"))
-        expect_true(all(vapply(prov$plant_status, identity, character(1)) == "pending"))
+        expect_true(is.environment(prov$plant_status))
+        expect_true(all(c("USI1", "USI2", "USI3") %in% ls(prov$plant_status)))
+        expect_true(all(vapply(
+            ls(prov$plant_status),
+            function(x) prov$plant_status[[x]],
+            character(1)
+        ) == "pending"))
         expect_true(prov$parallel)
     })
 
@@ -137,7 +141,7 @@ test_that("update_plant_status", {
         )
         prov <- create_provenance(cfg, "train", FALSE)
 
-        expect_error(f("not_a_list", "USI1", "completed"))
+        expect_error(f("not_an_env", "USI1", "completed"))
         expect_error(f(prov, 123, "completed"))
         expect_error(f(prov, c("USI1", "USI2"), "completed"))
     })
@@ -193,8 +197,8 @@ test_that("finalize_provenance", {
         expect_error(f(prov, "running"))
     })
 
-    test_that("finalize_provenance validates provenance is list", {
-        expect_error(f("not_a_list", "completed"))
+    test_that("finalize_provenance validates provenance is environment", {
+        expect_error(f("not_an_env", "completed"))
     })
 })
 
@@ -702,5 +706,41 @@ test_that("is_plant_error", {
         expect_false(f("USI1"))
         expect_false(f(42))
         expect_false(f(NULL))
+    })
+})
+
+test_that("prov_as_list", {
+    f <- mhpfv:::prov_as_list
+    expect_true(is.function(f))
+
+    test_that("prov_as_list converts environment provenance to list", {
+        cfg <- gen_config(
+            ids_usinas = c("USI1", "USI2"),
+            janela = list("2025-07-01", "2025-09-30")
+        )
+        prov <- create_provenance(cfg, "train", FALSE)
+        update_plant_status(prov, "USI1", "completed")
+
+        result <- f(prov)
+
+        expect_true(is.list(result))
+        expect_true(is.list(result$plant_status))
+        expect_equal(result$plant_status$USI1, "completed")
+        expect_equal(result$plant_status$USI2, "pending")
+        expect_equal(result$run_id, prov$run_id)
+        expect_equal(result$mode, "train")
+    })
+
+    test_that("update_plant_status mutates in place", {
+        cfg <- gen_config(
+            ids_usinas = c("USI1"),
+            janela = list("2025-07-01", "2025-09-30")
+        )
+        prov <- create_provenance(cfg, "train", FALSE)
+        prov_before <- prov
+        update_plant_status(prov, "USI1", "completed")
+
+        expect_identical(prov, prov_before)
+        expect_equal(prov$plant_status[["USI1"]], "completed")
     })
 })
