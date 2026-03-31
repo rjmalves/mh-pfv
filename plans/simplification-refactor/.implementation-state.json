@@ -1,0 +1,271 @@
+{
+  "plan": "simplification-refactor",
+  "plan_name": "simplification-refactor",
+  "created_at": "2026-03-31",
+  "last_updated": "2026-03-31T21:22:41Z",
+  "progressive": true,
+  "epics": {
+    "epic-01-per-plant-resilience": {
+      "phase": "completed",
+      "learning_extracted": false
+    },
+    "epic-02-environment-provenance-metrics": {
+      "phase": "pending",
+      "learning_extracted": false
+    },
+    "epic-03-model-strategy-simplification": {
+      "phase": "pending",
+      "learning_extracted": false
+    }
+  },
+  "tickets": {
+    "ticket-001-plant-error-sentinel.md": {
+      "status": "completed",
+      "detail_level": "detailed",
+      "epic": "epic-01-per-plant-resilience",
+      "id": "E01-T001",
+      "agent": "r-developer",
+      "dependencies": [],
+      "scores": {
+        "quality": 0.95,
+        "quality_breakdown": {
+          "criteria_adherence": 1.0,
+          "test_coverage": 0.95,
+          "code_quality": 0.95,
+          "scope_discipline": 0.95,
+          "integration_safety": 0.90
+        },
+        "readiness": 0.94,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 0.95,
+          "boundary": 0.9,
+          "dependency_clarity": 0.95,
+          "atomicity": 0.9
+        }
+      },
+      "workflow_step": null
+    },
+    "ticket-002-train-resilience.md": {
+      "status": "completed",
+      "detail_level": "detailed",
+      "epic": "epic-01-per-plant-resilience",
+      "id": "E01-T002",
+      "agent": "r-developer",
+      "dependencies": [
+        "E01-T001"
+      ],
+      "scores": {
+        "quality": 0.93,
+        "quality_breakdown": {
+          "criteria_adherence": 0.95,
+          "test_coverage": 0.90,
+          "code_quality": 0.95,
+          "scope_discipline": 0.95,
+          "integration_safety": 0.90
+        },
+        "readiness": 0.9,
+        "readiness_breakdown": {
+          "structure": 0.95,
+          "testability": 0.85,
+          "boundary": 0.9,
+          "dependency_clarity": 0.9,
+          "atomicity": 0.9
+        }
+      },
+      "workflow_step": null
+    },
+    "ticket-003-predict-resilience.md": {
+      "status": "completed",
+      "detail_level": "detailed",
+      "epic": "epic-01-per-plant-resilience",
+      "id": "E01-T003",
+      "agent": "r-developer",
+      "dependencies": [
+        "E01-T001"
+      ],
+      "scores": {
+        "quality": 0.93,
+        "quality_breakdown": {
+          "criteria_adherence": 0.95,
+          "test_coverage": 0.90,
+          "code_quality": 0.93,
+          "scope_discipline": 0.95,
+          "integration_safety": 0.90
+        },
+        "readiness": 0.88,
+        "readiness_breakdown": {
+          "structure": 0.9,
+          "testability": 0.85,
+          "boundary": 0.85,
+          "dependency_clarity": 0.9,
+          "atomicity": 0.9
+        }
+      },
+      "workflow_step": null
+    },
+    "ticket-004-resilience-integration-tests.md": {
+      "status": "completed",
+      "detail_level": "detailed",
+      "epic": "epic-01-per-plant-resilience",
+      "id": "E01-T004",
+      "agent": "r-developer",
+      "dependencies": [
+        "E01-T002",
+        "E01-T003"
+      ],
+      "scores": {
+        "quality": 0.91,
+        "quality_breakdown": {
+          "criteria_adherence": 0.95,
+          "test_coverage": 0.90,
+          "code_quality": 0.90,
+          "scope_discipline": 0.90,
+          "integration_safety": 0.90
+        },
+        "readiness": 0.86,
+        "readiness_breakdown": {
+          "structure": 0.9,
+          "testability": 0.85,
+          "boundary": 0.8,
+          "dependency_clarity": 0.9,
+          "atomicity": 0.85
+        }
+      },
+      "workflow_step": null
+    },
+    "ticket-001-provenance-as-environment.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "epic": "epic-02-environment-provenance-metrics",
+      "id": "E02-T001",
+      "agent": "r-developer",
+      "dependencies": [
+        "E01-T004"
+      ],
+      "scores": {
+        "readiness": 0.92,
+        "readiness_breakdown": {
+          "structure": 0.95,
+          "testability": 0.9,
+          "boundary": 0.9,
+          "dependency_clarity": 0.95,
+          "atomicity": 0.9
+        }
+      }
+    },
+    "ticket-002-metrics-as-environment.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "epic": "epic-02-environment-provenance-metrics",
+      "id": "E02-T002",
+      "agent": "r-developer",
+      "dependencies": [
+        "E02-T001"
+      ],
+      "scores": {
+        "readiness": 0.9,
+        "readiness_breakdown": {
+          "structure": 0.95,
+          "testability": 0.9,
+          "boundary": 0.85,
+          "dependency_clarity": 0.95,
+          "atomicity": 0.85
+        }
+      }
+    },
+    "ticket-003-remove-superassign-pipelines.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "epic": "epic-02-environment-provenance-metrics",
+      "id": "E02-T003",
+      "agent": "r-developer",
+      "dependencies": [
+        "E02-T001",
+        "E02-T002"
+      ],
+      "scores": {
+        "readiness": 0.88,
+        "readiness_breakdown": {
+          "structure": 0.9,
+          "testability": 0.85,
+          "boundary": 0.85,
+          "dependency_clarity": 0.9,
+          "atomicity": 0.9
+        }
+      }
+    },
+    "ticket-004-environment-tests.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "epic": "epic-02-environment-provenance-metrics",
+      "id": "E02-T004",
+      "agent": "r-developer",
+      "dependencies": [
+        "E02-T003"
+      ],
+      "scores": {
+        "readiness": 0.86,
+        "readiness_breakdown": {
+          "structure": 0.9,
+          "testability": 0.85,
+          "boundary": 0.8,
+          "dependency_clarity": 0.9,
+          "atomicity": 0.85
+        }
+      }
+    },
+    "ticket-001-rewrite-model-strategy.md": {
+      "status": "pending",
+      "detail_level": "outline",
+      "epic": "epic-03-model-strategy-simplification",
+      "id": "E03-T001",
+      "agent": "r-developer",
+      "dependencies": [
+        "E02-T004"
+      ]
+    },
+    "ticket-002-rewrite-model-linear-regression.md": {
+      "status": "pending",
+      "detail_level": "outline",
+      "epic": "epic-03-model-strategy-simplification",
+      "id": "E03-T002",
+      "agent": "r-developer",
+      "dependencies": [
+        "E03-T001"
+      ]
+    },
+    "ticket-003-update-artifact-train-predict.md": {
+      "status": "pending",
+      "detail_level": "outline",
+      "epic": "epic-03-model-strategy-simplification",
+      "id": "E03-T003",
+      "agent": "r-developer",
+      "dependencies": [
+        "E03-T001",
+        "E03-T002"
+      ]
+    },
+    "ticket-004-update-namespace-cli.md": {
+      "status": "pending",
+      "detail_level": "outline",
+      "epic": "epic-03-model-strategy-simplification",
+      "id": "E03-T004",
+      "agent": "r-developer",
+      "dependencies": [
+        "E03-T003"
+      ]
+    },
+    "ticket-005-rewrite-tests.md": {
+      "status": "pending",
+      "detail_level": "outline",
+      "epic": "epic-03-model-strategy-simplification",
+      "id": "E03-T005",
+      "agent": "r-developer",
+      "dependencies": [
+        "E03-T003",
+        "E03-T004"
+      ]
+    }
+  }
+}

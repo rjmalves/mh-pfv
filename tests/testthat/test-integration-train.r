@@ -151,3 +151,85 @@ test_that("train_main writes valid metrics JSON", {
         expect_true(!is.null(plant$model_quality$n_valid_slots))
     }
 })
+
+test_that("train_main partial failure: 1 of 3 plants fails", {
+    temp_artifact <- withr::local_tempdir()
+    config <- gen_config(
+        mode = "train",
+        ids_usinas = c("USI1", "USI_FAIL", "USI3"),
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config$artifact <- temp_artifact
+    config$input <- temp_artifact
+
+    mockery::stub(train_main, "conectamock_pfv", function(...) NULL)
+    mockery::stub(train_main, "get_usinas",
+        function(...) gen_usinas(ids = c("USI1", "USI_FAIL", "USI3")))
+    mockery::stub(train_main, "get_dataset", function(...) list(
+        ger_obs = data.table::data.table(), corte = data.table::data.table(),
+        irrad_prev = data.table::data.table()))
+    mockery::stub(train_main, "associa_nwp_usina",
+        function(...) data.table::data.table())
+    mockery::stub(train_main, "adicionar_passo_previsao",
+        function(x, ...) x)
+    mockery::stub(train_main, "ajustar_usina", function(iu, ...) {
+        if (iu == "USI_FAIL") stop("simulated failure")
+        gen_model_artifact(id_usina = iu)
+    })
+    mockery::stub(train_main, "write_model_artifact",
+        function(...) invisible(NULL))
+
+    expect_no_error(train_main(config))
+
+    prov_files <- list.files(temp_artifact, "^provenance-.*\\.json$",
+        full.names = TRUE)
+    expect_equal(length(prov_files), 1L)
+    parsed <- jsonlite::fromJSON(prov_files[1], simplifyVector = FALSE)
+
+    expect_equal(parsed$plant_status$USI1, "completed")
+    expect_equal(parsed$plant_status$USI_FAIL, "failed")
+    expect_equal(parsed$plant_status$USI3, "completed")
+    expect_equal(parsed$status, "failed")
+
+    report_files <- list.files(temp_artifact, "^health-.*\\.json$",
+        full.names = TRUE)
+    expect_equal(length(report_files), 1L)
+    report <- jsonlite::fromJSON(report_files[1], simplifyVector = FALSE)
+    expect_equal(report$overall_health, "failed")
+})
+
+test_that("train_main all plants fail", {
+    temp_artifact <- withr::local_tempdir()
+    config <- gen_config(
+        mode = "train",
+        ids_usinas = c("USI1", "USI2"),
+        janela = list("2025-07-01", "2025-09-30")
+    )
+    config$artifact <- temp_artifact
+    config$input <- temp_artifact
+
+    mockery::stub(train_main, "conectamock_pfv", function(...) NULL)
+    mockery::stub(train_main, "get_usinas",
+        function(...) gen_usinas(ids = c("USI1", "USI2")))
+    mockery::stub(train_main, "get_dataset", function(...) list(
+        ger_obs = data.table::data.table(), corte = data.table::data.table(),
+        irrad_prev = data.table::data.table()))
+    mockery::stub(train_main, "associa_nwp_usina",
+        function(...) data.table::data.table())
+    mockery::stub(train_main, "adicionar_passo_previsao",
+        function(x, ...) x)
+    mockery::stub(train_main, "ajustar_usina",
+        function(iu, ...) stop("all fail"))
+    mockery::stub(train_main, "write_model_artifact",
+        function(...) invisible(NULL))
+
+    expect_no_error(train_main(config))
+
+    prov_files <- list.files(temp_artifact, "^provenance-.*\\.json$",
+        full.names = TRUE)
+    parsed <- jsonlite::fromJSON(prov_files[1], simplifyVector = FALSE)
+
+    expect_equal(parsed$plant_status$USI1, "failed")
+    expect_equal(parsed$plant_status$USI2, "failed")
+    expect_equal(parsed$status, "failed")
+})

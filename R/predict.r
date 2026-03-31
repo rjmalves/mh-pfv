@@ -89,6 +89,7 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
     v_usinas_pending <- setdiff(args$ids_usinas, completed_plants)
 
     resultados_new <- list()
+    n_failed <- 0L
 
     if (length(v_usinas_pending) > 0L) {
         apply_args <- list(v_usinas_pending, processar_usina,
@@ -104,22 +105,38 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
             strategy = strategy
         )
 
+        extra_args <- apply_args[-(1L:2L)]
+
         if (parallel) {
             old_plan <- setup_parallel_plan()
             on.exit(reset_parallel_plan(old_plan), add = TRUE)
             batch_start <- proc.time()[["elapsed"]]
-            resultados_new <- do.call(future.apply::future_lapply,
-                c(apply_args, list(future.seed = TRUE)))
+            resultados_new <- future.apply::future_lapply(
+                v_usinas_pending, function(iu) {
+                    tryCatch(
+                        do.call(processar_usina, c(list(iu), extra_args)),
+                        error = function(e) plant_error(iu, e)
+                    )
+                }, future.seed = TRUE
+            )
             batch_elapsed <- proc.time()[["elapsed"]] - batch_start
             est_per_plant <- round(batch_elapsed / length(v_usinas_pending), 2L)
             for (iu in v_usinas_pending) {
                 metrics <- record_plant_timing(metrics, iu, est_per_plant)
             }
         } else {
-            extra_args <- apply_args[-(1L:2L)]
             resultados_new <- lapply(v_usinas_pending, function(iu) {
                 t0 <- proc.time()[["elapsed"]]
-                result <- do.call(processar_usina, c(list(iu), extra_args))
+                result <- tryCatch(
+                    do.call(processar_usina, c(list(iu), extra_args)),
+                    error = function(e) {
+                        lg$error(
+                            "Falha no processamento da usina %s: %s",
+                            iu, conditionMessage(e)
+                        )
+                        plant_error(iu, e)
+                    }
+                )
                 # <<- necessario para atualizar metrics no escopo da funcao pai
                 metrics <<- record_plant_timing(
                     metrics, iu, round(proc.time()[["elapsed"]] - t0, 2L)
@@ -128,64 +145,78 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
             })
         }
 
+        n_failed <- 0L
         n_total <- length(v_usinas_pending)
         for (i in seq_along(v_usinas_pending)) {
-            result <- resultados_new[[i]]
-            n_rows <- nrow(result$com_cortes)
-            n_na <- sum(is.na(result$com_cortes$valor))
-            n_total_vals <- length(result$com_cortes$valor)
-            metrics <- record_plant_data_volume(
-                metrics, v_usinas_pending[i],
-                as.numeric(n_rows), as.numeric(n_na), as.numeric(n_total_vals)
-            )
-            # <<- necessario para atualizar provenance no escopo da funcao pai
-            provenance <<- update_plant_status(
-                provenance, v_usinas_pending[i], "completed"
-            )
-            if (resume) {
-                write_plant_result(
-                    result, v_usinas_pending[i], args$output
+            iu <- v_usinas_pending[i]
+            if (is_plant_error(resultados_new[[i]])) {
+                provenance <- update_plant_status(provenance, iu, "failed")
+                n_failed <- n_failed + 1L
+                lg$error("Usina %s falhou: %s", iu, resultados_new[[i]]$error)
+            } else {
+                result <- resultados_new[[i]]
+                n_rows <- nrow(result$com_cortes)
+                n_na <- sum(is.na(result$com_cortes$valor))
+                n_total_vals <- length(result$com_cortes$valor)
+                metrics <- record_plant_data_volume(
+                    metrics, iu,
+                    as.numeric(n_rows), as.numeric(n_na),
+                    as.numeric(n_total_vals)
                 )
-                write_checkpoint(provenance, args$output)
+                provenance <- update_plant_status(provenance, iu, "completed")
+                if (resume) {
+                    write_plant_result(result, iu, args$output)
+                    write_checkpoint(provenance, args$output)
+                }
             }
-            lg$info("Usina %s concluida (%d/%d)", v_usinas_pending[i], i, n_total)
+            lg$info("Usina %s processada (%d/%d)", iu, i, n_total)
         }
     }
 
     resultados <- lapply(args$ids_usinas, function(iu) {
         if (iu %in% v_usinas_pending) {
-            resultados_new[[match(iu, v_usinas_pending)]]
+            idx <- match(iu, v_usinas_pending)
+            r <- resultados_new[[idx]]
+            if (is_plant_error(r)) return(NULL)
+            r
         } else {
             read_plant_result(iu, args$output)
         }
     })
 
-    resultados_organizados <- organiza_resultados(
-        resultados = resultados,
-        v_usinas = args$ids_usinas
-    )
+    valid_idx <- !vapply(resultados, is.null, logical(1L))
+    resultados_valid <- resultados[valid_idx]
+    usinas_valid <- args$ids_usinas[valid_idx]
 
-    geracao_usina_preenchida_com_cortes <- coloca_na_antes_inicio(
-        dt = copy(resultados_organizados$com_cortes),
-        dados_usina = dt_usinas
-    )
+    if (length(resultados_valid) > 0L) {
+        resultados_organizados <- organiza_resultados(
+            resultados = resultados_valid,
+            v_usinas = usinas_valid
+        )
 
-    geracao_usina_preenchida_sem_cortes <- coloca_na_antes_inicio(
-        dt = copy(resultados_organizados$sem_cortes),
-        dados_usina = dt_usinas
-    )
+        geracao_usina_preenchida_com_cortes <- coloca_na_antes_inicio(
+            dt = copy(resultados_organizados$com_cortes),
+            dados_usina = dt_usinas
+        )
 
-    write_melhor_historico_geracao(
-        dt = geracao_usina_preenchida_com_cortes,
-        output_dir = args$output
-    )
+        geracao_usina_preenchida_sem_cortes <- coloca_na_antes_inicio(
+            dt = copy(resultados_organizados$sem_cortes),
+            dados_usina = dt_usinas
+        )
 
-    write_melhor_historico_geracao_sem_cortes(
-        dt = geracao_usina_preenchida_sem_cortes,
-        output_dir = args$output
-    )
+        write_melhor_historico_geracao(
+            dt = geracao_usina_preenchida_com_cortes,
+            output_dir = args$output
+        )
 
-    provenance <- finalize_provenance(provenance, "completed")
+        write_melhor_historico_geracao_sem_cortes(
+            dt = geracao_usina_preenchida_sem_cortes,
+            output_dir = args$output
+        )
+    }
+
+    final_status <- if (n_failed == 0L) "completed" else "failed"
+    provenance <- finalize_provenance(provenance, final_status)
     if (resume) cleanup_checkpoint(args$output)
 }
 

@@ -97,17 +97,21 @@ train_main <- function(args, strategy = linear_regression_strategy(),
         old_plan <- setup_parallel_plan()
         on.exit(reset_parallel_plan(old_plan), add = TRUE)
         batch_start <- proc.time()[["elapsed"]]
-        models <- future.apply::future_lapply(v_usinas, ajustar_usina,
-            dt_usinas = dt_usinas,
-            dt_ger_obs = dataset$ger_obs,
-            dt_irrad_prev_filt = dt_irrad_prev_filt,
-            dt_corte_obs = dataset$corte,
-            fonte = args$ordem_prioridade_fontes,
-            fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
-            strategy = strategy,
-            config = args,
-            future.seed = TRUE
-        )
+        models <- future.apply::future_lapply(v_usinas, function(iu) {
+            tryCatch(
+                ajustar_usina(iu,
+                    dt_usinas = dt_usinas,
+                    dt_ger_obs = dataset$ger_obs,
+                    dt_irrad_prev_filt = dt_irrad_prev_filt,
+                    dt_corte_obs = dataset$corte,
+                    fonte = args$ordem_prioridade_fontes,
+                    fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+                    strategy = strategy,
+                    config = args
+                ),
+                error = function(e) plant_error(iu, e)
+            )
+        }, future.seed = TRUE)
         batch_elapsed <- proc.time()[["elapsed"]] - batch_start
         est_per_plant <- round(batch_elapsed / length(v_usinas), 2L)
         for (iu in v_usinas) {
@@ -116,15 +120,21 @@ train_main <- function(args, strategy = linear_regression_strategy(),
     } else {
         models <- lapply(v_usinas, function(iu) {
             t0 <- proc.time()[["elapsed"]]
-            result <- ajustar_usina(iu,
-                dt_usinas = dt_usinas,
-                dt_ger_obs = dataset$ger_obs,
-                dt_irrad_prev_filt = dt_irrad_prev_filt,
-                dt_corte_obs = dataset$corte,
-                fonte = args$ordem_prioridade_fontes,
-                fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
-                strategy = strategy,
-                config = args
+            result <- tryCatch(
+                ajustar_usina(iu,
+                    dt_usinas = dt_usinas,
+                    dt_ger_obs = dataset$ger_obs,
+                    dt_irrad_prev_filt = dt_irrad_prev_filt,
+                    dt_corte_obs = dataset$corte,
+                    fonte = args$ordem_prioridade_fontes,
+                    fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+                    strategy = strategy,
+                    config = args
+                ),
+                error = function(e) {
+                    lg$error("Falha no ajuste da usina %s: %s", iu, conditionMessage(e))
+                    plant_error(iu, e)
+                }
             )
             # <<- necessario para atualizar metrics no escopo da funcao pai
             metrics <<- record_plant_timing(
@@ -134,23 +144,33 @@ train_main <- function(args, strategy = linear_regression_strategy(),
         })
     }
 
+    n_failed <- 0L
     n_total <- length(v_usinas)
     lapply(seq_along(v_usinas), function(i) {
-        write_model_artifact(models[[i]], v_usinas[i], args$artifact)
-        # <<- necessario para atualizar provenance e metrics no escopo pai
-        provenance <<- update_plant_status(
-            provenance, v_usinas[i], "completed"
-        )
-        if ("metadata" %in% names(models[[i]])) {
-            metrics <<- record_model_quality(
-                metrics, v_usinas[i], models[[i]]$metadata
+        if (is_plant_error(models[[i]])) {
+            provenance <<- update_plant_status(
+                provenance, v_usinas[i], "failed"
             )
+            n_failed <<- n_failed + 1L
+            lg$error("Usina %s falhou: %s", v_usinas[i], models[[i]]$error)
+        } else {
+            write_model_artifact(models[[i]], v_usinas[i], args$artifact)
+            # <<- necessario para atualizar provenance e metrics no escopo pai
+            provenance <<- update_plant_status(
+                provenance, v_usinas[i], "completed"
+            )
+            if ("metadata" %in% names(models[[i]])) {
+                metrics <<- record_model_quality(
+                    metrics, v_usinas[i], models[[i]]$metadata
+                )
+            }
         }
         if (resume) write_checkpoint(provenance, args$artifact)
-        lg$info("Usina %s concluida (%d/%d)", v_usinas[i], i, n_total)
+        lg$info("Usina %s processada (%d/%d)", v_usinas[i], i, n_total)
     })
 
-    provenance <- finalize_provenance(provenance, "completed")
+    final_status <- if (n_failed == 0L) "completed" else "failed"
+    provenance <- finalize_provenance(provenance, final_status)
     if (resume) cleanup_checkpoint(args$artifact)
 }
 

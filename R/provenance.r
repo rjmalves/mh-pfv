@@ -372,6 +372,22 @@ read_plant_result <- function(id_usina, output_dir) {
 #'   os checkpoints encontrados
 #'
 #' @return `invisible(NULL)`
+plant_error <- function(id_usina, error) {
+    stopifnot(
+        is.character(id_usina), length(id_usina) == 1L,
+        inherits(error, "condition") || is.character(error)
+    )
+    msg <- if (inherits(error, "condition")) conditionMessage(error) else error
+    structure(
+        list(id_usina = id_usina, error = msg),
+        class = "plant_error"
+    )
+}
+
+is_plant_error <- function(x) {
+    inherits(x, "plant_error")
+}
+
 cleanup_checkpoint <- function(output_dir, run_id = NULL) {
     lg <- lgr::get_logger("mhpfv")
 

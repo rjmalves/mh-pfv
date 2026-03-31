@@ -646,3 +646,61 @@ test_that("cleanup_checkpoint", {
         expect_match(remaining[1], prov2$run_id)
     })
 })
+
+test_that("plant_error", {
+    f <- mhpfv:::plant_error
+    expect_true(is.function(f))
+
+    test_that("plant_error wraps condition object", {
+        err <- simpleError("boom")
+        result <- f("USI1", err)
+
+        expect_s3_class(result, "plant_error")
+        expect_equal(result$id_usina, "USI1")
+        expect_equal(result$error, "boom")
+    })
+
+    test_that("plant_error wraps character string", {
+        result <- f("USI1", "boom")
+
+        expect_s3_class(result, "plant_error")
+        expect_equal(result$id_usina, "USI1")
+        expect_equal(result$error, "boom")
+    })
+
+    test_that("plant_error rejects non-character id_usina", {
+        expect_error(f(123, "boom"))
+        expect_error(f(NULL, "boom"))
+        expect_error(f(TRUE, "boom"))
+    })
+
+    test_that("plant_error rejects vector id_usina", {
+        expect_error(f(c("USI1", "USI2"), "boom"))
+    })
+
+    test_that("plant_error rejects non-condition non-character error", {
+        expect_error(f("USI1", 42))
+        expect_error(f("USI1", NULL))
+        expect_error(f("USI1", list()))
+    })
+})
+
+test_that("is_plant_error", {
+    f <- mhpfv:::is_plant_error
+    expect_true(is.function(f))
+
+    test_that("is_plant_error returns TRUE for plant_error object", {
+        pe <- mhpfv:::plant_error("USI1", "x")
+        expect_true(f(pe))
+    })
+
+    test_that("is_plant_error returns FALSE for plain list", {
+        expect_false(f(list(id_usina = "USI1")))
+    })
+
+    test_that("is_plant_error returns FALSE for other types", {
+        expect_false(f("USI1"))
+        expect_false(f(42))
+        expect_false(f(NULL))
+    })
+})
