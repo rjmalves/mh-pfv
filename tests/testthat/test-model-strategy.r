@@ -78,16 +78,6 @@ test_that("custom model dispatch works with new API", {
         structure(list(fitted = TRUE), class = "custom_model")
     }
 
-    old_fit <- ns[["fit_custom"]]
-    assign("fit_custom", fit_custom, envir = ns)
-    on.exit({
-        if (is.null(old_fit)) {
-            rm("fit_custom", envir = ns)
-        } else {
-            assign("fit_custom", old_fit, envir = ns)
-        }
-    }, add = TRUE)
-
     predict_model.custom_model <- function(model, ...) { # nolint: object_name_linter.
         list(predicted = TRUE)
     }
@@ -100,6 +90,23 @@ test_that("custom model dispatch works with new API", {
         predict_model.custom_model, envir = ns)
     registerS3method("model_metadata", "custom_model",
         model_metadata.custom_model, envir = ns)
+
+    # fit_model uses get0() in the locked namespace; new fit functions cannot
+    # be added via assign(). Mock fit_model to route "custom" to fit_custom.
+    local_mocked_bindings(
+        fit_model = function(strategy, dty, dtx, dty_bruta, ...) {
+            stopifnot(is.character(strategy), length(strategy) == 1L)
+            if (strategy == "custom") {
+                return(fit_custom(dty = dty, dtx = dtx, dty_bruta = dty_bruta, ...))
+            }
+            fn_name <- paste0("fit_", strategy)
+            fn <- get0(fn_name, envir = ns, mode = "function", inherits = FALSE)
+            if (is.null(fn)) {
+                stop("fit_model nao implementado para estrategia '", strategy, "'")
+            }
+            fn(dty = dty, dtx = dtx, dty_bruta = dty_bruta, ...)
+        }
+    )
 
     fit_result <- fit_model("custom", NULL, NULL, NULL)
     expect_true(fit_result$fitted)

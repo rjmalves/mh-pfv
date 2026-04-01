@@ -26,14 +26,38 @@ model_metadata.test_strategy_model <- function(model, ...) { # nolint: object_na
     )
 }
 
+# Register S3 methods (works on locked namespaces via registerS3method)
 ns <- asNamespace("mhpfv")
-assign("fit_test_strategy", fit_test_strategy, envir = ns)
 registerS3method("predict_model", "test_strategy_model",
     predict_model.test_strategy_model, envir = ns)
 registerS3method("model_metadata", "test_strategy_model",
     model_metadata.test_strategy_model, envir = ns)
 
+# fit_model uses get0() in the locked namespace; new fit functions cannot be
+# added via assign(). This helper mocks fit_model to route "test_strategy"
+# to the local fit_test_strategy. Must be called inside test_that().
+mock_fit_test_strategy <- function(env = parent.frame()) {
+    local_mocked_bindings(
+        fit_model = function(strategy, dty, dtx, dty_bruta, ...) {
+            stopifnot(is.character(strategy), length(strategy) == 1L)
+            if (strategy == "test_strategy") {
+                return(fit_test_strategy(
+                    dty = dty, dtx = dtx, dty_bruta = dty_bruta, ...
+                ))
+            }
+            fn_name <- paste0("fit_", strategy)
+            fn <- get0(fn_name, envir = ns, mode = "function", inherits = FALSE)
+            if (is.null(fn)) {
+                stop("fit_model nao implementado para estrategia '", strategy, "'")
+            }
+            fn(dty = dty, dtx = dtx, dty_bruta = dty_bruta, ...)
+        },
+        .env = env
+    )
+}
+
 test_that("fit_model dispatches to test_strategy mock", {
+    mock_fit_test_strategy()
     result <- fit_model("test_strategy", dty = NULL, dtx = NULL, dty_bruta = NULL)
 
     expect_true(inherits(result, "test_strategy_model"))
@@ -52,6 +76,7 @@ test_that("fit_model dispatches to test_strategy mock", {
 })
 
 test_that("model_metadata dispatches to test_strategy_model mock", {
+    mock_fit_test_strategy()
     model <- fit_model("test_strategy", NULL, NULL, NULL)
 
     meta <- model_metadata(model)
@@ -65,6 +90,7 @@ test_that("model_metadata dispatches to test_strategy_model mock", {
 test_that("train_main with test_strategy produces mock artifacts", {
     skip_if_not(dir.exists(test_path("data")))
     skip_if_no_zstd()
+    mock_fit_test_strategy()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
@@ -102,6 +128,7 @@ test_that("train_main with test_strategy produces mock artifacts", {
 test_that("train_main with parallel = TRUE produces identical artifacts", {
     skip_if_not(dir.exists(test_path("data")))
     skip_if_no_zstd()
+    mock_fit_test_strategy()
     temp_seq <- withr::local_tempdir()
     temp_par <- withr::local_tempdir()
 
@@ -141,6 +168,7 @@ test_that("train_main with parallel = TRUE produces identical artifacts", {
 test_that("test_strategy lifecycle: fit -> artifact -> predict_model", {
     skip_if_not(dir.exists(test_path("data")))
     skip_if_no_zstd()
+    mock_fit_test_strategy()
     temp_artifact <- withr::local_tempdir()
 
     conn <- conectamock_pfv(test_path("data"))
