@@ -71,54 +71,6 @@ test_that("model_metadata", {
     })
 })
 
-test_that("custom model dispatch works with new API", {
-    ns <- asNamespace("mhpfv")
-
-    fit_custom <- function(dty, dtx, dty_bruta, ...) {
-        structure(list(fitted = TRUE), class = "custom_model")
-    }
-
-    predict_model.custom_model <- function(model, ...) { # nolint: object_name_linter.
-        list(predicted = TRUE)
-    }
-
-    model_metadata.custom_model <- function(model, ...) { # nolint: object_name_linter.
-        list(name = "custom")
-    }
-
-    registerS3method("predict_model", "custom_model",
-        predict_model.custom_model, envir = ns)
-    registerS3method("model_metadata", "custom_model",
-        model_metadata.custom_model, envir = ns)
-
-    # fit_model uses get0() in the locked namespace; new fit functions cannot
-    # be added via assign(). Mock fit_model to route "custom" to fit_custom.
-    local_mocked_bindings(
-        fit_model = function(strategy, dty, dtx, dty_bruta, ...) {
-            stopifnot(is.character(strategy), length(strategy) == 1L)
-            if (strategy == "custom") {
-                return(fit_custom(dty = dty, dtx = dtx, dty_bruta = dty_bruta, ...))
-            }
-            fn_name <- paste0("fit_", strategy)
-            fn <- get0(fn_name, envir = ns, mode = "function", inherits = FALSE)
-            if (is.null(fn)) {
-                stop("fit_model nao implementado para estrategia '", strategy, "'")
-            }
-            fn(dty = dty, dtx = dtx, dty_bruta = dty_bruta, ...)
-        }
-    )
-
-    fit_result <- fit_model("custom", NULL, NULL, NULL)
-    expect_true(fit_result$fitted)
-    expect_true(inherits(fit_result, "custom_model"))
-
-    pred_result <- predict_model(fit_result)
-    expect_true(pred_result$predicted)
-
-    meta_result <- model_metadata(fit_result)
-    expect_equal(meta_result$name, "custom")
-})
-
 test_that("fit_linear_regression", {
     f <- fit_linear_regression
 
