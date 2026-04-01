@@ -1,4 +1,4 @@
-test_that("ajustar_usina returns list with id_usina and parametros", {
+test_that("ajustar_usina returns artifact with id_usina and model", {
     skip_if_not(dir.exists(test_path("data")))
     skip_if_no_zstd()
 
@@ -28,13 +28,14 @@ test_that("ajustar_usina returns list with id_usina and parametros", {
     )
 
     expect_true(is.list(result))
-    expect_true(all(c("id_usina", "parametros", "metadata") %in% names(result)))
+    expect_true(all(c("id_usina", "model", "metadata") %in% names(result)))
     expect_true(is.character(result$id_usina))
     expect_equal(result$id_usina, iu)
-    expect_true(is.data.frame(result$parametros))
+    expect_true(inherits(result$model, "linear_regression_model"))
+    expect_true(is.data.frame(result$model$parametros))
 })
 
-test_that("ajustar_usina parametros has expected structure", {
+test_that("ajustar_usina model parametros has expected structure", {
     skip_if_not(dir.exists(test_path("data")))
     skip_if_no_zstd()
 
@@ -63,7 +64,7 @@ test_that("ajustar_usina parametros has expected structure", {
         fator_tolerancia = config$fator_tolerancia_limite_superior_geracao
     )
 
-    params <- result$parametros
+    params <- result$model$parametros
     expect_true(all(c("a", "b") %in% names(params)))
 
     non_na_b <- params$b[!is.na(params$b)]

@@ -16,9 +16,6 @@
 #'   - `ordem_prioridade_fontes`: fontes de dados em ordem de prioridade.
 #'   - `ordem_prioridade_modelosNWP`: modelos NWP em ordem de prioridade.
 #'   - `output`: caminho para a pasta de saida.
-#' @param strategy objeto [new_model_strategy()] definindo o tipo de modelo a
-#'   usar na previsao. Por padrao usa [linear_regression_strategy()], mantendo
-#'   comportamento identico ao original.
 #' @param parallel logico, se `TRUE` usa `future_lapply` para processar
 #'   usinas em paralelo. Padrao `FALSE` para compatibilidade.
 #' @param resume logico, se `TRUE` busca um checkpoint valido no diretorio
@@ -29,7 +26,7 @@
 #'   pasta de saida especificada.
 #'
 #' @seealso `organiza_resultados()`, [write_melhor_historico_geracao()],
-#'   [linear_regression_strategy()], [setup_parallel_plan()],
+#'   [setup_parallel_plan()],
 #'   [write_checkpoint()], [read_checkpoint()], [write_plant_result()]
 #'
 #' @export
@@ -50,8 +47,7 @@ load_predict_resume_state <- function(args, provenance) {
     list(provenance = provenance, completed = completed_plants)
 }
 
-predict_main <- function(args, strategy = linear_regression_strategy(),
-    parallel = FALSE, resume = FALSE) {
+predict_main <- function(args, parallel = FALSE, resume = FALSE) {
 
     provenance <- create_provenance(args, "predict", parallel)
     metrics <- create_metrics(provenance$run_id, "predict")
@@ -101,8 +97,7 @@ predict_main <- function(args, strategy = linear_regression_strategy(),
             dt_corte_obs = dataset$corte,
             fonte = args$ordem_prioridade_fontes,
             fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
-            artifact_dir = args$artifact,
-            strategy = strategy
+            artifact_dir = args$artifact
         )
 
         extra_args <- apply_args[-(1L:2L)]
@@ -248,8 +243,7 @@ get_dataset <- function(args, conn) {
 
 processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg,
     dt_mhg_sem_cortes, dt_irrad_prev_filt, dt_corte_obs, fonte,
-    fator_tolerancia, artifact_dir,
-    strategy = linear_regression_strategy(), ...) {
+    fator_tolerancia, artifact_dir, ...) {
 
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
@@ -270,7 +264,7 @@ processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg,
         limite_dados = c(0, potencia_instalada * fator_tolerancia)
     )
 
-    model <- pfvIO:::get_model_artifact(iu, artifact_dir)
+    artifact <- pfvIO:::get_model_artifact(iu, artifact_dir)
 
     geracao_usina_preenchida <- preenche_geracao_unit(
         geracao_usina = geracao_usina_consis,
@@ -278,8 +272,7 @@ processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg,
         mhg_prev = mhg,
         cortes = NULL,
         limite_dados = c(0, potencia_instalada * fator_tolerancia),
-        model = model,
-        strategy = strategy
+        model = artifact$model
     )
 
     datas <- lubridate::as_datetime(geracao_usina_consis$data_hora_observacao, tz = "UTC")
@@ -295,8 +288,7 @@ processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg,
         mhg_prev = mhg_sc,
         cortes = corte_obs,
         limite_dados = c(0, potencia_instalada * fator_tolerancia),
-        model = model,
-        strategy = strategy
+        model = artifact$model
     )
 
     # Garante que sem_cortes nunca seja menor que com_cortes

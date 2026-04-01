@@ -1,46 +1,46 @@
-fit_model.test_strategy <- function(strategy, dty, dtx, dty_bruta, ...) { # nolint: object_name_linter.
+fit_test_strategy <- function(dty, dtx, dty_bruta, ...) { # nolint: object_name_linter.
     horas <- seq(5.0, 18.5, by = 0.5)
     nomes <- sprintf(
         "%02d:%02d",
         floor(horas),
         ifelse(horas %% 1 == 0.5, 30, 0)
     )
-    data.frame(
+    params <- data.frame(
         a = rep(0.5, length(horas)),
         b = rep(0, length(horas)),
         row.names = nomes
     )
+    structure(list(parametros = params), class = "test_strategy_model")
 }
 
-predict_model.test_strategy <- function(strategy, model, df_ger_usi, # nolint: object_name_linter.
+predict_model.test_strategy_model <- function(model, df_ger_usi, # nolint: object_name_linter.
     df_irrad_prev, lim_dados, ...) {
-    substitui_por_estimativas(df_ger_usi, df_irrad_prev, model, lim_dados)
+    substitui_por_estimativas(df_ger_usi, df_irrad_prev, model$parametros, lim_dados)
 }
 
-model_metadata.test_strategy <- function(strategy, model, ...) { # nolint: object_name_linter.
+model_metadata.test_strategy_model <- function(model, ...) { # nolint: object_name_linter.
     list(
         type = "test_strategy",
-        n_slots = nrow(model),
+        n_slots = nrow(model$parametros),
         timestamp = Sys.time()
     )
 }
 
-registerS3method("fit_model", "test_strategy", fit_model.test_strategy,
-    envir = asNamespace("mhpfv"))
-registerS3method("predict_model", "test_strategy", predict_model.test_strategy,
-    envir = asNamespace("mhpfv"))
-registerS3method("model_metadata", "test_strategy", model_metadata.test_strategy,
-    envir = asNamespace("mhpfv"))
+ns <- asNamespace("mhpfv")
+assign("fit_test_strategy", fit_test_strategy, envir = ns)
+registerS3method("predict_model", "test_strategy_model",
+    predict_model.test_strategy_model, envir = ns)
+registerS3method("model_metadata", "test_strategy_model",
+    model_metadata.test_strategy_model, envir = ns)
 
 test_that("fit_model dispatches to test_strategy mock", {
-    s <- new_model_strategy("test_strategy")
+    result <- fit_model("test_strategy", dty = NULL, dtx = NULL, dty_bruta = NULL)
 
-    result <- fit_model(s, dty = NULL, dtx = NULL, dty_bruta = NULL)
-
-    expect_true(is.data.frame(result))
-    expect_true(all(c("a", "b") %in% names(result)))
-    expect_true(all(result$a == 0.5))
-    expect_true(all(result$b == 0))
+    expect_true(inherits(result, "test_strategy_model"))
+    expect_true(is.data.frame(result$parametros))
+    expect_true(all(c("a", "b") %in% names(result$parametros)))
+    expect_true(all(result$parametros$a == 0.5))
+    expect_true(all(result$parametros$b == 0))
 
     expected_horas <- seq(5.0, 18.5, by = 0.5)
     expected_names <- sprintf(
@@ -48,18 +48,17 @@ test_that("fit_model dispatches to test_strategy mock", {
         floor(expected_horas),
         ifelse(expected_horas %% 1 == 0.5, 30, 0)
     )
-    expect_equal(rownames(result), expected_names)
+    expect_equal(rownames(result$parametros), expected_names)
 })
 
-test_that("model_metadata dispatches to test_strategy mock", {
-    s <- new_model_strategy("test_strategy")
-    model <- fit_model(s, NULL, NULL, NULL)
+test_that("model_metadata dispatches to test_strategy_model mock", {
+    model <- fit_model("test_strategy", NULL, NULL, NULL)
 
-    meta <- model_metadata(s, model)
+    meta <- model_metadata(model)
 
     expect_true(is.list(meta))
     expect_equal(meta$type, "test_strategy")
-    expect_equal(meta$n_slots, nrow(model))
+    expect_equal(meta$n_slots, nrow(model$parametros))
     expect_true(inherits(meta$timestamp, "POSIXct"))
 })
 
@@ -77,8 +76,7 @@ test_that("train_main with test_strategy produces mock artifacts", {
     config$artifact <- temp_artifact
     config <- parse_config(config, conn)
 
-    strategy <- new_model_strategy("test_strategy")
-    expect_no_error(train_main(config, strategy = strategy))
+    expect_no_error(train_main(config, strategy = "test_strategy"))
 
     expected_ids <- config$ids_usinas
     artifact_files <- file.path(
@@ -91,12 +89,13 @@ test_that("train_main with test_strategy produces mock artifacts", {
         artifact <- readRDS(af)
 
         expect_true(is.list(artifact))
-        expect_true(all(c("id_usina", "parametros") %in% names(artifact)))
+        expect_true(all(c("id_usina", "model") %in% names(artifact)))
 
-        params <- artifact$parametros
-        expect_true(is.data.frame(params))
-        expect_true(all(params$a == 0.5))
-        expect_true(all(params$b == 0))
+        model <- artifact$model
+        expect_true(inherits(model, "test_strategy_model"))
+        expect_true(is.data.frame(model$parametros))
+        expect_true(all(model$parametros$a == 0.5))
+        expect_true(all(model$parametros$b == 0))
     }
 })
 
@@ -114,10 +113,8 @@ test_that("train_main with parallel = TRUE produces identical artifacts", {
     config$input <- test_path("data")
     config <- parse_config(config, conn)
 
-    strategy <- new_model_strategy("test_strategy")
-
     config$artifact <- temp_seq
-    train_main(config, strategy = strategy, parallel = FALSE)
+    train_main(config, strategy = "test_strategy", parallel = FALSE)
 
     config$artifact <- temp_par
     # Mock setup_parallel_plan to use sequential strategy so that
@@ -128,7 +125,7 @@ test_that("train_main with parallel = TRUE produces identical artifacts", {
             invisible(old)
         }
     )
-    train_main(config, strategy = strategy, parallel = TRUE)
+    train_main(config, strategy = "test_strategy", parallel = TRUE)
 
     expected_ids <- config$ids_usinas
     for (iu in expected_ids) {
@@ -137,7 +134,7 @@ test_that("train_main with parallel = TRUE produces identical artifacts", {
         art_par <- readRDS(file.path(temp_par, fname))
 
         expect_equal(art_seq$id_usina, art_par$id_usina)
-        expect_equal(art_seq$parametros, art_par$parametros)
+        expect_equal(art_seq$model$parametros, art_par$model$parametros)
     }
 })
 
@@ -155,12 +152,11 @@ test_that("test_strategy lifecycle: fit -> artifact -> predict_model", {
     config$artifact <- temp_artifact
     config <- parse_config(config, conn)
 
-    strategy <- new_model_strategy("test_strategy")
-    train_main(config, strategy = strategy)
+    train_main(config, strategy = "test_strategy")
 
     iu <- config$ids_usinas[1]
     artifact <- readRDS(file.path(temp_artifact, paste0(iu, ".rds")))
-    model <- artifact$parametros
+    model <- artifact$model
 
     datas <- seq(
         from = as.POSIXct("2025-08-01 06:00", tz = "UTC"),
@@ -184,8 +180,7 @@ test_that("test_strategy lifecycle: fit -> artifact -> predict_model", {
     lim_dados <- c(0, 100)
 
     result <- predict_model(
-        strategy,
-        model = model,
+        model,
         df_ger_usi = copy(df_ger_usi),
         df_irrad_prev = copy(df_irrad_prev),
         lim_dados = lim_dados

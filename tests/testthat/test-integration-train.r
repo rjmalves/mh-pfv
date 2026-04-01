@@ -15,7 +15,7 @@ test_that("train_main completes without error", {
     expect_no_error(train_main(config))
 })
 
-test_that("train_main accepts custom strategy", {
+test_that("train_main accepts strategy as string", {
     skip_if_not(dir.exists(test_path("data")))
     skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
@@ -29,8 +29,7 @@ test_that("train_main accepts custom strategy", {
     config$artifact <- temp_artifact
     config <- parse_config(config, conn)
 
-    strategy <- linear_regression_strategy()
-    expect_no_error(train_main(config, strategy = strategy))
+    expect_no_error(train_main(config, strategy = "linear_regression"))
 })
 
 test_that("train_main produces valid model artifacts", {
@@ -63,12 +62,13 @@ test_that("train_main produces valid model artifacts", {
         artifact <- readRDS(artifact_files[i])
 
         expect_true(is.list(artifact))
-        expect_true(all(c("id_usina", "parametros") %in% names(artifact)))
+        expect_true(all(c("id_usina", "model") %in% names(artifact)))
 
         expect_true(is.character(artifact$id_usina))
         expect_equal(artifact$id_usina, expected_ids[i])
 
-        params <- artifact$parametros
+        expect_true(inherits(artifact$model, "linear_regression_model"))
+        params <- artifact$model$parametros
         expect_true(is.data.frame(params))
         expect_true(all(c("a", "b") %in% names(params)))
 

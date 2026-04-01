@@ -20,9 +20,8 @@
 #'     rodar o treinamento dos modelos.
 #'   - `ordem_prioridade_modelosNWP`: string com os nomes dos modelos NWP
 #'     separados por virgula, em ordem de prioridade.
-#' @param strategy objeto [new_model_strategy()] definindo o tipo de modelo a
-#'   ajustar. Por padrao usa [linear_regression_strategy()], mantendo
-#'   comportamento identico ao original.
+#' @param strategy string escalar identificando o tipo de modelo a ajustar.
+#'   Por padrao `"linear_regression"`.
 #' @param parallel logico, se `TRUE` usa `future_lapply` para processar
 #'   usinas em paralelo. Padrao `FALSE` para compatibilidade.
 #' @param resume logico, se `TRUE` busca um checkpoint valido no diretorio
@@ -31,7 +30,7 @@
 #' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados
 #'   diretamente em arquivos na pasta de saida especificada.
 #'
-#' @seealso [fit_model()], [linear_regression_strategy()],
+#' @seealso [fit_model()], [fit_linear_regression()],
 #'   [setup_parallel_plan()], [write_checkpoint()], [read_checkpoint()]
 #'
 #' @export
@@ -49,7 +48,7 @@ load_train_resume_state <- function(args, provenance) {
     list(provenance = provenance, completed = completed_plants)
 }
 
-train_main <- function(args, strategy = linear_regression_strategy(),
+train_main <- function(args, strategy = "linear_regression",
     parallel = FALSE, resume = FALSE) {
 
     provenance <- create_provenance(args, "train", parallel)
@@ -168,7 +167,7 @@ train_main <- function(args, strategy = linear_regression_strategy(),
 
 ajustar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_irrad_prev_filt,
     dt_corte_obs, fonte, fator_tolerancia,
-    strategy = linear_regression_strategy(), config = list(), ...) {
+    strategy = "linear_regression", config = list(), ...) {
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
     corte_obs <- dt_corte_obs[id_usina == iu]
@@ -196,13 +195,13 @@ ajustar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_irrad_prev_filt,
         )
     }
 
-    regressoes <- fit_model(strategy,
+    model <- fit_model(strategy,
         dty = copy(geracao_usina_selec),
         dtx = copy(irrad_prev),
         dty_bruta = geracao_usina_bruta
     )
 
-    build_model_artifact(iu, regressoes, strategy, config)
+    build_model_artifact(iu, model, config)
 }
 
 ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {

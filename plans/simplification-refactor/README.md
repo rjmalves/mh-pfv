@@ -24,11 +24,11 @@ Epic 01 --> Epic 02 --> Epic 03
 | E02-T002 | 02-environment-provenance-metrics | Metrics as Environment            | completed | 0.90      | r-developer |
 | E02-T003 | 02-environment-provenance-metrics | Remove <<- from Pipelines         | completed | 0.88      | r-developer |
 | E02-T004 | 02-environment-provenance-metrics | Environment Adaptation Tests      | completed | 0.86      | r-developer |
-| E03-T001 | 03-model-strategy-simplification  | Rewrite model-strategy.r          | pending   | --        | r-developer |
-| E03-T002 | 03-model-strategy-simplification  | Rewrite model-linear-regression.r | pending   | --        | r-developer |
-| E03-T003 | 03-model-strategy-simplification  | Update artifact + train + predict | pending   | --        | r-developer |
-| E03-T004 | 03-model-strategy-simplification  | Update NAMESPACE + cli.r          | pending   | --        | r-developer |
-| E03-T005 | 03-model-strategy-simplification  | Rewrite tests                     | pending   | --        | r-developer |
+| E03-T001 | 03-model-strategy-simplification  | Rewrite model-strategy.r          | completed | 0.94      | r-developer |
+| E03-T002 | 03-model-strategy-simplification  | Rewrite model-linear-regression.r | completed | 0.93      | r-developer |
+| E03-T003 | 03-model-strategy-simplification  | Update artifact + train + predict | completed | 0.92      | r-developer |
+| E03-T004 | 03-model-strategy-simplification  | Update NAMESPACE + cli.r          | completed | 0.90      | r-developer |
+| E03-T005 | 03-model-strategy-simplification  | Rewrite tests                     | completed | 0.90      | r-developer |
 
 ## Dependency Graph
 

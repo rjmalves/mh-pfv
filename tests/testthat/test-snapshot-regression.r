@@ -24,9 +24,9 @@ test_that("snapshot_train_model_coefficients", {
 
         snapshot_repr <- list(
             id_usina = artifact$id_usina,
-            row_names = rownames(artifact$parametros),
-            a = round(artifact$parametros$a, 8),
-            b = round(artifact$parametros$b, 8)
+            row_names = rownames(artifact$model$parametros),
+            a = round(artifact$model$parametros$a, 8),
+            b = round(artifact$model$parametros$b, 8)
         )
 
         expect_snapshot_value(

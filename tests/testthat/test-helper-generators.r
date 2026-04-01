@@ -194,25 +194,26 @@ test_that("gen_mhg id_fonte_observacao is Consis", {
 test_that("gen_model_artifact returns correct structure", {
     art <- gen_model_artifact()
     expect_type(art, "list")
-    expect_true(all(c("id_usina", "parametros", "metadata") %in% names(art)))
+    expect_true(all(c("id_usina", "model", "metadata") %in% names(art)))
     expect_equal(art$id_usina, "USI1")
-    expect_true(is.data.frame(art$parametros))
-    expect_true(all(c("a", "b") %in% names(art$parametros)))
+    expect_true(inherits(art$model, "linear_regression_model"))
+    expect_true(is.data.frame(art$model$parametros))
+    expect_true(all(c("a", "b") %in% names(art$model$parametros)))
     expect_true(is.list(art$metadata))
 })
 
 test_that("gen_model_artifact has 28 half-hour slots", {
     art <- gen_model_artifact()
-    expect_equal(nrow(art$parametros), 28)
-    expect_equal(rownames(art$parametros)[1], "05:00")
-    expect_equal(rownames(art$parametros)[28], "18:30")
+    expect_equal(nrow(art$model$parametros), 28)
+    expect_equal(rownames(art$model$parametros)[1], "05:00")
+    expect_equal(rownames(art$model$parametros)[28], "18:30")
 })
 
 test_that("gen_model_artifact coefficients are in expected range", {
     art <- gen_model_artifact()
-    expect_true(all(art$parametros$a >= 0.01))
-    expect_true(all(art$parametros$a <= 0.05))
-    expect_true(all(art$parametros$b == 0))
+    expect_true(all(art$model$parametros$a >= 0.01))
+    expect_true(all(art$model$parametros$a <= 0.05))
+    expect_true(all(art$model$parametros$b == 0))
 })
 
 test_that("gen_model_artifact respects id_usina argument", {
@@ -236,9 +237,10 @@ test_that("gen_model_artifact metadata has expected fields", {
 test_that("gen_model_artifact_legacy returns old format without metadata", {
     art <- gen_model_artifact_legacy()
     expect_type(art, "list")
-    expect_equal(names(art), c("id_usina", "parametros"))
+    expect_equal(names(art), c("id_usina", "model"))
     expect_equal(art$id_usina, "USI1")
-    expect_true(is.data.frame(art$parametros))
+    expect_true(inherits(art$model, "linear_regression_model"))
+    expect_true(is.data.frame(art$model$parametros))
     expect_false("metadata" %in% names(art))
 })
 

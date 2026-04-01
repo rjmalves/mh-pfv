@@ -25,7 +25,7 @@ test_that("train_main resume skips completed plants", {
     train_main(config, resume = TRUE)
 
     artifact_first <- readRDS(file.path(tmp_artifact, paste0(plant_ids[1], ".rds")))
-    expect_equal(artifact_first$parametros, artifact_before$parametros)
+    expect_equal(artifact_first$model$parametros, artifact_before$model$parametros)
 
     artifact_second_path <- file.path(tmp_artifact, paste0(plant_ids[2], ".rds"))
     expect_true(file.exists(artifact_second_path))

@@ -192,6 +192,10 @@ gen_model_artifact <- function(id_usina = "USI1") {
         b = rep(0, length(hour_names)),
         row.names = hour_names
     )
+    model <- structure(
+        list(parametros = parametros),
+        class = "linear_regression_model"
+    )
     metadata <- list(
         type = "linear_regression",
         n_slots = length(hour_names),
@@ -200,7 +204,7 @@ gen_model_artifact <- function(id_usina = "USI1") {
         package_version = as.character(utils::packageVersion("mhpfv")),
         config_hash = "test-hash-placeholder"
     )
-    list(id_usina = id_usina, parametros = parametros, metadata = metadata)
+    list(id_usina = id_usina, model = model, metadata = metadata)
 }
 
 gen_model_artifact_legacy <- function(id_usina = "USI1") {
@@ -215,5 +219,9 @@ gen_model_artifact_legacy <- function(id_usina = "USI1") {
         b = rep(0, length(hour_names)),
         row.names = hour_names
     )
-    list(id_usina = id_usina, parametros = parametros)
+    model <- structure(
+        list(parametros = parametros),
+        class = "linear_regression_model"
+    )
+    list(id_usina = id_usina, model = model)
 }

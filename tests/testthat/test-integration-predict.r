@@ -96,7 +96,7 @@ test_that("predict_main produces valid output files", {
     expect_true(all(fonte_sem == "Consis"))
 })
 
-test_that("predict_main accepts custom strategy", {
+test_that("predict_main uses default strategy from trained artifacts", {
     skip_if_not(dir.exists(test_path("data")))
     skip_if_no_zstd()
     temp_artifact <- withr::local_tempdir()
@@ -122,8 +122,7 @@ test_that("predict_main accepts custom strategy", {
     config_predict$output <- temp_output
     config_predict <- parse_config(config_predict, conn)
 
-    strategy <- linear_regression_strategy()
-    expect_no_error(predict_main(config_predict, strategy = strategy))
+    expect_no_error(predict_main(config_predict))
 })
 
 test_that("predict_main handles legacy artifacts without metadata", {

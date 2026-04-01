@@ -13,10 +13,7 @@
 #'               \code{data_hora_observacao} e \code{valor} (1 para corte).
 #' @param limite_dados Vetor numerico de comprimento 2 com os limites inferior e superior permitidos
 #'                     para valores de geracao.
-#' @param model Lista contendo os modelos de regressao linear por horario.
-#' @param strategy objeto [new_model_strategy()] definindo o tipo de modelo a
-#'   usar na previsao. Por padrao usa [linear_regression_strategy()], mantendo
-#'   comportamento identico ao original.
+#' @param model objeto modelo ajustado com classe S3 (e.g. `"linear_regression_model"`)
 #'
 #' @return Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados,
 #'         e horarios extremos zerados onde nao ha geracao valida.
@@ -36,7 +33,7 @@
 #'          combina_dados_tempo, zera_horarios_extremos
 #'
 preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, limite_dados,
-    model, strategy = linear_regression_strategy()) {
+    model) {
     geracao_usina[valor == 999, valor := NA]
     irrad_prev[valor == 999, valor := NA]
     geracao_usina_bruta <- copy(geracao_usina)
@@ -48,8 +45,7 @@ preenche_geracao_unit <- function(geracao_usina, irrad_prev, mhg_prev, cortes, l
         )
     }
 
-    geracao_usina_completo <- predict_model(strategy,
-        model = model$parametros,
+    geracao_usina_completo <- predict_model(model,
         df_ger_usi = copy(geracao_usina),
         df_irrad_prev = copy(irrad_prev),
         lim_dados = limite_dados

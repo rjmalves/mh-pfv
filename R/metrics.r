@@ -74,7 +74,7 @@ record_plant_data_volume <- function(metrics, id_usina, n_rows, n_na, n_total) {
 #'
 #' @param metrics environment de metricas criado por [create_metrics()]
 #' @param id_usina character escalar, identificador da usina
-#' @param metadata lista de metadados do artefato (de [build_artifact_metadata()])
+#' @param metadata lista de metadados do artefato (de [model_metadata()])
 #'
 #' @return invisivel, environment de metricas (mutado in-place)
 record_model_quality <- function(metrics, id_usina, metadata) {

@@ -1,121 +1,147 @@
-test_that("new_model_strategy", {
-    f <- new_model_strategy
-
-    test_that("new_model_strategy cria objeto S3 valido", {
-        s <- f("linear_regression")
-
-        expect_true(inherits(s, "model_strategy"))
-        expect_true(inherits(s, "linear_regression"))
-        expect_equal(s$type, "linear_regression")
-        expect_true(is.list(s$params))
-        expect_equal(length(s$params), 0L)
-    })
-
-    test_that("new_model_strategy armazena parametros adicionais", {
-        s <- f("linear_regression", alpha = 0.05, window = 10)
-
-        expect_equal(s$params$alpha, 0.05)
-        expect_equal(s$params$window, 10)
-    })
-
-    test_that("new_model_strategy possui classe dupla na ordem correta", {
-        s <- f("custom_model")
-
-        expect_equal(class(s), c("custom_model", "model_strategy"))
-    })
-
-    test_that("new_model_strategy valida tipo string", {
-        expect_error(f(""))
-        expect_error(f(123))
-        expect_error(f(c("a", "b")))
-        expect_error(f(NULL))
-        expect_error(f(NA_character_))
-    })
-})
-
 test_that("fit_model", {
     f <- fit_model
 
-    test_that("fit_model.model_strategy levanta erro padrao", {
-        s <- new_model_strategy("nonexistent_model")
+    test_that("fit_model valida que strategy e string escalar", {
+        expect_error(f(123, NULL, NULL, NULL))
+        expect_error(f(c("a", "b"), NULL, NULL, NULL))
+        expect_error(f(NULL, NULL, NULL, NULL))
+        expect_error(f(TRUE, NULL, NULL, NULL))
+    })
 
-        expect_error(f(s, NULL, NULL, NULL), "nao implementado")
-        expect_error(f(s, NULL, NULL, NULL), "nonexistent_model")
+    test_that("fit_model levanta erro para estrategia desconhecida", {
+        expect_error(f("nonexistent", NULL, NULL, NULL), "nao implementado")
+        expect_error(f("nonexistent", NULL, NULL, NULL), "nonexistent")
+    })
+
+    test_that("fit_model despacha para fit_linear_regression", {
+        horarios <- seq(
+            from = as.POSIXct("2025-01-01 06:00"),
+            by = "1 day",
+            length.out = 10
+        )
+
+        dtx <- data.table(
+            id_usina = "U1",
+            data_hora_previsao = horarios,
+            valor = seq(10, 100, by = 10)
+        )
+
+        dty <- data.table(
+            id_usina = "U1",
+            data_hora_observacao = horarios,
+            valor = seq(2, 20, by = 2)
+        )
+
+        result <- f("linear_regression",
+            dty = copy(dty), dtx = copy(dtx), dty_bruta = copy(dty)
+        )
+
+        expect_true(inherits(result, "linear_regression_model"))
+        expect_true(is.data.frame(result$parametros))
     })
 })
 
 test_that("predict_model", {
     f <- predict_model
 
-    test_that("predict_model.model_strategy levanta erro padrao", {
-        s <- new_model_strategy("nonexistent_model")
+    test_that("predict_model.default levanta erro com nome da classe", {
+        fake_model <- structure(list(), class = "unknown_model_type")
+        expect_error(f(fake_model), "nao implementado")
+        expect_error(f(fake_model), "unknown_model_type")
+    })
 
-        expect_error(f(s, NULL, NULL, NULL, NULL), "nao implementado")
-        expect_error(f(s, NULL, NULL, NULL, NULL), "nonexistent_model")
+    test_that("predict_model.default levanta erro para lista sem classe", {
+        expect_error(f(list(a = 1)), "nao implementado")
+        expect_error(f(list(a = 1)), "list")
     })
 })
 
 test_that("model_metadata", {
     f <- model_metadata
 
-    test_that("model_metadata.model_strategy levanta erro padrao", {
-        s <- new_model_strategy("nonexistent_model")
+    test_that("model_metadata.default levanta erro com nome da classe", {
+        fake_model <- structure(list(), class = "unknown_model_type")
+        expect_error(f(fake_model), "nao implementado")
+        expect_error(f(fake_model), "unknown_model_type")
+    })
 
-        expect_error(f(s, NULL), "nao implementado")
-        expect_error(f(s, NULL), "nonexistent_model")
+    test_that("model_metadata.default levanta erro para lista sem classe", {
+        expect_error(f(list(a = 1)), "nao implementado")
+        expect_error(f(list(a = 1)), "list")
     })
 })
 
-test_that("dispatch S3 funciona para subclasse customizada", {
-    s <- new_model_strategy("test_model")
+test_that("custom model dispatch works with new API", {
+    ns <- asNamespace("mhpfv")
 
-    fit_model.test_model <- function(strategy, dty, dtx, dty_bruta, ...) { # nolint: object_name_linter.
-        list(fitted = TRUE, type = strategy$type)
+    fit_custom <- function(dty, dtx, dty_bruta, ...) {
+        structure(list(fitted = TRUE), class = "custom_model")
     }
 
-    predict_model.test_model <- function(strategy, model, df_ger_usi, # nolint: object_name_linter.
-        df_irrad_prev, lim_dados, ...) {
+    old_fit <- ns[["fit_custom"]]
+    assign("fit_custom", fit_custom, envir = ns)
+    on.exit({
+        if (is.null(old_fit)) {
+            rm("fit_custom", envir = ns)
+        } else {
+            assign("fit_custom", old_fit, envir = ns)
+        }
+    }, add = TRUE)
+
+    predict_model.custom_model <- function(model, ...) { # nolint: object_name_linter.
         list(predicted = TRUE)
     }
 
-    model_metadata.test_model <- function(strategy, model, ...) { # nolint: object_name_linter.
-        list(name = "test")
+    model_metadata.custom_model <- function(model, ...) { # nolint: object_name_linter.
+        list(name = "custom")
     }
 
-    fit_result <- fit_model(s, NULL, NULL, NULL)
-    expect_true(fit_result$fitted)
-    expect_equal(fit_result$type, "test_model")
+    registerS3method("predict_model", "custom_model",
+        predict_model.custom_model, envir = ns)
+    registerS3method("model_metadata", "custom_model",
+        model_metadata.custom_model, envir = ns)
 
-    pred_result <- predict_model(s, fit_result, NULL, NULL, NULL)
+    fit_result <- fit_model("custom", NULL, NULL, NULL)
+    expect_true(fit_result$fitted)
+    expect_true(inherits(fit_result, "custom_model"))
+
+    pred_result <- predict_model(fit_result)
     expect_true(pred_result$predicted)
 
-    meta_result <- model_metadata(s, fit_result)
-    expect_equal(meta_result$name, "test")
+    meta_result <- model_metadata(fit_result)
+    expect_equal(meta_result$name, "custom")
 })
 
-test_that("linear_regression_strategy", {
-    f <- linear_regression_strategy
+test_that("fit_linear_regression", {
+    f <- fit_linear_regression
 
-    test_that("linear_regression_strategy cria objeto com classe dupla", {
-        s <- f()
+    test_that("fit_linear_regression retorna linear_regression_model", {
+        horarios <- seq(
+            from = as.POSIXct("2025-01-01 06:00"),
+            by = "1 day",
+            length.out = 10
+        )
 
-        expect_equal(class(s), c("linear_regression", "model_strategy"))
-        expect_equal(s$type, "linear_regression")
-        expect_true(is.list(s$params))
-        expect_equal(length(s$params), 0L)
+        dtx <- data.table(
+            id_usina = "U1",
+            data_hora_previsao = horarios,
+            valor = seq(10, 100, by = 10)
+        )
+
+        dty <- data.table(
+            id_usina = "U1",
+            data_hora_observacao = horarios,
+            valor = seq(2, 20, by = 2)
+        )
+
+        result <- f(dty = copy(dty), dtx = copy(dtx), dty_bruta = copy(dty))
+
+        expect_true(inherits(result, "linear_regression_model"))
+        expect_true(is.data.frame(result$parametros))
+        expect_true("a" %in% names(result$parametros))
     })
 
-    test_that("linear_regression_strategy repassa parametros", {
-        s <- f(alpha = 0.01)
-
-        expect_equal(s$params$alpha, 0.01)
-    })
-})
-
-test_that("fit_model.linear_regression", {
-    f <- fit_model
-
-    test_that("fit_model.linear_regression produz resultado identico", {
+    test_that("fit_linear_regression produz resultado identico a ajusta_regressao_ger_irrad", {
         horarios <- seq(
             from = as.POSIXct("2025-01-01 06:00"),
             by = "1 day",
@@ -138,13 +164,40 @@ test_that("fit_model.linear_regression", {
             dty = copy(dty), dtx = copy(dtx), dty_bruta = copy(dty)
         )
 
-        s <- linear_regression_strategy()
-        via_strategy <- f(s, dty = copy(dty), dtx = copy(dtx), dty_bruta = copy(dty))
+        via_fit <- f(dty = copy(dty), dtx = copy(dtx), dty_bruta = copy(dty))
 
-        expect_identical(direto, via_strategy)
+        expect_identical(direto, via_fit$parametros)
     })
 
-    test_that("fit_model.linear_regression com dados de teste reais", {
+    test_that("fit_model e fit_linear_regression produzem mesmo resultado", {
+        horarios <- seq(
+            from = as.POSIXct("2025-01-01 06:00"),
+            by = "1 day",
+            length.out = 10
+        )
+
+        dtx <- data.table(
+            id_usina = "U1",
+            data_hora_previsao = horarios,
+            valor = seq(10, 100, by = 10)
+        )
+
+        dty <- data.table(
+            id_usina = "U1",
+            data_hora_observacao = horarios,
+            valor = seq(2, 20, by = 2)
+        )
+
+        via_fit_model <- fit_model("linear_regression",
+            dty = copy(dty), dtx = copy(dtx), dty_bruta = copy(dty)
+        )
+        via_direct <- f(dty = copy(dty), dtx = copy(dtx), dty_bruta = copy(dty))
+
+        expect_identical(via_fit_model$parametros, via_direct$parametros)
+        expect_equal(class(via_fit_model), class(via_direct))
+    })
+
+    test_that("fit_linear_regression com dados de teste reais", {
         skip_if_not(dir.exists(test_path("data")))
         skip_if_no_zstd()
 
@@ -195,22 +248,21 @@ test_that("fit_model.linear_regression", {
             dty_bruta = copy(geracao_bruta)
         )
 
-        s <- linear_regression_strategy()
-        via_strategy <- f(
-            s,
+        via_fit <- f(
             dty = copy(geracao),
             dtx = copy(irrad_prev),
             dty_bruta = copy(geracao_bruta)
         )
 
-        expect_identical(direto, via_strategy)
+        expect_identical(direto, via_fit$parametros)
+        expect_true(inherits(via_fit, "linear_regression_model"))
     })
 })
 
-test_that("predict_model.linear_regression", {
+test_that("predict_model.linear_regression_model", {
     f <- predict_model
 
-    test_that("predict_model.linear_regression delega para substitui_por_estimativas", {
+    test_that("predict_model.linear_regression_model delega para substitui_por_estimativas", {
         datas <- seq(
             from = as.POSIXct("2025-01-01 06:00"),
             by = "1 day",
@@ -230,80 +282,85 @@ test_that("predict_model.linear_regression", {
             valor = seq(10, 200, by = 10)
         )
 
-        model <- data.frame(
+        model_df <- data.frame(
             a = 0.2,
             b = 0,
             row.names = "06:00"
         )
+        model <- structure(list(parametros = model_df), class = "linear_regression_model")
         lim_dados <- c(0, 100)
 
         direto <- substitui_por_estimativas(
             df_ger_usi = copy(df_ger_usi),
             df_irrad_prev = copy(df_irrad_prev),
-            regressoes = model,
+            regressoes = model_df,
             lim_dados = lim_dados
         )
 
-        s <- linear_regression_strategy()
-        via_strategy <- f(
-            s,
-            model = model,
+        via_dispatch <- f(
+            model,
             df_ger_usi = copy(df_ger_usi),
             df_irrad_prev = copy(df_irrad_prev),
             lim_dados = lim_dados
         )
 
-        expect_identical(direto, via_strategy)
+        expect_identical(direto, via_dispatch)
     })
 })
 
-test_that("model_metadata.linear_regression", {
+test_that("model_metadata.linear_regression_model", {
     f <- model_metadata
 
-    test_that("model_metadata.linear_regression retorna estrutura correta", {
-        model <- gen_model_artifact()$parametros
-        s <- linear_regression_strategy()
+    test_that("model_metadata.linear_regression_model retorna estrutura correta", {
+        artifact <- gen_model_artifact()
+        model <- artifact$model
 
-        meta <- f(s, model)
+        meta <- f(model)
 
         expect_true(is.list(meta))
         expect_equal(meta$type, "linear_regression")
-        expect_equal(meta$n_slots, nrow(model))
-        expect_equal(meta$n_valid_slots, sum(!is.na(model$a)))
+        expect_equal(meta$n_slots, nrow(model$parametros))
+        expect_equal(meta$n_valid_slots, sum(!is.na(model$parametros$a)))
         expect_true(inherits(meta$timestamp, "POSIXct"))
     })
 
-    test_that("model_metadata.linear_regression trata coeficientes NA", {
-        model <- data.frame(
+    test_that("model_metadata.linear_regression_model trata coeficientes NA", {
+        params <- data.frame(
             a = c(0.1, NA, 0.3, NA, 0.5),
             b = rep(0, 5),
             row.names = c("06:00", "06:30", "07:00", "07:30", "08:00")
         )
-        s <- linear_regression_strategy()
+        model <- structure(list(parametros = params), class = "linear_regression_model")
 
-        meta <- f(s, model)
+        meta <- f(model)
 
         expect_equal(meta$n_slots, 5L)
         expect_equal(meta$n_valid_slots, 3L)
     })
 
-    test_that("model_metadata.linear_regression valida coluna a", {
-        s <- linear_regression_strategy()
+    test_that("model_metadata.linear_regression_model valida parametros", {
+        bad_model1 <- structure(
+            list(parametros = data.frame(b = 1:3)),
+            class = "linear_regression_model"
+        )
+        bad_model2 <- structure(
+            list(parametros = list(a = 1:3)),
+            class = "linear_regression_model"
+        )
 
-        expect_error(f(s, data.frame(b = 1:3)))
-        expect_error(f(s, list(a = 1:3)))
-        expect_error(f(s, "not a data.frame"))
+        expect_error(f(bad_model1))
+        expect_error(f(bad_model2))
     })
 
-    test_that("model_metadata.linear_regression retorna 0 valid_slots quando todos coeficientes sao NA", {
-        model <- data.frame(
+    test_that("model_metadata.linear_regression_model retorna 0 valid_slots quando todos NA", {
+        params <- data.frame(
             a = c(NA_real_, NA_real_, NA_real_),
             b = rep(0, 3),
             row.names = c("06:00", "06:30", "07:00")
         )
-        s <- linear_regression_strategy()
+        model <- structure(list(parametros = params), class = "linear_regression_model")
 
-        meta <- f(s, model)
+        meta <- f(model)
 
         expect_equal(meta$n_slots, 3L)
         expect_equal(meta$n_valid_slots, 0L)
