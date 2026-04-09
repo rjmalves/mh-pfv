@@ -343,12 +343,15 @@ test_that("predict_main partial failure: 1 of 3 plants fails", {
     mockery::stub(predict_main, "conectamock_pfv", function(...) NULL)
     mockery::stub(predict_main, "get_usinas",
         function(...) gen_usinas(ids = c("USI1", "USI_FAIL", "USI3")))
-    mockery::stub(predict_main, "get_dataset", function(...) list(
-        ger_obs = data.table::data.table(),
-        corte = data.table::data.table(),
-        irrad_prev = data.table::data.table(),
-        mhg = data.table::data.table(),
-        mhg_sem_cortes = data.table::data.table()))
+    mockery::stub(predict_main, "get_dataset", function(...) {
+        list(
+            ger_obs = data.table::data.table(),
+            corte = data.table::data.table(),
+            irrad_prev = data.table::data.table(),
+            mhg = data.table::data.table(),
+            mhg_sem_cortes = data.table::data.table()
+        )
+    })
     mockery::stub(predict_main, "associa_nwp_usina",
         function(...) data.table::data.table())
     mockery::stub(predict_main, "adicionar_passo_previsao",
@@ -397,12 +400,15 @@ test_that("predict_main all plants fail", {
     mockery::stub(predict_main, "conectamock_pfv", function(...) NULL)
     mockery::stub(predict_main, "get_usinas",
         function(...) gen_usinas(ids = c("USI1", "USI2")))
-    mockery::stub(predict_main, "get_dataset", function(...) list(
-        ger_obs = data.table::data.table(),
-        corte = data.table::data.table(),
-        irrad_prev = data.table::data.table(),
-        mhg = data.table::data.table(),
-        mhg_sem_cortes = data.table::data.table()))
+    mockery::stub(predict_main, "get_dataset", function(...) {
+        list(
+            ger_obs = data.table::data.table(),
+            corte = data.table::data.table(),
+            irrad_prev = data.table::data.table(),
+            mhg = data.table::data.table(),
+            mhg_sem_cortes = data.table::data.table()
+        )
+    })
     mockery::stub(predict_main, "associa_nwp_usina",
         function(...) data.table::data.table())
     mockery::stub(predict_main, "adicionar_passo_previsao",

@@ -118,8 +118,10 @@ test_that("validate_artifact", {
     })
 
     test_that("validate_artifact rejeita artefato sem id_usina", {
-        art <- list(model = structure(list(parametros = data.frame(a = 1)),
-            class = "linear_regression_model"))
+        art <- list(model = structure(
+            list(parametros = data.frame(a = 1)),
+            class = "linear_regression_model"
+        ))
         expect_error(f(art), "id_usina")
     })
 

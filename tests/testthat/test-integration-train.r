@@ -165,9 +165,13 @@ test_that("train_main partial failure: 1 of 3 plants fails", {
     mockery::stub(train_main, "conectamock_pfv", function(...) NULL)
     mockery::stub(train_main, "get_usinas",
         function(...) gen_usinas(ids = c("USI1", "USI_FAIL", "USI3")))
-    mockery::stub(train_main, "get_dataset", function(...) list(
-        ger_obs = data.table::data.table(), corte = data.table::data.table(),
-        irrad_prev = data.table::data.table()))
+    mockery::stub(train_main, "get_dataset", function(...) {
+        list(
+            ger_obs = data.table::data.table(),
+            corte = data.table::data.table(),
+            irrad_prev = data.table::data.table()
+        )
+    })
     mockery::stub(train_main, "associa_nwp_usina",
         function(...) data.table::data.table())
     mockery::stub(train_main, "adicionar_passo_previsao",
@@ -211,9 +215,13 @@ test_that("train_main all plants fail", {
     mockery::stub(train_main, "conectamock_pfv", function(...) NULL)
     mockery::stub(train_main, "get_usinas",
         function(...) gen_usinas(ids = c("USI1", "USI2")))
-    mockery::stub(train_main, "get_dataset", function(...) list(
-        ger_obs = data.table::data.table(), corte = data.table::data.table(),
-        irrad_prev = data.table::data.table()))
+    mockery::stub(train_main, "get_dataset", function(...) {
+        list(
+            ger_obs = data.table::data.table(),
+            corte = data.table::data.table(),
+            irrad_prev = data.table::data.table()
+        )
+    })
     mockery::stub(train_main, "associa_nwp_usina",
         function(...) data.table::data.table())
     mockery::stub(train_main, "adicionar_passo_previsao",

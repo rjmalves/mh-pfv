@@ -98,77 +98,57 @@ train_main <- function(args, strategy = "linear_regression",
     dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dataset$irrad_prev)
     dt_irrad_prev_filt <- adicionar_passo_previsao(dt_irrad_prev_filt)
 
+    extra_args <- list(
+        dt_usinas = dt_usinas,
+        dt_ger_obs = dataset$ger_obs,
+        dt_irrad_prev_filt = dt_irrad_prev_filt,
+        dt_corte_obs = dataset$corte,
+        fonte = args$ordem_prioridade_fontes,
+        fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+        strategy = strategy,
+        config = args
+    )
+
     if (parallel) {
         old_plan <- setup_parallel_plan()
         on.exit(reset_parallel_plan(old_plan), add = TRUE)
-        batch_start <- proc.time()[["elapsed"]]
-        models <- future.apply::future_lapply(v_usinas, function(iu) {
-            tryCatch(
-                ajustar_usina(iu,
-                    dt_usinas = dt_usinas,
-                    dt_ger_obs = dataset$ger_obs,
-                    dt_irrad_prev_filt = dt_irrad_prev_filt,
-                    dt_corte_obs = dataset$corte,
-                    fonte = args$ordem_prioridade_fontes,
-                    fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
-                    strategy = strategy,
-                    config = args
-                ),
-                error = function(e) plant_error(iu, e)
-            )
-        }, future.seed = TRUE)
-        batch_elapsed <- proc.time()[["elapsed"]] - batch_start
-        est_per_plant <- round(batch_elapsed / length(v_usinas), 2L)
-        for (iu in v_usinas) {
-            record_plant_timing(metrics, iu, est_per_plant)
-        }
-    } else {
-        models <- lapply(v_usinas, function(iu) {
-            t0 <- proc.time()[["elapsed"]]
-            result <- tryCatch(
-                ajustar_usina(iu,
-                    dt_usinas = dt_usinas,
-                    dt_ger_obs = dataset$ger_obs,
-                    dt_irrad_prev_filt = dt_irrad_prev_filt,
-                    dt_corte_obs = dataset$corte,
-                    fonte = args$ordem_prioridade_fontes,
-                    fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
-                    strategy = strategy,
-                    config = args
-                ),
-                error = function(e) {
-                    lg$error("Falha no ajuste da usina %s: %s", iu, conditionMessage(e))
-                    plant_error(iu, e)
-                }
-            )
-            record_plant_timing(
-                metrics, iu, round(proc.time()[["elapsed"]] - t0, 2L)
-            )
-            result
-        })
     }
 
-    n_failed <- 0L
-    n_total <- length(v_usinas)
-    for (i in seq_along(v_usinas)) {
-        if (is_plant_error(models[[i]])) {
-            update_plant_status(provenance, v_usinas[i], "failed")
-            n_failed <- n_failed + 1L
-            lg$error("Usina %s falhou: %s", v_usinas[i], models[[i]]$error)
-        } else {
-            write_model_artifact(models[[i]], v_usinas[i], args$artifact)
-            update_plant_status(provenance, v_usinas[i], "completed")
-            if ("metadata" %in% names(models[[i]])) {
-                record_model_quality(metrics, v_usinas[i], models[[i]]$metadata)
-            }
-        }
-        if (resume) write_checkpoint(provenance, args$artifact)
-        lg$info("Usina %s processada (%d/%d)", v_usinas[i], i, n_total)
-    }
+    models <- run_plants(
+        v_usinas, ajustar_usina, extra_args,
+        parallel = parallel, metrics = metrics, lg = lg
+    )
+
+    n_failed <- tally_train_results(
+        models, v_usinas, provenance, metrics, lg, resume, args$artifact
+    )
 
     final_status <- if (n_failed == 0L) "completed" else "failed"
     finalize_provenance(provenance, final_status)
     if (resume) cleanup_checkpoint(args$artifact)
+}
+
+tally_train_results <- function(models, v_usinas, provenance, metrics, lg,
+    resume, artifact_dir) {
+    n_failed <- 0L
+    n_total <- length(v_usinas)
+    for (i in seq_along(v_usinas)) {
+        iu <- v_usinas[i]
+        if (is_plant_error(models[[i]])) {
+            update_plant_status(provenance, iu, "failed")
+            n_failed <- n_failed + 1L
+            lg$error("Usina %s falhou: %s", iu, models[[i]]$error)
+        } else {
+            write_model_artifact(models[[i]], iu, artifact_dir)
+            update_plant_status(provenance, iu, "completed")
+            if ("metadata" %in% names(models[[i]])) {
+                record_model_quality(metrics, iu, models[[i]]$metadata)
+            }
+        }
+        if (resume) write_checkpoint(provenance, artifact_dir)
+        lg$info("Usina %s processada (%d/%d)", iu, i, n_total)
+    }
+    n_failed
 }
 
 ajustar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_irrad_prev_filt,
