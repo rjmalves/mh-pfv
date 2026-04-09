@@ -3,7 +3,7 @@
 # =============================================================================
 # Stage 1: Builder — installs build tools and restores all R packages via renv
 # =============================================================================
-FROM rocker/r-ver:4.5.2 AS builder
+FROM rocker/r-ver:4.5.3 AS builder
 
 ARG MHPFV_VERSION=0.1.1
 
@@ -15,16 +15,16 @@ ARG MHPFV_VERSION=0.1.1
 # python3 / python3-dev: argparse R package delegates to Python at build time
 # git: renv needs git to install GitHub-sourced packages (pfvIO, dbinterface)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        libxml2-dev \
-        zlib1g-dev \
-        libzstd-dev \
-        python3 \
-        python3-dev \
-        git \
+    build-essential \
+    cmake \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    zlib1g-dev \
+    libzstd-dev \
+    python3 \
+    python3-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # ARROW_WITH_ZSTD: ensures ZSTD codec is included when arrow compiles from source.
@@ -54,16 +54,16 @@ RUN R -e "remotes::install_local('.', dependencies = FALSE, upgrade = 'never')"
 # =============================================================================
 # Stage 2: Runtime — minimal image with only runtime libraries and entrypoint
 # =============================================================================
-FROM rocker/r-ver:4.5.2
+FROM rocker/r-ver:4.5.3
 
 ARG MHPFV_VERSION=0.1.1
 
 LABEL org.opencontainers.image.title="mhpfv" \
-      org.opencontainers.image.description="Consolidação de histórico de geração solar fotovoltaica" \
-      org.opencontainers.image.vendor="ONS - Operador Nacional do Sistema Elétrico" \
-      org.opencontainers.image.source="https://github.com/rjmalves/mh-pfv" \
-      org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.version="${MHPFV_VERSION}"
+    org.opencontainers.image.description="Consolidação de histórico de geração solar fotovoltaica" \
+    org.opencontainers.image.vendor="ONS - Operador Nacional do Sistema Elétrico" \
+    org.opencontainers.image.source="https://github.com/rjmalves/mh-pfv" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.version="${MHPFV_VERSION}"
 
 # ---- Runtime system dependencies ---------------------------------------------
 # libcurl4-openssl-dev / libssl-dev: arrow C++ library needs these at runtime
@@ -71,10 +71,10 @@ LABEL org.opencontainers.image.title="mhpfv" \
 # libzstd-dev: ZSTD codec used by arrow for Parquet compression/decompression
 # python3: argparse R package shells out to Python's argparse module at runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        libzstd-dev \
-        python3 \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libzstd-dev \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # ---- Copy installed R library from builder -----------------------------------
