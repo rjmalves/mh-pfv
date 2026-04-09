@@ -1,37 +1,17 @@
-#' Funcao Principal de Treinamento dos Modelos para Consistencia dos Dados
+#' Carrega Estado de Retomada do Treinamento
 #'
-#' Executa o treinamento dos modelos para consistencia dos dados observados
-#' para um conjunto de usinas.
+#' Le o checkpoint de treinamento e identifica usinas ja completadas para
+#' permitir retomada do pipeline.
 #'
-#' @param args lista de argumentos necessarios para o processamento. Os campos
-#'   esperados sao:
-#'   - `artifact`: caminho onde artefatos adicionais serao armazenados.
-#'   - `data_inicio`: string com a data inicial no formato `"yyyy-mm-dd"`,
-#'     indicando o inicio do periodo de analise.
-#'   - `data_fim`: string com a data final no formato `"yyyy-mm-dd"`,
-#'     indicando o fim do periodo de analise.
-#'   - `fator_tolerancia_limite_superior_geracao`: valor numerico que define
-#'     o fator de tolerancia aplicado ao limite superior de geracao observada.
-#'   - `ids_usinas`: vetor com os IDs das usinas a serem processadas. Se
-#'     `NULL`, todas as usinas disponiveis serao utilizadas.
-#'   - `input`: caminho para a pasta onde estao localizados os dados de
-#'     entrada (ex: dados de SCADA, modelos NWP, cortes, etc.).
-#'   - `mode`: string que define o modo de operacao. Deve ser `"train"` para
-#'     rodar o treinamento dos modelos.
-#'   - `ordem_prioridade_modelosNWP`: string com os nomes dos modelos NWP
-#'     separados por virgula, em ordem de prioridade.
-#' @param strategy string escalar identificando o tipo de modelo a ajustar.
-#'   Por padrao `"linear_regression"`.
-#' @param parallel logico, se `TRUE` usa `future_lapply` para processar
-#'   usinas em paralelo. Padrao `FALSE` para compatibilidade.
-#' @param resume logico, se `TRUE` busca um checkpoint valido no diretorio
-#'   de artefatos e reprocessa apenas as usinas pendentes. Padrao `FALSE`.
+#' @param args lista de argumentos do pipeline (deve conter `artifact` e
+#'   `ids_usinas`)
+#' @param provenance environment de proveniencia criado por
+#'   [create_provenance()]
 #'
-#' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados
-#'   diretamente em arquivos na pasta de saida especificada.
+#' @return lista com `provenance` (atualizado) e `completed` (character vector
+#'   de IDs de usinas ja processadas)
 #'
-#' @seealso [fit_model()], [fit_linear_regression()],
-#'   [setup_parallel_plan()], [write_checkpoint()], [read_checkpoint()]
+#' @seealso [read_checkpoint()], [get_pending_plants()]
 #'
 #' @export
 load_train_resume_state <- function(args, provenance) {
@@ -48,6 +28,32 @@ load_train_resume_state <- function(args, provenance) {
     list(provenance = provenance, completed = completed_plants)
 }
 
+#' Funcao Principal de Treinamento dos Modelos para Consistencia dos Dados
+#'
+#' Executa o treinamento dos modelos para consistencia dos dados observados
+#' para um conjunto de usinas.
+#'
+#' @param args lista de argumentos necessarios para o processamento. Os campos
+#'   esperados sao:
+#'   - `artifact`: caminho onde artefatos adicionais serao armazenados.
+#'   - `data_inicio`: string com a data inicial no formato `"yyyy-mm-dd"`.
+#'   - `data_fim`: string com a data final no formato `"yyyy-mm-dd"`.
+#'   - `fator_tolerancia_limite_superior_geracao`: fator de tolerancia.
+#'   - `ids_usinas`: vetor com os IDs das usinas a serem processadas.
+#'   - `input`: caminho para os dados de entrada.
+#'   - `mode`: deve ser `"train"`.
+#'   - `ordem_prioridade_modelosNWP`: modelos NWP em ordem de prioridade.
+#' @param strategy string escalar identificando o tipo de modelo a ajustar.
+#'   Por padrao `"linear_regression"`.
+#' @param parallel logico, se `TRUE` usa `future_lapply` para processar
+#'   usinas em paralelo. Padrao `FALSE`.
+#' @param resume logico, se `TRUE` busca um checkpoint valido e reprocessa
+#'   apenas as usinas pendentes. Padrao `FALSE`.
+#'
+#' @return Nenhum valor e retornado. Os resultados sao gravados em arquivos.
+#'
+#' @seealso [fit_model()], [fit_linear_regression()],
+#'   [setup_parallel_plan()], [write_checkpoint()], [read_checkpoint()]
 train_main <- function(args, strategy = "linear_regression",
     parallel = FALSE, resume = FALSE) {
 
@@ -243,6 +249,8 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
         }
 
 
+        hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
+
         if (nrow(dty_f) > 5 && nrow(dty_f) == nrow(dtx_f)) {
             dados_validos <- complete.cases(dty_f$valor, dtx_f$valor)
             if (sum(dados_validos) > 5) {
@@ -255,14 +263,16 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
 
                 angulares <- c(angulares, a)
                 lineares <- c(lineares, b)
-                hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
                 nomes_linhas <- c(nomes_linhas, hora_txt)
             } else {
                 angulares <- c(angulares, NA)
                 lineares <- c(lineares, NA)
-                hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
                 nomes_linhas <- c(nomes_linhas, hora_txt)
             }
+        } else {
+            angulares <- c(angulares, NA)
+            lineares <- c(lineares, NA)
+            nomes_linhas <- c(nomes_linhas, hora_txt)
         }
     }
 

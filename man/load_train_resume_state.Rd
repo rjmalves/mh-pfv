@@ -2,50 +2,25 @@
 % Please edit documentation in R/train.r
 \name{load_train_resume_state}
 \alias{load_train_resume_state}
-\title{Funcao Principal de Treinamento dos Modelos para Consistencia dos Dados}
+\title{Carrega Estado de Retomada do Treinamento}
 \usage{
 load_train_resume_state(args, provenance)
 }
 \arguments{
-\item{args}{lista de argumentos necessarios para o processamento. Os campos
-esperados sao:
-\itemize{
-\item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-\item \code{data_inicio}: string com a data inicial no formato \code{"yyyy-mm-dd"},
-indicando o inicio do periodo de analise.
-\item \code{data_fim}: string com a data final no formato \code{"yyyy-mm-dd"},
-indicando o fim do periodo de analise.
-\item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define
-o fator de tolerancia aplicado ao limite superior de geracao observada.
-\item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se
-\code{NULL}, todas as usinas disponiveis serao utilizadas.
-\item \code{input}: caminho para a pasta onde estao localizados os dados de
-entrada (ex: dados de SCADA, modelos NWP, cortes, etc.).
-\item \code{mode}: string que define o modo de operacao. Deve ser \code{"train"} para
-rodar o treinamento dos modelos.
-\item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP
-separados por virgula, em ordem de prioridade.
-}}
+\item{args}{lista de argumentos do pipeline (deve conter \code{artifact} e
+\code{ids_usinas})}
 
-\item{strategy}{objeto \code{\link[=new_model_strategy]{new_model_strategy()}} definindo o tipo de modelo a
-ajustar. Por padrao usa \code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, mantendo
-comportamento identico ao original.}
-
-\item{parallel}{logico, se \code{TRUE} usa \code{future_lapply} para processar
-usinas em paralelo. Padrao \code{FALSE} para compatibilidade.}
-
-\item{resume}{logico, se \code{TRUE} busca um checkpoint valido no diretorio
-de artefatos e reprocessa apenas as usinas pendentes. Padrao \code{FALSE}.}
+\item{provenance}{environment de proveniencia criado por
+\code{\link[=create_provenance]{create_provenance()}}}
 }
 \value{
-Nenhum valor e retornado pela funcao. Os resultados sao gravados
-diretamente em arquivos na pasta de saida especificada.
+lista com \code{provenance} (atualizado) e \code{completed} (character vector
+de IDs de usinas ja processadas)
 }
 \description{
-Executa o treinamento dos modelos para consistencia dos dados observados
-para um conjunto de usinas.
+Le o checkpoint de treinamento e identifica usinas ja completadas para
+permitir retomada do pipeline.
 }
 \seealso{
-\code{\link[=fit_model]{fit_model()}}, \code{\link[=linear_regression_strategy]{linear_regression_strategy()}},
-\code{\link[=setup_parallel_plan]{setup_parallel_plan()}}, \code{\link[=write_checkpoint]{write_checkpoint()}}, \code{\link[=read_checkpoint]{read_checkpoint()}}
+\code{\link[=read_checkpoint]{read_checkpoint()}}, \code{\link[=get_pending_plants]{get_pending_plants()}}
 }

@@ -13,8 +13,8 @@ validate_artifact(artifact)
 \code{invisible(TRUE)} se o artefato e valido
 }
 \description{
-Verifica a estrutura de um artefato de modelo. Artefatos no formato
-antigo (sem metadados) sao aceitos com aviso via logger.
+Verifica a estrutura de um artefato de modelo. Artefatos sem metadados
+sao aceitos com aviso via logger.
 }
 \details{
 Todas as falhas sao coletadas antes de levantar uma unica excecao.
@@ -22,7 +22,8 @@ Todas as falhas sao coletadas antes de levantar uma unica excecao.
 \examples{
 art <- list(
     id_usina = "USI1",
-    parametros = data.frame(a = 0.1, b = 0),
+    model = structure(list(parametros = data.frame(a = 0.1, b = 0)),
+        class = "linear_regression_model"),
     metadata = list(type = "linear_regression")
 )
 validate_artifact(art)

@@ -7,7 +7,7 @@
 record_plant_data_volume(metrics, id_usina, n_rows, n_na, n_total)
 }
 \arguments{
-\item{metrics}{lista de metricas criada por \code{\link[=create_metrics]{create_metrics()}}}
+\item{metrics}{environment de metricas criado por \code{\link[=create_metrics]{create_metrics()}}}
 
 \item{id_usina}{character escalar, identificador da usina}
 
@@ -18,7 +18,7 @@ record_plant_data_volume(metrics, id_usina, n_rows, n_na, n_total)
 \item{n_total}{numeric escalar, denominador para calculo da taxa de NA}
 }
 \value{
-lista de metricas com \code{data_volume} adicionado para a usina
+invisivel, environment de metricas (mutado in-place)
 }
 \description{
 Registra Volume de Dados Processados de Uma Usina

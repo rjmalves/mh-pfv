@@ -4,14 +4,13 @@
 \alias{build_model_artifact}
 \title{Constroi Artefato de Modelo Enriquecido}
 \usage{
-build_model_artifact(id_usina, parametros, strategy, config)
+build_model_artifact(id_usina, model, config)
 }
 \arguments{
 \item{id_usina}{character escalar, identificador da usina}
 
-\item{parametros}{resultado do ajuste (ex: \code{data.frame} de coeficientes)}
-
-\item{strategy}{objeto \code{\link[=new_model_strategy]{new_model_strategy()}}}
+\item{model}{objeto modelo ajustado retornado por \code{\link[=fit_model]{fit_model()}}, com classe
+propria (e.g. \code{"linear_regression_model"})}
 
 \item{config}{lista com a configuracao de treinamento}
 }
@@ -19,18 +18,24 @@ build_model_artifact(id_usina, parametros, strategy, config)
 lista com tres elementos:
 \describe{
 \item{\code{id_usina}}{character com o identificador da usina}
-\item{\code{parametros}}{\code{data.frame} com os coeficientes do modelo}
-\item{\code{metadata}}{lista retornada por \code{\link[=build_artifact_metadata]{build_artifact_metadata()}}}
+\item{\code{model}}{objeto modelo com classe S3 preservada}
+\item{\code{metadata}}{lista com metadados do modelo, versao do pacote e hash}
 }
 }
 \description{
-Monta o artefato completo de modelo contendo identificador, parametros
-ajustados e metadados de proveniencia.
+Monta o artefato completo de modelo contendo identificador, modelo ajustado
+com classe e metadados de proveniencia.
 }
 \examples{
-s <- linear_regression_strategy()
-params <- data.frame(a = c(0.1, 0.2), b = c(0, 0), row.names = c("06:00", "06:30"))
+model <- fit_linear_regression(
+    dty = data.table::data.table(id_usina = "U1",
+        data_hora_observacao = Sys.time(), valor = 1),
+    dtx = data.table::data.table(id_usina = "U1",
+        data_hora_previsao = Sys.time(), valor = 1),
+    dty_bruta = data.table::data.table(id_usina = "U1",
+        data_hora_observacao = Sys.time(), valor = 1)
+)
 cfg <- list(janela = c("2025-07-01", "2025-09-30"), ids_usinas = "USI1")
-artifact <- build_model_artifact("USI1", params, s, cfg)
+artifact <- build_model_artifact("USI1", model, cfg)
 
 }

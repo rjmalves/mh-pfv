@@ -45,7 +45,7 @@ Ambos os modos suportam execução paralela via `future`/`future.apply`, retomad
     │     ▼                             ▼            ▼                   │
     │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  │
     │  │ consiste_        │  │ fit_model()      │  │ predict_model()  │  │
-    │  │ geracao_unit()   │  │ (S3 dispatch)    │  │ (S3 dispatch)    │  │
+    │  │ geracao_unit()   │  │ (name dispatch)  │  │ (S3 dispatch)    │  │
     │  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘  │
     │           │                     │                     │            │
     │           │                     ▼                     │            │
@@ -170,15 +170,17 @@ Saída: dados consistidos com fonte única ("Consis")
 
 ### 5. Model Strategy (`model-strategy.r`, `model-linear-regression.r`)
 
-Sistema plugável de modelos via S3 dispatch. Permite trocar o tipo de modelo sem alterar o pipeline.
+Sistema plugável de modelos via Strategy Pattern. `fit_model()` usa despacho por convenção
+de nome (`get0(paste0("fit_", strategy))`), enquanto `predict_model()` e `model_metadata()`
+usam despacho S3 genuíno via `UseMethod()`.
 
-#### Interface (`model_strategy`)
+#### Interface
 
-| Generic            | Responsabilidade                                 |
-| ------------------ | ------------------------------------------------ |
-| `fit_model()`      | Ajusta modelo a partir de geração e irradiância  |
-| `predict_model()`  | Preenche lacunas usando modelo ajustado          |
-| `model_metadata()` | Extrai metadados do modelo (slots, coeficientes) |
+| Função             | Despacho         | Responsabilidade                                 |
+| ------------------ | ---------------- | ------------------------------------------------ |
+| `fit_model()`      | nome (`get0`)    | Ajusta modelo a partir de geração e irradiância  |
+| `predict_model()`  | S3 (`UseMethod`) | Preenche lacunas usando modelo ajustado          |
+| `model_metadata()` | S3 (`UseMethod`) | Extrai metadados do modelo (slots, coeficientes) |
 
 #### Implementação: `linear_regression`
 
@@ -196,9 +198,9 @@ Geração_h = α_h × Irradiância_h
 #### Como Adicionar um Novo Modelo
 
 1. Crie `R/model-{nome}.r`
-2. Implemente construtor: `{nome}_strategy <- function(...) new_model_strategy("{nome}", ...)`
-3. Implemente `fit_model.{nome}()`, `predict_model.{nome}()`, `model_metadata.{nome}()`
-4. Passe a nova estratégia para `train_main()` / `predict_main()`
+2. Implemente `fit_{nome}(dty, dtx, dty_bruta, ...)` — retorna objeto S3 com classe `"{nome}_model"`
+3. Implemente `predict_model.{nome}_model()` e `model_metadata.{nome}_model()`
+4. Passe `strategy = "{nome}"` para `train_main()`
 
 ### 6. Treinamento (`train.r`)
 
@@ -215,10 +217,13 @@ Calibra modelos para cada usina via `fit_model()` dispatch.
 ```r
 list(
     id_usina = "USINA_A",
-    parametros = data.frame(
-        a = c(0.12, 0.15, ...),  # coeficientes angulares
-        b = c(0, 0, ...),        # sempre zero (regressão linear)
-        row.names = c("05:00", "05:30", ...)
+    model = structure(
+        list(parametros = data.frame(
+            a = c(0.12, 0.15, ...),
+            b = c(0, 0, ...),
+            row.names = c("05:00", "05:30", ...)
+        )),
+        class = "linear_regression_model"
     ),
     metadata = list(
         type = "linear_regression",
@@ -283,12 +288,11 @@ O número de workers é resolvido com a seguinte precedência:
 
 Constrói e valida artefatos de modelo enriquecidos com metadados de proveniência.
 
-| Função                        | Descrição                                               |
-| ----------------------------- | ------------------------------------------------------- |
-| `build_model_artifact()`      | Monta artefato completo (id + parâmetros + metadados)   |
-| `build_artifact_metadata()`   | Combina metadados do modelo com info do pacote e config |
-| `validate_artifact()`         | Valida estrutura (aceita formato antigo sem metadados)  |
-| `normalize_config_for_hash()` | Normaliza config para hash determinístico               |
+| Função                        | Descrição                                              |
+| ----------------------------- | ------------------------------------------------------ |
+| `build_model_artifact()`      | Monta artefato completo (id + modelo + metadados)      |
+| `validate_artifact()`         | Valida estrutura (aceita formato antigo sem metadados) |
+| `normalize_config_for_hash()` | Normaliza config para hash determinístico              |
 
 ### 11. Proveniência e Checkpoints (`provenance.r`)
 
@@ -375,11 +379,12 @@ Funções auxiliares reutilizáveis.
 
 Exportação de resultados.
 
-| Função                                        | Descrição             |
-| --------------------------------------------- | --------------------- |
-| `write_model_artifact()`                      | Salva modelo em RDS   |
-| `write_melhor_historico_geracao()`            | Exporta MH em Parquet |
-| `write_melhor_historico_geracao_sem_cortes()` | Exporta MH sem cortes |
+| Função                                        | Descrição                        |
+| --------------------------------------------- | -------------------------------- |
+| `write_melhor_historico_geracao()`            | Exporta MH em Parquet            |
+| `write_melhor_historico_geracao_sem_cortes()` | Exporta MH sem cortes em Parquet |
+
+> **Nota:** `write_model_artifact()` é fornecida pelo pacote externo `pfvIO`.
 
 ## Fluxo de Dados
 

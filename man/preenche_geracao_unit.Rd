@@ -10,8 +10,7 @@ preenche_geracao_unit(
   mhg_prev,
   cortes,
   limite_dados,
-  model,
-  strategy = linear_regression_strategy()
+  model
 )
 }
 \arguments{
@@ -30,11 +29,7 @@ preenche_geracao_unit(
 \item{limite_dados}{Vetor numerico de comprimento 2 com os limites inferior e superior permitidos
 para valores de geracao.}
 
-\item{model}{Lista contendo os modelos de regressao linear por horario.}
-
-\item{strategy}{objeto \code{\link[=new_model_strategy]{new_model_strategy()}} definindo o tipo de modelo a
-usar na previsao. Por padrao usa \code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, mantendo
-comportamento identico ao original.}
+\item{model}{objeto modelo ajustado com classe S3 (e.g. \code{"linear_regression_model"})}
 }
 \value{
 Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados,

@@ -7,7 +7,7 @@
 write_metrics(metrics, output_dir)
 }
 \arguments{
-\item{metrics}{lista de metricas finalizada por \code{\link[=finalize_metrics]{finalize_metrics()}}}
+\item{metrics}{environment de metricas finalizado por \code{\link[=finalize_metrics]{finalize_metrics()}}}
 
 \item{output_dir}{character, diretorio de saida}
 }

@@ -81,9 +81,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /usr/local/lib/R/site-library /usr/local/lib/R/site-library
 COPY --from=builder /usr/local/lib/R/library       /usr/local/lib/R/library
 
+# ---- Non-root user -----------------------------------------------------------
+RUN useradd -r -s /bin/false appuser
+
 # ---- Application code --------------------------------------------------------
 WORKDIR /app
-COPY main.r main.r
+COPY --chown=appuser:appuser main.r main.r
 
 # ---- Runtime environment -----------------------------------------------------
 ENV LOG_LEVEL=info
@@ -94,6 +97,8 @@ ENV MHPFV_WORKERS=
 # ---- Health check ------------------------------------------------------------
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD Rscript -e "library(mhpfv); cat('OK')" || exit 1
+
+USER appuser
 
 ENTRYPOINT ["Rscript", "main.r"]
 CMD ["--datadir", "/app/data"]

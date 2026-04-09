@@ -7,14 +7,14 @@
 record_plant_timing(metrics, id_usina, duration_secs)
 }
 \arguments{
-\item{metrics}{lista de metricas criada por \code{\link[=create_metrics]{create_metrics()}}}
+\item{metrics}{environment de metricas criado por \code{\link[=create_metrics]{create_metrics()}}}
 
 \item{id_usina}{character escalar, identificador da usina}
 
 \item{duration_secs}{numeric escalar, duracao em segundos de parede}
 }
 \value{
-lista de metricas com \code{duration_seconds} adicionado para a usina
+invisivel, environment de metricas (mutado in-place)
 }
 \description{
 Registra Tempo de Processamento de Uma Usina

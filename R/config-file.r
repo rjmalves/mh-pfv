@@ -58,7 +58,12 @@ valida_tipos_config <- function(config) {
     tipos <- config_types()
 
     config <- config[names(tipos)]
-    valid <- mapply(valid_tipos, config, tipos, SIMPLIFY = TRUE)
+    valid <- vapply(
+        seq_along(config),
+        function(i) valid_tipos(config[[i]], tipos[[i]]),
+        logical(1L)
+    )
+    names(valid) <- names(config)
     all_valid <- all(valid)
 
     if (!all_valid) {
@@ -93,7 +98,7 @@ config_types <- function() {
 #' @param tipos tipos esperados de `l`, escalar ou lista
 #'
 #' @return booleano indicando se validacao encerrou com sucesso ou nao
-valid_tipos <- function(l, tipos) do.call(all, list(sapply(l, valid_tipos_unit, tipos = tipos)))
+valid_tipos <- function(l, tipos) all(vapply(l, valid_tipos_unit, logical(1L), tipos = tipos))
 
 #' Auxiliar De `valid_tipos`
 #'

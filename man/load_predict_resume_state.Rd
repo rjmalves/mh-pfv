@@ -2,48 +2,26 @@
 % Please edit documentation in R/predict.r
 \name{load_predict_resume_state}
 \alias{load_predict_resume_state}
-\title{Funcao Principal de Consolidacao dos dados}
+\title{Carrega Estado de Retomada da Predicao}
 \usage{
 load_predict_resume_state(args, provenance)
 }
 \arguments{
-\item{args}{lista de argumentos necessarios para o processamento. Os campos
-esperados sao:
-\itemize{
-\item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-\item \code{data_inicio}: string com a data inicial no formato \code{"yyyy-mm-dd"}.
-\item \code{data_fim}: string com a data final no formato \code{"yyyy-mm-dd"}.
-\item \code{fator_tolerancia_limite_superior_geracao}: fator de tolerancia aplicado
-ao limite superior de geracao observada.
-\item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas.
-\item \code{input}: caminho para os dados de entrada (SCADA, NWP, cortes, etc.).
-\item \code{mode}: deve ser \code{"predict"}.
-\item \code{ordem_prioridade_fontes}: fontes de dados em ordem de prioridade.
-\item \code{ordem_prioridade_modelosNWP}: modelos NWP em ordem de prioridade.
-\item \code{output}: caminho para a pasta de saida.
-}}
+\item{args}{lista de argumentos do pipeline (deve conter \code{output} e
+\code{ids_usinas})}
 
-\item{strategy}{objeto \code{\link[=new_model_strategy]{new_model_strategy()}} definindo o tipo de modelo a
-usar na previsao. Por padrao usa \code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, mantendo
-comportamento identico ao original.}
-
-\item{parallel}{logico, se \code{TRUE} usa \code{future_lapply} para processar
-usinas em paralelo. Padrao \code{FALSE} para compatibilidade.}
-
-\item{resume}{logico, se \code{TRUE} busca um checkpoint valido no diretorio
-de saida e reprocessa apenas as usinas pendentes. Resultados intermediarios
-de usinas concluidas sao carregados do disco. Padrao \code{FALSE}.}
+\item{provenance}{environment de proveniencia criado por
+\code{\link[=create_provenance]{create_provenance()}}}
 }
 \value{
-Nenhum valor e retornado. Os resultados sao gravados em arquivos na
-pasta de saida especificada.
+lista com \code{provenance} (atualizado) e \code{completed} (character vector
+de IDs de usinas ja processadas)
 }
 \description{
-Executa o processamento completo de consistencia dos dados observados para um conjunto de usinas,
-considerando diferentes fontes e modelos em ordem de prioridade.
+Le o checkpoint de predicao e identifica usinas ja completadas cujos
+resultados intermediarios existem em disco.
 }
 \seealso{
-\code{organiza_resultados()}, \code{\link[=write_melhor_historico_geracao]{write_melhor_historico_geracao()}},
-\code{\link[=linear_regression_strategy]{linear_regression_strategy()}}, \code{\link[=setup_parallel_plan]{setup_parallel_plan()}},
-\code{\link[=write_checkpoint]{write_checkpoint()}}, \code{\link[=read_checkpoint]{read_checkpoint()}}, \code{\link[=write_plant_result]{write_plant_result()}}
+\code{\link[=read_checkpoint]{read_checkpoint()}}, \code{\link[=get_pending_plants]{get_pending_plants()}},
+\code{\link[=read_plant_result]{read_plant_result()}}
 }

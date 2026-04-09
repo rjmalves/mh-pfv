@@ -280,14 +280,10 @@ checa_valores_overbound <- function(dt, limites = c(0, Inf)) {
 #' @seealso combina_dados
 #'
 combina_fontes <- function(dt, grandeza, ordem) {
-    # Se a grandeza for geracao_observada, apenas combina os dados
     if (grandeza == "geracao_observada") {
-        geracao_combinada <- combina_dados(dt, ordem)
-        dt_comb <- geracao_combinada
+        return(combina_dados(dt, ordem))
     }
-
-    # Retorna o data.table combinado
-    return(dt_comb)
+    stop("grandeza nao suportada: '", grandeza, "'", call. = FALSE)
 }
 
 

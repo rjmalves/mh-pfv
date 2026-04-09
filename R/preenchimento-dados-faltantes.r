@@ -141,7 +141,10 @@ zera_horarios_extremos <- function(df_ger_usi) {
     df_ger_usi[, hora_dec := hour(data_hora_observacao) + minute(data_hora_observacao) / 60]
     horas_validas <- unique(df_ger_usi[!is.na(valor), hora_dec])
 
-    if (length(horas_validas) == 0) return(df_ger_usi)
+    if (length(horas_validas) == 0) {
+        df_ger_usi[, hora_dec := NULL]
+        return(df_ger_usi)
+    }
 
     min_hora <- max(4, c(min(c(horas_validas, 6))))
     max_hora <- min(20, c(max(c(horas_validas, 18))))

@@ -104,7 +104,15 @@ cli_main <- function(datadir = "./data", parallel = FALSE, resume = FALSE,
     }
 
     if (!is.null(workers)) {
+        old_workers <- Sys.getenv("MHPFV_WORKERS", unset = NA)
         Sys.setenv(MHPFV_WORKERS = as.character(workers))
+        on.exit({
+            if (is.na(old_workers)) {
+                Sys.unsetenv("MHPFV_WORKERS")
+            } else {
+                Sys.setenv(MHPFV_WORKERS = old_workers)
+            }
+        }, add = TRUE)
     }
 
     lg$info(

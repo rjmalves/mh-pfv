@@ -1,33 +1,18 @@
-#' Funcao Principal de Consolidacao dos dados
+#' Carrega Estado de Retomada da Previsao
 #'
-#' Executa o processamento completo de consistencia dos dados observados para um conjunto de usinas,
-#' considerando diferentes fontes e modelos em ordem de prioridade.
+#' Le o checkpoint de previsao e identifica usinas ja completadas cujos
+#' resultados intermediarios existem em disco.
 #'
-#' @param args lista de argumentos necessarios para o processamento. Os campos
-#'   esperados sao:
-#'   - `artifact`: caminho onde artefatos adicionais serao armazenados.
-#'   - `data_inicio`: string com a data inicial no formato `"yyyy-mm-dd"`.
-#'   - `data_fim`: string com a data final no formato `"yyyy-mm-dd"`.
-#'   - `fator_tolerancia_limite_superior_geracao`: fator de tolerancia aplicado
-#'     ao limite superior de geracao observada.
-#'   - `ids_usinas`: vetor com os IDs das usinas a serem processadas.
-#'   - `input`: caminho para os dados de entrada (SCADA, NWP, cortes, etc.).
-#'   - `mode`: deve ser `"predict"`.
-#'   - `ordem_prioridade_fontes`: fontes de dados em ordem de prioridade.
-#'   - `ordem_prioridade_modelosNWP`: modelos NWP em ordem de prioridade.
-#'   - `output`: caminho para a pasta de saida.
-#' @param parallel logico, se `TRUE` usa `future_lapply` para processar
-#'   usinas em paralelo. Padrao `FALSE` para compatibilidade.
-#' @param resume logico, se `TRUE` busca um checkpoint valido no diretorio
-#'   de saida e reprocessa apenas as usinas pendentes. Resultados intermediarios
-#'   de usinas concluidas sao carregados do disco. Padrao `FALSE`.
+#' @param args lista de argumentos do pipeline (deve conter `output` e
+#'   `ids_usinas`)
+#' @param provenance environment de proveniencia criado por
+#'   [create_provenance()]
 #'
-#' @return Nenhum valor e retornado. Os resultados sao gravados em arquivos na
-#'   pasta de saida especificada.
+#' @return lista com `provenance` (atualizado) e `completed` (character vector
+#'   de IDs de usinas ja processadas)
 #'
-#' @seealso `organiza_resultados()`, [write_melhor_historico_geracao()],
-#'   [setup_parallel_plan()],
-#'   [write_checkpoint()], [read_checkpoint()], [write_plant_result()]
+#' @seealso [read_checkpoint()], [get_pending_plants()],
+#'   [read_plant_result()]
 #'
 #' @export
 load_predict_resume_state <- function(args, provenance) {
@@ -47,6 +32,34 @@ load_predict_resume_state <- function(args, provenance) {
     list(provenance = provenance, completed = completed_plants)
 }
 
+#' Funcao Principal de Consolidacao dos dados
+#'
+#' Executa o processamento completo de consistencia dos dados observados
+#' para um conjunto de usinas, considerando diferentes fontes e modelos
+#' em ordem de prioridade.
+#'
+#' @param args lista de argumentos necessarios para o processamento. Os campos
+#'   esperados sao:
+#'   - `artifact`: caminho onde artefatos adicionais serao armazenados.
+#'   - `data_inicio`: string com a data inicial no formato `"yyyy-mm-dd"`.
+#'   - `data_fim`: string com a data final no formato `"yyyy-mm-dd"`.
+#'   - `fator_tolerancia_limite_superior_geracao`: fator de tolerancia.
+#'   - `ids_usinas`: vetor com os IDs das usinas a serem processadas.
+#'   - `input`: caminho para os dados de entrada.
+#'   - `mode`: deve ser `"predict"`.
+#'   - `ordem_prioridade_fontes`: fontes em ordem de prioridade.
+#'   - `ordem_prioridade_modelosNWP`: modelos NWP em ordem de prioridade.
+#'   - `output`: caminho para a pasta de saida.
+#' @param parallel logico, se `TRUE` usa `future_lapply` para processar
+#'   usinas em paralelo. Padrao `FALSE`.
+#' @param resume logico, se `TRUE` busca um checkpoint valido e reprocessa
+#'   apenas as usinas pendentes. Padrao `FALSE`.
+#'
+#' @return Nenhum valor e retornado. Os resultados sao gravados em arquivos.
+#'
+#' @seealso `organiza_resultados()`, [write_melhor_historico_geracao()],
+#'   [setup_parallel_plan()],
+#'   [write_checkpoint()], [read_checkpoint()], [write_plant_result()]
 predict_main <- function(args, parallel = FALSE, resume = FALSE) {
 
     provenance <- create_provenance(args, "predict", parallel)
@@ -214,7 +227,8 @@ predict_main <- function(args, parallel = FALSE, resume = FALSE) {
     if (resume) cleanup_checkpoint(args$output)
 }
 
-get_dataset <- function(args, conn) {
+get_dataset <- function(args, conn, mode = args$mode) {
+    mode <- match.arg(mode, c("train", "predict"))
     janela <- paste0(args$janela[1], "/", args$janela[2])
 
     ger_obs <- get_geracao_observada(conn,
@@ -229,16 +243,21 @@ get_dataset <- function(args, conn) {
         id_usina = args$ids_usinas,
         id_modelo_nwp = args$ordem_prioridade_modelosNWP, data_hora_previsao = janela
     )
-    mhg <- get_melhor_historico_geracao(conn, id_usina = args$ids_usinas)
-    mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(conn, id_usina = args$ids_usinas)
 
-    list(
+    result <- list(
         ger_obs = ger_obs,
         corte = corte,
-        irrad_prev = irrad_prev,
-        mhg = mhg,
-        mhg_sem_cortes = mhg_sem_cortes
+        irrad_prev = irrad_prev
     )
+
+    if (mode == "predict") {
+        result$mhg <- get_melhor_historico_geracao(conn, id_usina = args$ids_usinas)
+        result$mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(
+            conn, id_usina = args$ids_usinas
+        )
+    }
+
+    result
 }
 
 processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg,
@@ -292,7 +311,7 @@ processar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_mhg,
     )
 
     # Garante que sem_cortes nunca seja menor que com_cortes
-    idx_maior <- geracao_usina_preenchida$valor > geracao_usina_preenchida_sem_cortes$valor
+    idx_maior <- which(geracao_usina_preenchida$valor > geracao_usina_preenchida_sem_cortes$valor)
     geracao_usina_preenchida_sem_cortes[idx_maior, `:=`(
         valor = geracao_usina_preenchida[idx_maior, valor],
         status = geracao_usina_preenchida[idx_maior, status]

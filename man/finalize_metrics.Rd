@@ -7,10 +7,10 @@
 finalize_metrics(metrics)
 }
 \arguments{
-\item{metrics}{lista de metricas criada por \code{\link[=create_metrics]{create_metrics()}}}
+\item{metrics}{environment de metricas criado por \code{\link[=create_metrics]{create_metrics()}}}
 }
 \value{
-lista de metricas com \code{pipeline} e \code{created_at} preenchidos
+invisivel, environment de metricas (mutado in-place)
 }
 \description{
 Computa estatisticas agregadas das metricas por usina e preenche

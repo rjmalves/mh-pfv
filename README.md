@@ -44,7 +44,7 @@ Este pacote implementa um pipeline de processamento de dados que:
          │                 │                 │                    │
          ▼                 ▼                 ▼                    ▼
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                  VALIDAÇÃO DE ENTRADA (validate_all_inputs)                │
+│                  PARSING E VALIDAÇÃO (parse_config)                        │
 └────────────────────────────────┬───────────────────────────────────────────┘
                                  │
                  ┌───────────────┴────────────┐
@@ -69,26 +69,24 @@ Este pacote implementa um pipeline de processamento de dados que:
 
 ### Componentes Principais
 
-| Módulo                            | Descrição                                                         |
-| --------------------------------- | ----------------------------------------------------------------- |
-| `cli.r`                           | Entry point do pacote (`cli_main`), parsing de flags e env vars   |
-| `config-file.r`                   | Parsing e validação do arquivo de configuração                    |
-| `validation.r`                    | Validação de dados de entrada contra schemas tipados              |
-| `consistencia-dados.r`            | Detecção de valores congelados, outliers, combinação de fontes    |
-| `model-strategy.r`                | Interface S3 plugável para modelos (`fit_model`, `predict_model`) |
-| `model-linear-regression.r`       | Implementação da estratégia de regressão linear                   |
-| `train.r`                         | Pipeline de treinamento com suporte a paralelismo e retomada      |
-| `predict.r`                       | Pipeline de consolidação com suporte a paralelismo e retomada     |
-| `preenchimento-dados-faltantes.r` | Imputação de dados faltantes usando NWP                           |
-| `parallel.r`                      | Gestão do backend paralelo (`future`/`future.apply`)              |
-| `artifact.r`                      | Construção e validação de artefatos de modelo enriquecidos        |
-| `provenance.r`                    | Rastreabilidade de execução, checkpoints e retomada               |
-| `metrics.r`                       | Coleta de métricas por usina e agregados do pipeline              |
-| `health-report.r`                 | Classificação de saúde por usina e do pipeline                    |
-| `model-comparison.r`              | Comparação pairwise de artefatos de modelo                        |
-| `logging.r`                       | Logging estruturado com contexto (run_id, mode)                   |
-| `utils.r`                         | Funções auxiliares (interpolação, associação NWP-usina)           |
-| `escrita.r`                       | Exportação de resultados em CSV/Parquet                           |
+| Módulo                            | Descrição                                                       |
+| --------------------------------- | --------------------------------------------------------------- |
+| `cli.r`                           | Entry point do pacote (`cli_main`), parsing de flags e env vars |
+| `config-file.r`                   | Parsing e validação do arquivo de configuração                  |
+| `consistencia-dados.r`            | Detecção de valores congelados, outliers, combinação de fontes  |
+| `model-strategy.r`                | Interface plugável para modelos (`fit_model`, `predict_model`)  |
+| `model-linear-regression.r`       | Implementação da estratégia de regressão linear                 |
+| `train.r`                         | Pipeline de treinamento com suporte a paralelismo e retomada    |
+| `predict.r`                       | Pipeline de consolidação com suporte a paralelismo e retomada   |
+| `preenchimento-dados-faltantes.r` | Imputação de dados faltantes usando NWP                         |
+| `parallel.r`                      | Gestão do backend paralelo (`future`/`future.apply`)            |
+| `artifact.r`                      | Construção e validação de artefatos de modelo enriquecidos      |
+| `provenance.r`                    | Rastreabilidade de execução, checkpoints e retomada             |
+| `metrics.r`                       | Coleta de métricas por usina e agregados do pipeline            |
+| `health-report.r`                 | Classificação de saúde por usina e do pipeline                  |
+| `logging.r`                       | Logging estruturado com contexto (run_id, mode)                 |
+| `utils.r`                         | Funções auxiliares (interpolação, associação NWP-usina)         |
+| `escrita.r`                       | Exportação de resultados em Parquet                             |
 
 ---
 
@@ -326,17 +324,16 @@ Valores são considerados "congelados" quando uma janela deslizante de N valores
 
 ### Modelo de Regressão (Strategy Pattern)
 
-O pipeline usa um sistema de estratégias plugáveis via S3:
+O pipeline usa um sistema de estratégias plugáveis. `fit_model()` resolve a
+função de ajuste por convenção de nome, enquanto `predict_model()` e
+`model_metadata()` usam despacho S3:
 
 ```r
-# Estratégia padrão: regressão linear sem intercepto
-strategy <- linear_regression_strategy()
+# Treinamento com estratégia padrão (regressão linear sem intercepto)
+train_main(config, strategy = "linear_regression")
 
-# Usar em treinamento
-train_main(config, strategy = strategy)
-
-# Ou em previsão
-predict_main(config, strategy = strategy)
+# Previsão (lê modelo do artefato salvo)
+predict_main(config)
 ```
 
 Para cada hora do dia (05:00 às 18:30, intervalos de 30min), ajusta-se:
@@ -378,13 +375,6 @@ Rscript -e "lintr::lint_package()"
 
 # Cobertura de testes
 Rscript -e "covr::package_coverage()"
-```
-
-### Benchmarks
-
-```bash
-# Executar suite de benchmarks
-Rscript inst/benchmarks/run-all.r [data_dir]
 ```
 
 ---

@@ -7,14 +7,14 @@
 record_model_quality(metrics, id_usina, metadata)
 }
 \arguments{
-\item{metrics}{lista de metricas criada por \code{\link[=create_metrics]{create_metrics()}}}
+\item{metrics}{environment de metricas criado por \code{\link[=create_metrics]{create_metrics()}}}
 
 \item{id_usina}{character escalar, identificador da usina}
 
-\item{metadata}{lista de metadados do artefato (de \code{\link[=build_artifact_metadata]{build_artifact_metadata()}})}
+\item{metadata}{lista de metadados do artefato (de \code{\link[=model_metadata]{model_metadata()}})}
 }
 \value{
-lista de metricas com \code{model_quality} adicionado para a usina
+invisivel, environment de metricas (mutado in-place)
 }
 \description{
 Extrai \code{n_slots} e \code{n_valid_slots} dos metadados do artefato e os adiciona

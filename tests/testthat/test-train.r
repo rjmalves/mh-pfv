@@ -90,28 +90,34 @@ test_that("ajusta_regressao_ger_irrad", {
     )
 
     resultado <- ajusta_regressao_ger_irrad(copy(dty_base), copy(dtx_base), copy(dty_base))
-    expect_equal(rownames(resultado), "06:00")
+    expect_equal(nrow(resultado), 28L)
+    expect_true("06:00" %in% rownames(resultado))
     expect_gt(resultado["06:00", "a"], 0)
     expect_equal(resultado["06:00", "b"], 0)
+    # Slots without data get NA coefficients
+    expect_true(is.na(resultado["05:00", "a"]))
 
     dty_poucos <- dty_base[1:5]
     dtx_poucos <- dtx_base[1:5]
     resultado_poucos <- ajusta_regressao_ger_irrad(copy(dty_poucos), copy(dtx_poucos), copy(dty_poucos))
-    expect_equal(nrow(resultado_poucos), 0)
+    expect_equal(nrow(resultado_poucos), 28L)
+    expect_true(all(is.na(resultado_poucos$a)))
 
     dty_zero <- copy(dty_base)
     dtx_zero <- copy(dtx_base)
     dty_zero[1:3, valor := 0]
     dtx_zero[1:3, valor := 0]
     resultado_zero <- ajusta_regressao_ger_irrad(copy(dty_zero), copy(dtx_zero), copy(dty_zero))
-    expect_equal(rownames(resultado_zero), "06:00")
+    expect_equal(nrow(resultado_zero), 28L)
+    expect_true("06:00" %in% rownames(resultado_zero))
 
     dty_na <- copy(dty_base)
     dtx_na <- copy(dtx_base)
     dty_na[, valor := NA]
     dtx_na[, valor := NA]
     resultado_na <- ajusta_regressao_ger_irrad(copy(dty_na), copy(dtx_na), copy(dty_na))
-    expect_equal(resultado_na["06:00", "a"], NA)
+    expect_equal(nrow(resultado_na), 28L)
+    expect_true(all(is.na(resultado_na$a)))
 
     horarios_0630 <- seq(from = as.POSIXct("2025-01-01 06:30"), by = "1 day", length.out = 10)
     dtx_0630 <- data.table(
@@ -125,6 +131,7 @@ test_that("ajusta_regressao_ger_irrad", {
         valor = seq(3, 30, by = 3)
     )
     resultado_0630 <- ajusta_regressao_ger_irrad(copy(dty_0630), copy(dtx_0630), copy(dty_0630))
-    expect_equal(rownames(resultado_0630), "06:30")
+    expect_equal(nrow(resultado_0630), 28L)
+    expect_true("06:30" %in% rownames(resultado_0630))
     expect_gt(resultado_0630["06:30", "a"], 0)
 })

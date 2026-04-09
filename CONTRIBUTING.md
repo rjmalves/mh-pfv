@@ -137,13 +137,9 @@ calcular_mae <- function(observado, previsto) {
 
 #### 2. Validação de Entrada
 
-O pacote inclui um framework de validação contra schemas tipados (`R/validation.r`). Use `validate_input()` para dados de entrada e `validate_artifact()` para artefatos de modelo.
+Use `validate_artifact()` para validar artefatos de modelo. Para dados de entrada, use validação explícita:
 
 ```r
-# Validação via schema
-validate_input(dt, "geracao_observada")
-
-# Validação manual para funções simples
 processar_dados <- function(dt, coluna) {
     if (!data.table::is.data.table(dt)) {
         stop("'dt' deve ser um data.table")
@@ -155,24 +151,24 @@ processar_dados <- function(dt, coluna) {
 }
 ```
 
-#### 3. Strategy Pattern (S3)
+#### 3. Strategy Pattern
 
-Novos modelos devem implementar a interface `model_strategy`:
+Novos modelos devem seguir a convenção de despacho do pacote:
 
 ```r
-# Criar construtor
-meu_modelo_strategy <- function(...) {
-    new_model_strategy("meu_modelo", ...)
+# 1. Criar função de ajuste (resolvida por nome via get0)
+fit_meu_modelo <- function(dty, dtx, dty_bruta, ...) {
+    # ... ajustar modelo ...
+    structure(list(parametros = params), class = "meu_modelo_model")
 }
 
-# Implementar métodos obrigatórios
-fit_model.meu_modelo <- function(strategy, dty, dtx, dty_bruta, ...) { ... }
-predict_model.meu_modelo <- function(strategy, model, df_ger_usi,
+# 2. Implementar métodos S3 obrigatórios
+predict_model.meu_modelo_model <- function(model, df_ger_usi,
     df_irrad_prev, lim_dados, ...) { ... }
-model_metadata.meu_modelo <- function(strategy, model, ...) { ... }
+model_metadata.meu_modelo_model <- function(model, ...) { ... }
 ```
 
-Em testes, definições locais de métodos S3 (ex: `fit_model.test_model`) devem usar `# nolint: object_name_linter.` para suprimir o linter de nomes.
+Use `strategy = "meu_modelo"` em `train_main()`. O despacho de `fit_model()` resolve `fit_meu_modelo` por convenção de nome.
 
 #### 4. Operações Vetorizadas
 
@@ -234,8 +230,7 @@ tests/
     ├── test-integration-train.r        # Integração do train
     ├── test-logging.r                  # Logging estruturado
     ├── test-metrics.r                  # Métricas de pipeline
-    ├── test-model-comparison.r         # Comparação de artefatos
-    ├── test-model-strategy.r           # Strategy pattern S3
+    ├── test-model-strategy.r           # Strategy pattern
     ├── test-parallel.r                 # Infraestrutura paralela
     ├── test-parser-expanded.r          # Parser de argumentos
     ├── test-pipeline-resume.r          # Retomada de pipeline
@@ -243,10 +238,8 @@ tests/
     ├── test-preenchimento-dados-faltantes.r  # Imputação
     ├── test-provenance.r               # Proveniência
     ├── test-snapshot-regression.r      # Testes de snapshot
-    ├── test-strategy-integration.r     # Integração strategy+pipeline
     ├── test-train.r                    # Pipeline train
-    ├── test-utils.r                    # Utilitários
-    └── test-validation.r              # Validação de entrada
+    └── test-utils.r                    # Utilitários
 ```
 
 ### Geradores de Dados de Teste

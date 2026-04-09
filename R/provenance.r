@@ -373,17 +373,6 @@ read_plant_result <- function(id_usina, output_dir) {
     )
 }
 
-#' Remove Arquivos de Checkpoint e Resultados Intermediarios
-#'
-#' Apaga o arquivo de checkpoint e todos os arquivos `plant-result-*.rds`
-#' do diretorio informado. Chamada apenas apos conclusao bem-sucedida do
-#' pipeline. Falhas de remocao geram aviso no log e nao propagam erro.
-#'
-#' @param output_dir character, diretorio de saida
-#' @param run_id character escalar, ID da execucao. Se `NULL`, remove todos
-#'   os checkpoints encontrados
-#'
-#' @return `invisible(NULL)`
 plant_error <- function(id_usina, error) {
     stopifnot(
         is.character(id_usina), length(id_usina) == 1L,
@@ -400,6 +389,17 @@ is_plant_error <- function(x) {
     inherits(x, "plant_error")
 }
 
+#' Remove Arquivos de Checkpoint e Resultados Intermediarios
+#'
+#' Apaga o arquivo de checkpoint e todos os arquivos `plant-result-*.rds`
+#' do diretorio informado. Chamada apenas apos conclusao bem-sucedida do
+#' pipeline. Falhas de remocao geram aviso no log e nao propagam erro.
+#'
+#' @param output_dir character, diretorio de saida
+#' @param run_id character escalar, ID da execucao. Se `NULL`, remove todos
+#'   os checkpoints encontrados
+#'
+#' @return `invisible(NULL)`
 cleanup_checkpoint <- function(output_dir, run_id = NULL) {
     lg <- lgr::get_logger("mhpfv")
 
