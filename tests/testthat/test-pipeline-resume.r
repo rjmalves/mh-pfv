@@ -8,7 +8,7 @@ test_that("train_main resume skips completed plants", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- tmp_artifact
     config <- parse_config(config, conn)
 
@@ -43,7 +43,7 @@ test_that("train_main resume with config mismatch runs from scratch", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- tmp_artifact
     config <- parse_config(config, conn)
 
@@ -51,7 +51,7 @@ test_that("train_main resume with config mismatch runs from scratch", {
         mode = "train",
         janela = list("2024-01-01", "2024-03-31")
     )
-    config_other$input <- test_path("data")
+    config_other$input <- normalizePath(test_path("data"))
     config_other$artifact <- tmp_artifact
     config_other <- parse_config(config_other, conn)
 
@@ -77,7 +77,7 @@ test_that("train_main cleans up checkpoint after successful run", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- tmp_artifact
     config <- parse_config(config, conn)
 
@@ -100,7 +100,7 @@ test_that("train_main without resume runs normally and does not create checkpoin
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- tmp_artifact
     config <- parse_config(config, conn)
 
@@ -120,7 +120,7 @@ test_that("train_main resume with no existing checkpoint runs from scratch", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- tmp_artifact
     config <- parse_config(config, conn)
 
@@ -142,7 +142,7 @@ test_that("predict_main resume combines old and new results", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- tmp_artifact
     config_train <- parse_config(config_train, conn)
     train_main(config_train)
@@ -151,7 +151,7 @@ test_that("predict_main resume combines old and new results", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- tmp_artifact
     config$output <- tmp_output
     config <- parse_config(config, conn)
@@ -220,7 +220,7 @@ test_that("predict_main cleans up checkpoint after successful resume run", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- tmp_artifact
     config_train <- parse_config(config_train, conn)
     train_main(config_train)
@@ -229,7 +229,7 @@ test_that("predict_main cleans up checkpoint after successful resume run", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- tmp_artifact
     config$output <- tmp_output
     config <- parse_config(config, conn)
@@ -257,7 +257,7 @@ test_that("predict_main resume with missing plant result reprocesses that plant"
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- tmp_artifact
     config_train <- parse_config(config_train, conn)
     train_main(config_train)
@@ -266,7 +266,7 @@ test_that("predict_main resume with missing plant result reprocesses that plant"
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- tmp_artifact
     config$output <- tmp_output
     config <- parse_config(config, conn)

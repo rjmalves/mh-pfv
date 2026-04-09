@@ -18,3 +18,4 @@
 ^plans$
 ^codecov\.yml$
 ^\.claude$
+^dev\.r$

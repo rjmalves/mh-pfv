@@ -165,7 +165,7 @@ test_that("fit_linear_regression", {
             mode = "train",
             janela = list("2025-07-01", "2025-09-30")
         )
-        config$input <- test_path("data")
+        config$input <- normalizePath(test_path("data"))
         config <- parse_config(config, conn)
 
         dataset <- get_dataset(config, conn)

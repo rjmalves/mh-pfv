@@ -8,7 +8,7 @@ test_that("snapshot_train_model_coefficients", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- temp_artifact
     config <- parse_config(config, conn)
 
@@ -48,7 +48,7 @@ test_that("snapshot_predict_output_summary", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- temp_artifact
     config_train <- parse_config(config_train, conn)
 
@@ -58,7 +58,7 @@ test_that("snapshot_predict_output_summary", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_predict$input <- test_path("data")
+    config_predict$input <- normalizePath(test_path("data"))
     config_predict$artifact <- temp_artifact
     config_predict$output <- temp_output
     config_predict <- parse_config(config_predict, conn)

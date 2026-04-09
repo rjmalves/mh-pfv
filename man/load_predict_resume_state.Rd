@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict.r
 \name{load_predict_resume_state}
 \alias{load_predict_resume_state}
-\title{Carrega Estado de Retomada da Predicao}
+\title{Carrega Estado de Retomada da Previsao}
 \usage{
 load_predict_resume_state(args, provenance)
 }
@@ -18,7 +18,7 @@ lista com \code{provenance} (atualizado) e \code{completed} (character vector
 de IDs de usinas ja processadas)
 }
 \description{
-Le o checkpoint de predicao e identifica usinas ja completadas cujos
+Le o checkpoint de previsao e identifica usinas ja completadas cujos
 resultados intermediarios existem em disco.
 }
 \seealso{

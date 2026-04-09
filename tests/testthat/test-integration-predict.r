@@ -9,7 +9,7 @@ test_that("predict_main completes without error after training", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- temp_artifact
     config_train <- parse_config(config_train, conn)
 
@@ -19,7 +19,7 @@ test_that("predict_main completes without error after training", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_predict$input <- test_path("data")
+    config_predict$input <- normalizePath(test_path("data"))
     config_predict$artifact <- temp_artifact
     config_predict$output <- temp_output
     config_predict <- parse_config(config_predict, conn)
@@ -38,7 +38,7 @@ test_that("predict_main produces valid output files", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- temp_artifact
     config_train <- parse_config(config_train, conn)
 
@@ -48,7 +48,7 @@ test_that("predict_main produces valid output files", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_predict$input <- test_path("data")
+    config_predict$input <- normalizePath(test_path("data"))
     config_predict$artifact <- temp_artifact
     config_predict$output <- temp_output
     config_predict <- parse_config(config_predict, conn)
@@ -107,7 +107,7 @@ test_that("predict_main uses default strategy from trained artifacts", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- temp_artifact
     config_train <- parse_config(config_train, conn)
 
@@ -117,7 +117,7 @@ test_that("predict_main uses default strategy from trained artifacts", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_predict$input <- test_path("data")
+    config_predict$input <- normalizePath(test_path("data"))
     config_predict$artifact <- temp_artifact
     config_predict$output <- temp_output
     config_predict <- parse_config(config_predict, conn)
@@ -137,7 +137,7 @@ test_that("predict_main handles legacy artifacts without metadata", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_predict$input <- test_path("data")
+    config_predict$input <- normalizePath(test_path("data"))
     config_predict$artifact <- temp_artifact
     config_predict$output <- temp_output
     config_predict <- parse_config(config_predict, conn)
@@ -175,7 +175,7 @@ test_that("predict_main parallel produces identical output to sequential", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- temp_artifact
     config_train <- parse_config(config_train, conn)
 
@@ -185,7 +185,7 @@ test_that("predict_main parallel produces identical output to sequential", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_seq$input <- test_path("data")
+    config_seq$input <- normalizePath(test_path("data"))
     config_seq$artifact <- temp_artifact
     config_seq$output <- temp_output_seq
     config_seq <- parse_config(config_seq, conn)
@@ -196,7 +196,7 @@ test_that("predict_main parallel produces identical output to sequential", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_par$input <- test_path("data")
+    config_par$input <- normalizePath(test_path("data"))
     config_par$artifact <- temp_artifact
     config_par$output <- temp_output_par
     config_par <- parse_config(config_par, conn)
@@ -238,7 +238,7 @@ test_that("predict_main writes valid provenance JSON", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- temp_artifact
     config_train <- parse_config(config_train, conn)
 
@@ -248,7 +248,7 @@ test_that("predict_main writes valid provenance JSON", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_predict$input <- test_path("data")
+    config_predict$input <- normalizePath(test_path("data"))
     config_predict$artifact <- temp_artifact
     config_predict$output <- temp_output
     config_predict <- parse_config(config_predict, conn)
@@ -277,7 +277,7 @@ test_that("predict_main writes valid metrics JSON", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- temp_artifact
     config_train <- parse_config(config_train, conn)
 
@@ -287,7 +287,7 @@ test_that("predict_main writes valid metrics JSON", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_predict$input <- test_path("data")
+    config_predict$input <- normalizePath(test_path("data"))
     config_predict$artifact <- temp_artifact
     config_predict$output <- temp_output
     config_predict <- parse_config(config_predict, conn)

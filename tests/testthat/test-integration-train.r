@@ -8,7 +8,7 @@ test_that("train_main completes without error", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- temp_artifact
     config <- parse_config(config, conn)
 
@@ -25,7 +25,7 @@ test_that("train_main accepts strategy as string", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- temp_artifact
     config <- parse_config(config, conn)
 
@@ -42,7 +42,7 @@ test_that("train_main produces valid model artifacts", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- temp_artifact
     config <- parse_config(config, conn)
 
@@ -102,7 +102,7 @@ test_that("train_main writes valid provenance JSON", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- temp_artifact
     config <- parse_config(config, conn)
 
@@ -129,7 +129,7 @@ test_that("train_main writes valid metrics JSON", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config$artifact <- temp_artifact
     config <- parse_config(config, conn)
 

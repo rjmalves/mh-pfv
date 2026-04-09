@@ -7,7 +7,7 @@ test_that("get_dataset returns named list with all components", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config <- parse_config(config, conn)
 
     dataset <- get_dataset(config, conn)
@@ -28,7 +28,7 @@ test_that("get_dataset components are data.tables with rows", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config <- parse_config(config, conn)
 
     dataset <- get_dataset(config, conn)
@@ -52,7 +52,7 @@ test_that("processar_usina returns list with com_cortes and sem_cortes", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- temp_artifact
     config_train <- parse_config(config_train, conn)
 
@@ -62,7 +62,7 @@ test_that("processar_usina returns list with com_cortes and sem_cortes", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_predict$input <- test_path("data")
+    config_predict$input <- normalizePath(test_path("data"))
     config_predict$artifact <- temp_artifact
     config_predict <- parse_config(config_predict, conn)
 
@@ -103,7 +103,7 @@ test_that("processar_usina output data.tables have rows and expected columns", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_train$input <- test_path("data")
+    config_train$input <- normalizePath(test_path("data"))
     config_train$artifact <- temp_artifact
     config_train <- parse_config(config_train, conn)
 
@@ -113,7 +113,7 @@ test_that("processar_usina output data.tables have rows and expected columns", {
         mode = "predict",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config_predict$input <- test_path("data")
+    config_predict$input <- normalizePath(test_path("data"))
     config_predict$artifact <- temp_artifact
     config_predict <- parse_config(config_predict, conn)
 

@@ -3,7 +3,7 @@
     "mode": "train",
 
     // Caminho para a leitura dos dados de entrada 
-    "input": "./data",
+    "input": ".",
 
     // Caminho para a escrita dos dados de saida 
     "output": "./out",

@@ -7,7 +7,7 @@ test_that("ajustar_usina returns artifact with id_usina and model", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config <- parse_config(config, conn)
 
     dataset <- get_dataset(config, conn)
@@ -44,7 +44,7 @@ test_that("ajustar_usina model parametros has expected structure", {
         mode = "train",
         janela = list("2025-07-01", "2025-09-30")
     )
-    config$input <- test_path("data")
+    config$input <- normalizePath(test_path("data"))
     config <- parse_config(config, conn)
 
     dataset <- get_dataset(config, conn)
