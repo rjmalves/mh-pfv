@@ -6,6 +6,7 @@
 FROM rocker/r-ver:4.5.3 AS builder
 
 ARG MHPFV_VERSION=0.1.1
+ARG GITHUB_PAT
 
 # ---- System build dependencies -----------------------------------------------
 # build-essential / cmake: compile packages with C/C++ code (arrow, data.table)
@@ -17,6 +18,7 @@ ARG MHPFV_VERSION=0.1.1
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
+    curl \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
@@ -30,26 +32,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ARROW_WITH_ZSTD: ensures ZSTD codec is included when arrow compiles from source.
 # RENV_CONFIG_REPOS_OVERRIDE: routes CRAN packages through PPM for pre-built Linux binaries.
 ENV ARROW_WITH_ZSTD=ON \
-    RENV_CONFIG_REPOS_OVERRIDE="https://p3m.dev/cran/__linux__/noble/latest"
+    RENV_CONFIG_PPM_ENABLED=TRUE
 
 WORKDIR /app
 
-# ---- renv bootstrap layer (invalidated only on lockfile or settings changes) --
+# ---- renv bootstrap and package install --------------------------------------
 RUN mkdir -p renv
 COPY renv.lock       renv.lock
 COPY renv/activate.R renv/activate.R
 COPY renv/settings.json renv/settings.json
 COPY .Rprofile       .Rprofile
-
-RUN R -e "renv::restore(confirm = FALSE)"
-
-# ---- Package install layer (invalidated only on DESCRIPTION/R/ changes) -------
 COPY DESCRIPTION DESCRIPTION
 COPY NAMESPACE   NAMESPACE
 COPY R/          R/
 COPY main.r      main.r
 
-RUN R -e "remotes::install_local('.', dependencies = FALSE, upgrade = 'never')"
+RUN R -e "renv::restore(confirm = FALSE); renv::install('.', rebuild = TRUE)" && \
+    for lib in $(R -s -e "cat(.libPaths(), sep='\n')"); do \
+        cp -rLn "$lib"/* /usr/local/lib/R/site-library/ 2>/dev/null || true; \
+    done
 
 # =============================================================================
 # Stage 2: Runtime — minimal image with only runtime libraries and entrypoint

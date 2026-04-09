@@ -70,6 +70,12 @@
       "Maintainer": "Trevor L. Davis <trevor.l.davis@gmail.com>",
       "Repository": "CRAN"
     },
+    "arrow": {
+      "Package": "arrow",
+      "Version": "23.0.1.2",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
     "askpass": {
       "Package": "askpass",
       "Version": "1.2.1",
