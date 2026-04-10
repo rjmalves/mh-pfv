@@ -133,7 +133,7 @@ combina_dados_tempo <- function(dt1, dt2) {
 
     select_out <- function(dt) {
         dt[, .(id_fonte_observacao, id_usina, data_hora_observacao,
-            valor, status)][order(id_usina, data_hora_observacao)]
+                valor, status)][order(id_usina, data_hora_observacao)]
     }
     if (nrow(dt1) == 0L && nrow(dt2) == 0L) {
         return(data.table(
