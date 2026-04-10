@@ -60,6 +60,7 @@ coloca_na_antes_inicio <- function(dt, dados_usina) {
 #'
 checa_valores_faltantes <- function(dt) {
     if (!is.data.table(dt)) dt <- as.data.table(dt)
+    if (nrow(dt) == 0L) return(dt)
 
     dt[valor == "NaN" | is.nan(valor) | valor == 999, valor := NA]
 
@@ -129,6 +130,32 @@ checa_valores_faltantes <- function(dt) {
 combina_dados_tempo <- function(dt1, dt2) {
     dt1 <- as.data.table(dt1)
     dt2 <- as.data.table(dt2)
+
+    select_out <- function(dt) {
+        dt[, .(id_fonte_observacao, id_usina, data_hora_observacao,
+            valor, status)][order(id_usina, data_hora_observacao)]
+    }
+    if (nrow(dt1) == 0L && nrow(dt2) == 0L) {
+        return(data.table(
+            id_fonte_observacao = character(),
+            id_usina = character(),
+            data_hora_observacao = as.POSIXct(character(), tz = "UTC"),
+            valor = numeric(),
+            status = integer()
+        ))
+    }
+    if (nrow(dt1) == 0L) {
+        dt2[, valor := as.numeric(valor)]
+        dt2[, status := as.integer(status)]
+        dt2[, id_fonte_observacao := "Consis"]
+        return(select_out(dt2))
+    }
+    if (nrow(dt2) == 0L) {
+        dt1[, valor := as.numeric(valor)]
+        dt1[, status := as.integer(status)]
+        dt1[, id_fonte_observacao := "Consis"]
+        return(select_out(dt1))
+    }
 
     dt1[, valor := as.numeric(valor)]
     dt2[, valor := as.numeric(valor)]
