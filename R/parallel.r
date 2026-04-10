@@ -134,3 +134,48 @@ validate_workers <- function(workers) {
     }
     invisible(NULL)
 }
+
+#' Divide Argumentos por Usina para Despacho Paralelo
+#'
+#' Particiona os data.tables contidos em `extra_args` por `id_usina`,
+#' gerando uma lista de argumentos por usina pronta para ser enviada a
+#' workers paralelos. Elementos que nao sao data.tables ou que nao possuem
+#' a coluna `id_usina` sao replicados inalterados para cada usina.
+#'
+#' @param extra_args lista nomeada de argumentos, como construida por
+#'   `predict_main` ou `train_main`
+#' @param v_usinas vetor de IDs de usinas a processar
+#'
+#' @return lista nomeada por `id_usina`, onde cada elemento e uma lista
+#'   com a mesma estrutura de `extra_args`, porem com data.tables filtrados
+#'   para a usina correspondente
+#'
+split_args_by_plant <- function(extra_args, v_usinas) {
+    is_splittable <- vapply(extra_args, function(x) {
+        is.data.table(x) && "id_usina" %in% names(x)
+    }, logical(1L))
+
+    splittable_names <- names(extra_args)[is_splittable]
+
+    splits <- lapply(splittable_names, function(nm) {
+        split(extra_args[[nm]], by = "id_usina", keep.by = TRUE)
+    })
+    names(splits) <- splittable_names
+
+    empties <- lapply(splittable_names, function(nm) {
+        extra_args[[nm]][0L]
+    })
+    names(empties) <- splittable_names
+
+    shared <- extra_args[!is_splittable]
+
+    out <- lapply(v_usinas, function(iu) {
+        per_plant <- lapply(splittable_names, function(nm) {
+            splits[[nm]][[iu]] %||% empties[[nm]]
+        })
+        names(per_plant) <- splittable_names
+        c(list(.iu = iu), per_plant, shared)
+    })
+    names(out) <- v_usinas
+    out
+}

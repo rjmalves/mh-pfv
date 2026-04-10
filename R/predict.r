@@ -250,14 +250,21 @@ organiza_resultados <- function(resultados, v_usinas) {
 
 run_plants <- function(v_usinas, fn, extra_args, parallel, metrics, lg) {
     if (parallel) {
+        per_plant_args <- split_args_by_plant(extra_args, v_usinas)
         batch_start <- proc.time()[["elapsed"]]
+        .fn <- fn
+        .plant_error <- plant_error
         results <- future.apply::future_lapply(
-            v_usinas, function(iu) {
+            per_plant_args, function(plant_args) {
+                iu <- plant_args$.iu
+                plant_args$.iu <- NULL
                 tryCatch(
-                    do.call(fn, c(list(iu), extra_args)),
-                    error = function(e) plant_error(iu, e)
+                    do.call(.fn, c(list(iu), plant_args)),
+                    error = function(e) .plant_error(iu, e)
                 )
-            }, future.seed = TRUE
+            },
+            future.seed = TRUE,
+            future.globals = list(.fn = .fn, .plant_error = .plant_error)
         )
         batch_elapsed <- proc.time()[["elapsed"]] - batch_start
         est_per_plant <- round(batch_elapsed / length(v_usinas), 2L)
