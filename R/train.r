@@ -1,85 +1,167 @@
-#' Funcao Principal de Treinamento dos Modelos para Consistencia dos Dados
+#' Carrega Estado de Retomada do Treinamento
 #'
-#' Executa o treinamento dos modelos para consistencia dos dados observados para um conjunto de usinas.
+#' Le o checkpoint de treinamento e identifica usinas ja completadas para
+#' permitir retomada do pipeline.
 #'
-#' @param args Lista de argumentos necessarios para o processamento. Os campos esperados sao:
-#' \itemize{
-#'   \item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-#'   \item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd",
-#'                             indicando o inicio do periodo de analise.
-#'   \item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
-#'   \item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia aplicado
-#'                                                          ao limite superior de geracao observada.
-#'   \item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as
-#'                            usinas disponiveis serao utilizadas.
-#'   \item \code{input}: caminho para a pasta onde estao localizados os dados de entrada
-#'                       (ex: dados de SCADA, modelos NWP, cortes, etc.).
-#'   \item \code{mode}: string que define o modo de operacao. Deve ser "train" para rodar o treinamento dos modelos.
-#'   \item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados
-#'                                             por virgula, em ordem de prioridade.
-#' }
+#' @param args lista de argumentos do pipeline (deve conter `artifact` e
+#'   `ids_usinas`)
+#' @param provenance environment de proveniencia criado por
+#'   [create_provenance()]
 #'
-#' @return Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente
-#'         em arquivos na pasta de saida especificada.
+#' @return lista com `provenance` (atualizado) e `completed` (character vector
+#'   de IDs de usinas ja processadas)
 #'
-#' @details
-#' A funcao executa o treinamento do modelo para cada usina:
-#' \enumerate{
-#'   \item Leitura da configuracao e dados de entrada (usinas, geracao observada, modelos NWP, cortes, etc).
-#'   \item Aplicacao da funcao \code{ajustar_usina} para cada usina de forma individual.
-#'   \item Retorno dos modelos ajustados.
-#' }
-#'
-#' @seealso ajustar_usina, ajusta_regressao_ger_irrad
+#' @seealso [read_checkpoint()], [get_pending_plants()]
 #'
 #' @export
+load_train_resume_state <- function(args, provenance) {
+    checkpoint <- read_checkpoint(args$artifact, args)
+    if (is.null(checkpoint)) {
+        return(list(provenance = provenance, completed = character(0L)))
+    }
+    completed_plants <- setdiff(
+        args$ids_usinas, get_pending_plants(checkpoint)
+    )
+    for (iu in completed_plants) {
+        update_plant_status(provenance, iu, "completed")
+    }
+    list(provenance = provenance, completed = completed_plants)
+}
 
+#' Funcao Principal de Treinamento dos Modelos para Consistencia dos Dados
+#'
+#' Executa o treinamento dos modelos para consistencia dos dados observados
+#' para um conjunto de usinas.
+#'
+#' @param args lista de argumentos necessarios para o processamento. Os campos
+#'   esperados sao:
+#'   - `artifact`: caminho onde artefatos adicionais serao armazenados.
+#'   - `data_inicio`: string com a data inicial no formato `"yyyy-mm-dd"`.
+#'   - `data_fim`: string com a data final no formato `"yyyy-mm-dd"`.
+#'   - `fator_tolerancia_limite_superior_geracao`: fator de tolerancia.
+#'   - `ids_usinas`: vetor com os IDs das usinas a serem processadas.
+#'   - `input`: caminho para os dados de entrada.
+#'   - `mode`: deve ser `"train"`.
+#'   - `ordem_prioridade_modelosNWP`: modelos NWP em ordem de prioridade.
+#' @param strategy string escalar identificando o tipo de modelo a ajustar.
+#'   Por padrao `"linear_regression"`.
+#' @param parallel logico, se `TRUE` usa `future_lapply` para processar
+#'   usinas em paralelo. Padrao `FALSE`.
+#' @param resume logico, se `TRUE` busca um checkpoint valido e reprocessa
+#'   apenas as usinas pendentes. Padrao `FALSE`.
+#'
+#' @return Nenhum valor e retornado. Os resultados sao gravados em arquivos.
+#'
+#' @seealso [fit_model()], [fit_linear_regression()],
+#'   [setup_parallel_plan()], [write_checkpoint()], [read_checkpoint()]
+train_main <- function(args, strategy = "linear_regression",
+    parallel = FALSE, resume = FALSE) {
 
-train_main <- function(args) {
-    # Define a ordem de prioridade das fontes a partir do argumento
+    provenance <- create_provenance(args, "train", parallel)
+    metrics <- create_metrics(provenance$run_id, "train")
+    set_log_context(provenance$run_id, "train")
+    lg <- lgr::get_logger("mhpfv")
+    completed_plants <- character(0L)
+
+    if (resume) {
+        state <- load_train_resume_state(args, provenance)
+        provenance <- state$provenance
+        completed_plants <- state$completed
+    }
+
+    on.exit({
+        if (provenance$status == "running") {
+            finalize_provenance(provenance, "failed")
+        }
+        write_provenance(provenance, args$artifact)
+        finalize_metrics(metrics)
+        write_metrics(metrics, args$artifact)
+        report <- build_health_report(provenance, metrics)
+        write_health_report(report, args$artifact)
+        clear_log_context()
+    }, add = TRUE)
+
+    v_usinas <- setdiff(args$ids_usinas, completed_plants)
+
+    if (length(v_usinas) == 0L) {
+        finalize_provenance(provenance, "completed")
+        cleanup_checkpoint(args$artifact)
+        return(invisible(NULL))
+    }
+
     conn <- conectamock_pfv(args$input)
 
-    v_usinas <- args$ids_usinas
-    dt_usinas <- get_usinas(conn, id_usina = v_usinas)
+    dt_usinas <- get_usinas(conn, id_usina = args$ids_usinas)
 
     dataset <- get_dataset(args, conn)
 
-    # Realiza o treinamento para cada usina
-    models <- lapply(v_usinas, ajustar_usina,
+    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dataset$irrad_prev)
+    dt_irrad_prev_filt <- adicionar_passo_previsao(dt_irrad_prev_filt)
+
+    extra_args <- list(
         dt_usinas = dt_usinas,
         dt_ger_obs = dataset$ger_obs,
-        dt_irrad_prev = dataset$irrad_prev,
+        dt_irrad_prev_filt = dt_irrad_prev_filt,
         dt_corte_obs = dataset$corte,
         fonte = args$ordem_prioridade_fontes,
-        fator_tolerancia = args$fator_tolerancia_limite_superior_geracao
+        fator_tolerancia = args$fator_tolerancia_limite_superior_geracao,
+        strategy = strategy,
+        config = args
     )
 
-    # Exporta o artefato treinado para cada usina
-    lapply(seq_along(v_usinas), function(i) {
-        iu <- v_usinas[i]
-        model <- models[[i]]
+    if (parallel) {
+        old_plan <- setup_parallel_plan()
+        on.exit(reset_parallel_plan(old_plan), add = TRUE)
+    }
 
-        write_model_artifact(model, iu, args$artifact)
-    })
+    models <- run_plants(
+        v_usinas, ajustar_usina, extra_args,
+        parallel = parallel, metrics = metrics, lg = lg
+    )
+
+    n_failed <- tally_train_results(
+        models, v_usinas, provenance, metrics, lg, resume, args$artifact
+    )
+
+    final_status <- if (n_failed == 0L) "completed" else "failed"
+    finalize_provenance(provenance, final_status)
+    if (resume) cleanup_checkpoint(args$artifact)
 }
 
-ajustar_usina <- function(
-    iu, dt_usinas, dt_ger_obs,
-    dt_irrad_prev, dt_corte_obs, fonte, fator_tolerancia
-) {
-    # Filtra os dados referentes a usina atual
+tally_train_results <- function(models, v_usinas, provenance, metrics, lg,
+    resume, artifact_dir) {
+    n_failed <- 0L
+    n_total <- length(v_usinas)
+    for (i in seq_along(v_usinas)) {
+        iu <- v_usinas[i]
+        if (is_plant_error(models[[i]])) {
+            update_plant_status(provenance, iu, "failed")
+            n_failed <- n_failed + 1L
+            lg$error("Usina %s falhou: %s", iu, models[[i]]$error)
+        } else {
+            write_model_artifact(models[[i]], iu, artifact_dir)
+            update_plant_status(provenance, iu, "completed")
+            if ("metadata" %in% names(models[[i]])) {
+                record_model_quality(metrics, iu, models[[i]]$metadata)
+            }
+        }
+        if (resume) write_checkpoint(provenance, artifact_dir)
+        lg$info("Usina %s processada (%d/%d)", iu, i, n_total)
+    }
+    n_failed
+}
+
+ajustar_usina <- function(iu, dt_usinas, dt_ger_obs, dt_irrad_prev_filt,
+    dt_corte_obs, fonte, fator_tolerancia,
+    strategy = "linear_regression", config = list(), ...) {
     dad_usi <- dt_usinas[id_usina == iu]
     ger_usi <- dt_ger_obs[id_usina == iu]
     corte_obs <- dt_corte_obs[id_usina == iu]
     potencia_instalada <- dad_usi$capacidade_instalada_MW
 
-    # Associa os dados NWP a usina e adiciona o passo de previsao
-    dt_irrad_prev_filt <- associa_nwp_usina(dt_usinas, dt_irrad_prev)
-    dt_irrad_prev_filt_n <- adicionar_passo_previsao(dt_irrad_prev_filt)
-    irrad_prev <- dt_irrad_prev_filt_n[id_usina == iu & passo_prev == "D+0"]
+    irrad_prev <- dt_irrad_prev_filt[id_usina == iu & passo_prev == "D+0"]
     irrad_prev <- interpolar_30min(irrad_prev)
 
-    # Consistencia da geracao observada com base nos limites definidos
     geracao_usina_selec <- consiste_geracao_unit(
         dados_usina = dad_usi,
         geracao_usina = ger_usi,
@@ -92,7 +174,6 @@ ajustar_usina <- function(
     irrad_prev[valor == 999, valor := NA]
     geracao_usina_bruta <- copy(geracao_usina_selec)
 
-    # ajusta modelo de regressao linear
     if (!is.null(corte_obs)) {
         geracao_usina_selec <- aplica_cortes_em_geracao(
             dt_geracao_usina = copy(geracao_usina_selec),
@@ -100,63 +181,14 @@ ajustar_usina <- function(
         )
     }
 
-    # ajusta modelo de regressao linear
-    regressoes <- ajusta_regressao_ger_irrad(
+    model <- fit_model(strategy,
         dty = copy(geracao_usina_selec),
         dtx = copy(irrad_prev),
         dty_bruta = geracao_usina_bruta
     )
 
-
-    return(
-        list(
-            id_usina = iu,
-            parametros = regressoes
-        )
-    )
+    build_model_artifact(iu, model, config)
 }
-
-
-#' Ajusta Regressao Linear entre Geracao Observada e Irradiacao Prevista
-#'
-#' Estima coeficientes de regressao linear para cada horario de meia em meia hora,
-#' usando dados de geracao observada e irradiacao prevista.
-#'
-#' @param dty data.table com dados de geracao observada. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_observacao}: data e hora da geracao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da geracao.
-#'   }
-#' @param dtx data.table com dados de irradiacao prevista. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_previsao}: data e hora da irradiacao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da irradiacao.
-#'   }
-#' @param dty_bruta data.table com dados de geracao observada bruta. Deve conter as colunas:
-#'   \itemize{
-#'     \item \code{id_usina}: identificador da usina.
-#'     \item \code{data_hora_observacao}: data e hora da geracao (classe POSIXct).
-#'     \item \code{valor}: valor numerico da geracao.
-#'   }
-#'
-#' @return Um data.frame com os coeficientes de regressao por horario, com:
-#'   \itemize{
-#'     \item \code{a}: coeficiente angular da regressao (inclinacao da reta).
-#'     \item \code{b}: coeficiente linear, sempre zero neste ajuste.
-#'     \item Nomes das linhas indicando o horario no formato "HH:MM".
-#'   }
-#'
-#' @details
-#' A funcao percorre os horarios do dia entre 05:00 e 18:30 com passos de 30 minutos.
-#' Para cada horario, filtra os dados de geracao e irradiacao correspondentes e realiza um
-#' ajuste linear sem intercepto (\code{lm(y ~ x + 0)}). Apenas pares com mais de 5 observacoes validas
-#' sao considerados. Quando ha dados insuficientes, o coeficiente angular e definido como zero.
-#'
-#' Valores iguais a zero sao tratados como ausentes (NA) antes do ajuste.
-#'
-#' @seealso substitui_por_estimativas
 
 ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
     dty[valor == 0, valor := NA]
@@ -165,8 +197,8 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
 
     horas_meia_hora <- seq(5.0, 18.5, by = 0.5)
 
-    angulares <- c() # a (inclinação)
-    lineares <- c() # b (sempre zero)
+    angulares <- c()
+    lineares <- c()
     nomes_linhas <- c()
 
     for (h in horas_meia_hora) {
@@ -179,33 +211,25 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
         dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
                 minute(data_hora_previsao) == minuto]
 
-        # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
         dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
-
-        # Mantém somente as datas de dty_f que existam em dtx_fn
         dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
-
 
         dados_validos <- complete.cases(dty_f$valor, dtx_f$valor)
         if (sum(dados_validos) < 10) {
             dty_f <- dty_bruta[hour(data_hora_observacao) == hora_inteira &
                     minute(data_hora_observacao) == minuto]
-            # Calcular o quantil de 60% da coluna 'valor'
             q60 <- quantile(dty_f$valor, probs = 0.7, na.rm = TRUE)
-
-            # Substituir por NA os valores menores que o quantil de 60%
             dty_f[valor < q60, valor := NA]
 
             dtx_fn <- dtx[hour(data_hora_previsao) == hora_inteira &
                     minute(data_hora_previsao) == minuto]
 
-            # Faz o filtro: mantém somente valores em dtx_f com datas e usinas presentes em dty_f
             dtx_f <- dtx_fn[dty_f, on = .(id_usina, data_hora_previsao = data_hora_observacao), nomatch = 0]
-
-            # Mantém somente as datas de dty_f que existam em dtx_fn
             dty_f <- dty_f[dtx_f, on = .(id_usina, data_hora_observacao = data_hora_previsao), nomatch = 0]
         }
 
+
+        hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
 
         if (nrow(dty_f) > 5 && nrow(dty_f) == nrow(dtx_f)) {
             dados_validos <- complete.cases(dty_f$valor, dtx_f$valor)
@@ -219,18 +243,18 @@ ajusta_regressao_ger_irrad <- function(dty, dtx, dty_bruta) {
 
                 angulares <- c(angulares, a)
                 lineares <- c(lineares, b)
-                hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
                 nomes_linhas <- c(nomes_linhas, hora_txt)
             } else {
                 angulares <- c(angulares, NA)
                 lineares <- c(lineares, NA)
-                hora_txt <- sprintf("%02d:%02d", hora_inteira, minuto)
                 nomes_linhas <- c(nomes_linhas, hora_txt)
             }
+        } else {
+            angulares <- c(angulares, NA)
+            lineares <- c(lineares, NA)
+            nomes_linhas <- c(nomes_linhas, hora_txt)
         }
     }
 
-    reg_par <- data.frame(a = angulares, b = lineares, row.names = nomes_linhas)
-
-    return(reg_par)
+    data.frame(a = angulares, b = lineares, row.names = nomes_linhas)
 }

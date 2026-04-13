@@ -15,3 +15,7 @@
 ^ARCHITECTURE\.md$
 ^CONTRIBUTING\.md$
 ^CHANGELOG\.md$
+^plans$
+^codecov\.yml$
+^\.claude$
+^dev\.r$

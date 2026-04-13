@@ -10,5 +10,5 @@ get_pkg_logger()
 objeto \code{Logger} como retornado por \code{lgr::get_logger()}
 }
 \description{
-Funcao auxiliar para acesso do logger do pacote
+Getter Do Objeto Logger
 }
