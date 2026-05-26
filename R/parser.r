@@ -26,7 +26,7 @@ inner_parser_generic_args <- function(parser) {
     )
     parser$add_argument("--datadir",
         type = "character",
-        default = "./data",
+        default = "./tests/testthat/data",
         help = help_msg
     )
     parser$add_argument("--parallel",

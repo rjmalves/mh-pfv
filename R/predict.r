@@ -153,7 +153,7 @@ get_dataset <- function(args, conn, mode = args$mode) {
         id_fonte_observacao = args$ordem_prioridade_fontes, data_hora_observacao = janela
     )
     irrad_prev <- get_irradiancia_prevista(conn,
-        id_usina = args$ids_usinas,
+        
         id_modelo_nwp = args$ordem_prioridade_modelosNWP, data_hora_previsao = janela
     )
 

@@ -83,7 +83,7 @@ read_env_integer <- function(name, default = NULL) {
 #'     [setup_parallel_plan()]
 #'
 #' @export
-cli_main <- function(datadir = "./data", parallel = FALSE, resume = FALSE,
+cli_main <- function(datadir = "./tests/testthat/data", parallel = FALSE, resume = FALSE,
     workers = NULL) {
 
     lg <- get_pkg_logger()
