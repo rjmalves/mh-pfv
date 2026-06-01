@@ -163,10 +163,30 @@ get_dataset <- function(args, conn, mode = args$mode) {
         irrad_prev = irrad_prev
     )
 
+    empty_mhg <- function() {
+    data.table(
+        id_fonte_observacao  = character(),
+        id_usina             = character(),
+        data_hora_observacao = as.POSIXct(character()),
+        valor                = numeric(),
+        status               = integer()
+    )
+    }
+
     if (mode == "predict") {
-        result$mhg <- get_melhor_historico_geracao(conn, id_usina = args$ids_usinas)
-        result$mhg_sem_cortes <- get_melhor_historico_geracao_sem_cortes(
-            conn, id_usina = args$ids_usinas
+        result$mhg <- tryCatch(
+        get_melhor_historico_geracao(conn, id_usina = args$ids_usinas),
+        error = function(e) {
+            warning("Falha ao buscar MHG: ", conditionMessage(e))
+            empty_mhg()
+        }
+        )
+        result$mhg_sem_cortes <- tryCatch(
+        get_melhor_historico_geracao_sem_cortes(conn, id_usina = args$ids_usinas),
+        error = function(e) {
+            warning("Falha ao buscar MHG sem cortes: ", conditionMessage(e))
+            empty_mhg()
+        }
         )
     }
 
