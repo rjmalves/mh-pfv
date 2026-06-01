@@ -1,13 +1,15 @@
 {
-    "mode": "train",
+    "mode": "predict",
     "input": ".",
     "output": "./out",
     "artifact": "./artifact",
     "janela": [
-        "2025-01-01",
+        "2025-10-01",
         "2025-12-31"
     ],
-    "ids_usinas": [],
+    "ids_usinas": [
+        "BAUFI1"
+    ],
     "ordem_prioridade_fontes": [
         "PI",
         "CCEE",
