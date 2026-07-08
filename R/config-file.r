@@ -9,10 +9,66 @@
 parse_config <- function(config, conn) {
     valida_nomes_config(config)
     valida_tipos_config(config)
+    config <- resolve_config_paths(config, attr(conn, "uri"))
     config$janela <- parsearg_janela(unlist(config$janela))
     config$ids_usinas <- parsearg_ids_usinas(config$ids_usinas, conn)
     config$ordem_prioridade_fontes <- unlist(config$ordem_prioridade_fontes)
     return(config)
+}
+
+# RESOLUCAO DE CAMINHOS ---------------------------------------------------------------------------
+
+#' Resolve Caminhos Relativos no Config
+#'
+#' Normaliza `input`, `output` e `artifact` em relacao ao diretorio do config.
+#' Caminhos absolutos sao mantidos; caminhos relativos sao resolvidos a partir
+#' de `base_dir`. Diretorios de saida (`output`, `artifact`) sao criados se nao
+#' existirem. Erro se `input` nao existir.
+#'
+#' @param config lista de configuracoes
+#' @param base_dir diretorio base para resolver caminhos relativos (tipicamente
+#'     o diretorio contendo o config.json)
+#'
+#' @return `config` com caminhos normalizados
+resolve_config_paths <- function(config, base_dir) {
+    lg <- lgr::get_logger("mhpfv")
+    base_dir <- normalizePath(base_dir, mustWork = TRUE)
+    path_keys <- c("input", "output", "artifact")
+
+    for (key in path_keys) {
+        raw_path <- config[[key]]
+        if (is_relative_path(raw_path)) {
+            config[[key]] <- normalizePath(
+                file.path(base_dir, raw_path), mustWork = FALSE
+            )
+            lg$info(
+                "Caminho relativo '%s' em '%s' resolvido para '%s'",
+                raw_path, key, config[[key]]
+            )
+        }
+    }
+
+    if (!dir.exists(config$input)) {
+        stop(sprintf(
+            "Diretorio de entrada nao encontrado: '%s'", config$input
+        ))
+    }
+
+    for (key in c("output", "artifact")) {
+        if (!dir.exists(config[[key]])) {
+            dir.create(config[[key]], recursive = TRUE)
+            lg$info("Diretorio '%s' criado: %s", key, config[[key]])
+        }
+        config[[key]] <- normalizePath(config[[key]])
+    }
+
+    config
+}
+
+is_relative_path <- function(path) {
+    !startsWith(path, "/") &&
+        !startsWith(path, "s3://") &&
+        !startsWith(path, "~")
 }
 
 # VALIDACOES DE CONFIG -----------------------------------------------------------------------------
@@ -58,7 +114,12 @@ valida_tipos_config <- function(config) {
     tipos <- config_types()
 
     config <- config[names(tipos)]
-    valid <- mapply(valid_tipos, config, tipos, SIMPLIFY = TRUE)
+    valid <- vapply(
+        seq_along(config),
+        function(i) valid_tipos(config[[i]], tipos[[i]]),
+        logical(1L)
+    )
+    names(valid) <- names(config)
     all_valid <- all(valid)
 
     if (!all_valid) {
@@ -93,7 +154,7 @@ config_types <- function() {
 #' @param tipos tipos esperados de `l`, escalar ou lista
 #'
 #' @return booleano indicando se validacao encerrou com sucesso ou nao
-valid_tipos <- function(l, tipos) do.call(all, list(sapply(l, valid_tipos_unit, tipos = tipos)))
+valid_tipos <- function(l, tipos) all(vapply(l, valid_tipos_unit, logical(1L), tipos = tipos))
 
 #' Auxiliar De `valid_tipos`
 #'

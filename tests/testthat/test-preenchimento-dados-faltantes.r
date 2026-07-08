@@ -29,14 +29,14 @@ test_that("preenche_geracao_unit", {
     cortes <- NULL
     limite_dados <- c(0, 40)
 
-    model <- list()
-    model[[1]] <- "U1"
-    model[[2]] <- data.frame(
-        a = rep(1, 2),
-        b = rep(0, 2),
-        row.names = c("06:00", "06:30")
+    model <- structure(
+        list(parametros = data.frame(
+            a = rep(1, 2),
+            b = rep(0, 2),
+            row.names = c("06:00", "06:30")
+        )),
+        class = "linear_regression_model"
     )
-
 
     resultado <- preenche_geracao_unit(
         geracao_usina = copy(geracao_usina),

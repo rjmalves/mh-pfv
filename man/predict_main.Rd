@@ -4,46 +4,40 @@
 \alias{predict_main}
 \title{Funcao Principal de Consolidacao dos dados}
 \usage{
-predict_main(args)
+predict_main(args, parallel = FALSE, resume = FALSE)
 }
 \arguments{
-\item{args}{Lista de argumentos necessarios para o processamento. Os campos esperados sao:
+\item{args}{lista de argumentos necessarios para o processamento. Os campos
+esperados sao:
 \itemize{
 \item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-\item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd",
-indicando o inicio do periodo de analise.
-\item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
-\item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia
-aplicado ao limite superior de geracao observada.
-\item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as usinas
-disponiveis serao utilizadas.
-\item \code{input}: caminho para a pasta onde estao localizados os dados de entrada
-(ex: dados de SCADA, modelos NWP, cortes, etc.).
-\item \code{mode}: string que define o modo de operacao. Deve ser "predict" para rodar o fluxo de consistencia.
-\item \code{ordem_prioridade_fontes}: string com os nomes das fontes de dados separados por virgula,
-indicando a ordem de prioridade para uso dos dados historicos.
-\item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados por virgula,
-em ordem de prioridade.
-\item \code{output}: caminho para a pasta onde os arquivos de saida serao escritos.
+\item \code{data_inicio}: string com a data inicial no formato \code{"yyyy-mm-dd"}.
+\item \code{data_fim}: string com a data final no formato \code{"yyyy-mm-dd"}.
+\item \code{fator_tolerancia_limite_superior_geracao}: fator de tolerancia.
+\item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas.
+\item \code{input}: caminho para os dados de entrada.
+\item \code{mode}: deve ser \code{"predict"}.
+\item \code{ordem_prioridade_fontes}: fontes em ordem de prioridade.
+\item \code{ordem_prioridade_modelosNWP}: modelos NWP em ordem de prioridade.
+\item \code{output}: caminho para a pasta de saida.
 }}
+
+\item{parallel}{logico, se \code{TRUE} usa \code{future_lapply} para processar
+usinas em paralelo. Padrao \code{FALSE}.}
+
+\item{resume}{logico, se \code{TRUE} busca um checkpoint valido e reprocessa
+apenas as usinas pendentes. Padrao \code{FALSE}.}
 }
 \value{
-Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente em arquivos
-na pasta de saida especificada.
+Nenhum valor e retornado. Os resultados sao gravados em arquivos.
 }
 \description{
-Executa o processamento completo de consistencia dos dados observados para um conjunto de usinas,
-considerando diferentes fontes e modelos em ordem de prioridade.
-}
-\details{
-A funcao executa o fluxo completo para cada usina:
-\enumerate{
-\item Leitura da configuracao e dados de entrada (usinas, geracao observada, modelos NWP, cortes, etc).
-\item Aplicacao da funcao \code{processar_usina} para cada usina de forma individual.
-\item Organizacao dos resultados com e sem consideracao de cortes.
-\item Escrita dos melhores historicos de geracao observada nos formatos de saida esperados.
-}
+Executa o processamento completo de consistencia dos dados observados
+para um conjunto de usinas, considerando diferentes fontes e modelos
+em ordem de prioridade.
 }
 \seealso{
-processar_usina, get_dados_historicos, organiza_resultados, write_melhor_historico_geracao
+\code{organiza_resultados()}, \code{\link[=write_melhor_historico_geracao]{write_melhor_historico_geracao()}},
+\code{\link[=setup_parallel_plan]{setup_parallel_plan()}},
+\code{\link[=write_checkpoint]{write_checkpoint()}}, \code{\link[=read_checkpoint]{read_checkpoint()}}, \code{\link[=write_plant_result]{write_plant_result()}}
 }

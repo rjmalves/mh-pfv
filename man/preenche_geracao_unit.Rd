@@ -29,7 +29,7 @@ preenche_geracao_unit(
 \item{limite_dados}{Vetor numerico de comprimento 2 com os limites inferior e superior permitidos
 para valores de geracao.}
 
-\item{model}{Lista contendo os modelos de regressao linear por horario.}
+\item{model}{objeto modelo ajustado com classe S3 (e.g. \code{"linear_regression_model"})}
 }
 \value{
 Um data.table com a serie de geracao completa, com valores preenchidos, cortes aplicados,

@@ -26,8 +26,23 @@ inner_parser_generic_args <- function(parser) {
     )
     parser$add_argument("--datadir",
         type = "character",
-        default = "./data",
+        default = "./tests/testthat/data",
         help = help_msg
+    )
+    parser$add_argument("--parallel",
+        action = "store_true",
+        default = FALSE,
+        help = "Habilita processamento paralelo de usinas"
+    )
+    parser$add_argument("--resume",
+        action = "store_true",
+        default = FALSE,
+        help = "Habilita retomada do pipeline a partir do ultimo checkpoint"
+    )
+    parser$add_argument("--workers",
+        type = "integer",
+        default = NULL,
+        help = "Numero de workers paralelos (padrao: auto-detect via availableCores() - 1)"
     )
 
     return(parser)

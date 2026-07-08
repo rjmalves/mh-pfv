@@ -9,7 +9,7 @@ write_melhor_historico_geracao(dt, output_dir = ".")
 \arguments{
 \item{dt}{\code{data.table} com os dados a serem salvos}
 
-\item{output_dir}{diretorio de saida onde sera salvo o arquivo CSV}
+\item{output_dir}{diretorio de saida onde sera salvo o arquivo Parquet}
 }
 \value{
 vazio, apenas escreve arquivo

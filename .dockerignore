@@ -22,6 +22,16 @@ testthat/
 .github/
 DOC-DIRECTIVES.md
 
+# Implementation plans and CI/AI config (not needed in image)
+plans/
+.claude/
+
+# Benchmark scripts (not needed in production image)
+inst/benchmarks/
+
+# R check output directory
+mhpfv.Rcheck/
+
 # Output directories (will be mounted)
 out/
 artifact/

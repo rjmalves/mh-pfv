@@ -4,41 +4,44 @@
 \alias{train_main}
 \title{Funcao Principal de Treinamento dos Modelos para Consistencia dos Dados}
 \usage{
-train_main(args)
+train_main(
+  args,
+  strategy = "linear_regression",
+  parallel = FALSE,
+  resume = FALSE
+)
 }
 \arguments{
-\item{args}{Lista de argumentos necessarios para o processamento. Os campos esperados sao:
+\item{args}{lista de argumentos necessarios para o processamento. Os campos
+esperados sao:
 \itemize{
 \item \code{artifact}: caminho onde artefatos adicionais serao armazenados.
-\item \code{data_inicio}: string com a data inicial no formato "yyyy-mm-dd",
-indicando o inicio do periodo de analise.
-\item \code{data_fim}: string com a data final no formato "yyyy-mm-dd", indicando o fim do periodo de analise.
-\item \code{fator_tolerancia_limite_superior_geracao}: valor numerico que define o fator de tolerancia aplicado
-ao limite superior de geracao observada.
-\item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas. Se \code{NULL}, todas as
-usinas disponiveis serao utilizadas.
-\item \code{input}: caminho para a pasta onde estao localizados os dados de entrada
-(ex: dados de SCADA, modelos NWP, cortes, etc.).
-\item \code{mode}: string que define o modo de operacao. Deve ser "train" para rodar o treinamento dos modelos.
-\item \code{ordem_prioridade_modelosNWP}: string com os nomes dos modelos NWP separados
-por virgula, em ordem de prioridade.
+\item \code{data_inicio}: string com a data inicial no formato \code{"yyyy-mm-dd"}.
+\item \code{data_fim}: string com a data final no formato \code{"yyyy-mm-dd"}.
+\item \code{fator_tolerancia_limite_superior_geracao}: fator de tolerancia.
+\item \code{ids_usinas}: vetor com os IDs das usinas a serem processadas.
+\item \code{input}: caminho para os dados de entrada.
+\item \code{mode}: deve ser \code{"train"}.
+\item \code{ordem_prioridade_modelosNWP}: modelos NWP em ordem de prioridade.
 }}
+
+\item{strategy}{string escalar identificando o tipo de modelo a ajustar.
+Por padrao \code{"linear_regression"}.}
+
+\item{parallel}{logico, se \code{TRUE} usa \code{future_lapply} para processar
+usinas em paralelo. Padrao \code{FALSE}.}
+
+\item{resume}{logico, se \code{TRUE} busca um checkpoint valido e reprocessa
+apenas as usinas pendentes. Padrao \code{FALSE}.}
 }
 \value{
-Nenhum valor e retornado pela funcao. Os resultados sao gravados diretamente
-em arquivos na pasta de saida especificada.
+Nenhum valor e retornado. Os resultados sao gravados em arquivos.
 }
 \description{
-Executa o treinamento dos modelos para consistencia dos dados observados para um conjunto de usinas.
-}
-\details{
-A funcao executa o treinamento do modelo para cada usina:
-\enumerate{
-\item Leitura da configuracao e dados de entrada (usinas, geracao observada, modelos NWP, cortes, etc).
-\item Aplicacao da funcao \code{ajustar_usina} para cada usina de forma individual.
-\item Retorno dos modelos ajustados.
-}
+Executa o treinamento dos modelos para consistencia dos dados observados
+para um conjunto de usinas.
 }
 \seealso{
-ajustar_usina, ajusta_regressao_ger_irrad
+\code{\link[=fit_model]{fit_model()}}, \code{\link[=fit_linear_regression]{fit_linear_regression()}},
+\code{\link[=setup_parallel_plan]{setup_parallel_plan()}}, \code{\link[=write_checkpoint]{write_checkpoint()}}, \code{\link[=read_checkpoint]{read_checkpoint()}}
 }

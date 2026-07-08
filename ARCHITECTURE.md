@@ -6,8 +6,10 @@ Este documento descreve a arquitetura do pacote `mhpfv`, incluindo o fluxo de da
 
 A aplicação implementa um pipeline de processamento de dados para consolidação de séries históricas de geração solar fotovoltaica. Opera em dois modos:
 
-1. **Train**: Calibra modelos de regressão linear para estimar geração a partir de irradiância
+1. **Train**: Calibra modelos (plugáveis via Strategy Pattern) para estimar geração a partir de irradiância
 2. **Predict**: Aplica consistência, preenche lacunas e gera o histórico consolidado
+
+Ambos os modos suportam execução paralela via `future`/`future.apply`, retomada a partir de checkpoints, e emitem artefatos de observabilidade (proveniência, métricas, relatórios de saúde).
 
 ## Diagrama de Fluxo
 
@@ -19,8 +21,8 @@ A aplicação implementa um pipeline de processamento de dados para consolidaç�
                                          │
                                          ▼
                               ┌─────────────────────┐
-                              │    main.r           │
-                              │  (entry point)      │
+                              │   main.r            │
+                              │  → cli_main()       │
                               └──────────┬──────────┘
                                          │
                          ┌───────────────┴────────────┐
@@ -33,24 +35,24 @@ A aplicação implementa um pipeline de processamento de dados para consolidaç�
                          │                            │
     ┌────────────────────┼────────────────────────────┼──────────────────┐
     │                    │                            │                  │
-    │                    ▼                            ▼                  │
-    │         ┌─────────────────────┐     ┌─────────────────────┐        │
+    │         ┌──────────┴──────────┐     ┌──────────┴──────────┐        │
     │         │  ajustar_usina()    │     │  processar_usina()  │        │
-    │         │  (por usina)        │     │  (por usina)        │        │
+    │         │  (por usina, ∥)     │     │  (por usina, ∥)     │       │
     │         └──────────┬──────────┘     └──────────┬──────────┘        │
     │                    │                           │                   │
     │     ┌──────────────┴──────────────┐            │                   │
     │     │                             │            │                   │
     │     ▼                             ▼            ▼                   │
     │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  │
-    │  │ consiste_        │  │ ajusta_regressao │  │ preenche_        │  │
-    │  │ geracao_unit()   │  │ _ger_irrad()     │  │ geracao_unit()   │  │
+    │  │ consiste_        │  │ fit_model()      │  │ predict_model()  │  │
+    │  │ geracao_unit()   │  │ (name dispatch)  │  │ (S3 dispatch)    │  │
     │  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘  │
     │           │                     │                     │            │
     │           │                     ▼                     │            │
     │           │           ┌──────────────────┐            │            │
-    │           │           │  modelo.rds      │◄───────────┤            │
-    │           │           │  (artefato)      │            │            │
+    │           │           │  {usina}.rds     │◄───────────┤            │
+    │           │           │  (artefato c/    │            │            │
+    │           │           │   metadados)     │            │            │
     │           │           └──────────────────┘            │            │
     │           │                                           │            │
     │           └──────────────────┬────────────────────────┘            │
@@ -69,25 +71,41 @@ A aplicação implementa um pipeline de processamento de dados para consolidaç�
     │                            │                                       │
     └────────────────────────────┼───────────────────────────────────────┘
                                  │
-                                 ▼
-                      ┌─────────────────────┐
-                      │  SAÍDA              │
-                      │  ├─ MH_geracao      │
-                      │  └─ MH_sem_cortes   │
-                      └─────────────────────┘
+                 ┌───────────────┼───────────────┐
+                 │               │               │
+                 ▼               ▼               ▼
+      ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+      │ SAÍDA        │ │ provenance-  │ │ metrics-     │
+      │ ├─ MH_ger    │ │ {run_id}     │ │ {run_id}     │
+      │ └─ MH_s/c    │ │ .json        │ │ .json        │
+      └──────────────┘ └──────────────┘ └──────────────┘
+                                               │
+                                               ▼
+                                      ┌──────────────┐
+                                      │ health-      │
+                                      │ {run_id}     │
+                                      │ .json        │
+                                      └──────────────┘
 ```
 
 ## Componentes Principais
 
-### 1. Entry Point (`main.r`)
+### 1. Entry Point (`cli.r` / `main.r`)
 
-Ponto de entrada da aplicação. Responsabilidades:
+`main.r` é o script de entrada que parseia argumentos CLI e delega para `cli_main()`.
 
-- Carregar bibliotecas necessárias
-- Parsear argumentos de linha de comando
-- Carregar configuração
+`cli_main()` é a função principal do pacote, responsável por:
+
+- Resolver parâmetros com precedência: argumento CLI > variável de ambiente > padrão
+- Carregar e parsear configuração
 - Despachar para modo `train` ou `predict`
-- Tratamento de erros de alto nível
+- Configurar workers paralelos quando solicitado
+
+| Parâmetro  | Flag CLI      | Variável de Ambiente | Padrão  |
+| ---------- | ------------- | -------------------- | ------- |
+| `parallel` | `--parallel`  | `MHPFV_PARALLEL`     | `FALSE` |
+| `resume`   | `--resume`    | `MHPFV_RESUME`       | `FALSE` |
+| `workers`  | `--workers N` | `MHPFV_WORKERS`      | auto    |
 
 ### 2. Configuração (`config-file.r`)
 
@@ -150,17 +168,21 @@ Saída: dados consistidos com fonte única ("Consis")
 # 2. N=8, limiar=0.1 (detecção de variação baixa)
 ```
 
-### 4. Treinamento (`train.r`)
+### 5. Model Strategy (`model-strategy.r`, `model-linear-regression.r`)
 
-Calibra modelos de regressão para cada usina.
+Sistema plugável de modelos via Strategy Pattern. `fit_model()` usa despacho por convenção
+de nome (`get0(paste0("fit_", strategy))`), enquanto `predict_model()` e `model_metadata()`
+usam despacho S3 genuíno via `UseMethod()`.
 
-| Função                         | Descrição                                  |
-| ------------------------------ | ------------------------------------------ |
-| `train_main()`                 | Orquestra treinamento para todas as usinas |
-| `ajustar_usina()`              | Processa uma usina individual              |
-| `ajusta_regressao_ger_irrad()` | Ajusta regressão por hora do dia           |
+#### Interface
 
-#### Modelo de Regressão
+| Função             | Despacho         | Responsabilidade                                 |
+| ------------------ | ---------------- | ------------------------------------------------ |
+| `fit_model()`      | nome (`get0`)    | Ajusta modelo a partir de geração e irradiância  |
+| `predict_model()`  | S3 (`UseMethod`) | Preenche lacunas usando modelo ajustado          |
+| `model_metadata()` | S3 (`UseMethod`) | Extrai metadados do modelo (slots, coeficientes) |
+
+#### Implementação: `linear_regression`
 
 Para cada hora `h` ∈ {05:00, 05:30, ..., 18:30}:
 
@@ -173,31 +195,60 @@ Geração_h = α_h × Irradiância_h
 - Valores zero tratados como NA antes do ajuste
 - Fallback para quantil 70% se dados insuficientes
 
-#### Artefato de Saída
+#### Como Adicionar um Novo Modelo
+
+1. Crie `R/model-{nome}.r`
+2. Implemente `fit_{nome}(dty, dtx, dty_bruta, ...)` — retorna objeto S3 com classe `"{nome}_model"`
+3. Implemente `predict_model.{nome}_model()` e `model_metadata.{nome}_model()`
+4. Passe `strategy = "{nome}"` para `train_main()`
+
+### 6. Treinamento (`train.r`)
+
+Calibra modelos para cada usina via `fit_model()` dispatch.
+
+| Função                      | Descrição                                  |
+| --------------------------- | ------------------------------------------ |
+| `train_main()`              | Orquestra treinamento para todas as usinas |
+| `ajustar_usina()`           | Processa uma usina individual              |
+| `load_train_resume_state()` | Carrega estado de retomada do checkpoint   |
+
+#### Artefato de Saída (enriquecido)
 
 ```r
 list(
     id_usina = "USINA_A",
-    parametros = data.frame(
-        a = c(0.12, 0.15, ...),  # coeficientes angulares
-        b = c(0, 0, ...),        # sempre zero
-        row.names = c("05:00", "05:30", ...)
+    model = structure(
+        list(parametros = data.frame(
+            a = c(0.12, 0.15, ...),
+            b = c(0, 0, ...),
+            row.names = c("05:00", "05:30", ...)
+        )),
+        class = "linear_regression_model"
+    ),
+    metadata = list(
+        type = "linear_regression",
+        n_slots = 28L,
+        n_valid_slots = 26L,
+        timestamp = "2025-01-01T12:00:00Z",
+        package_version = "0.1.1",
+        config_hash = "sha256:abc123..."
     )
 )
 ```
 
-### 5. Previsão/Consolidação (`predict.r`)
+### 7. Previsão/Consolidação (`predict.r`)
 
-Aplica consistência e gera histórico final.
+Aplica consistência e gera histórico final via `predict_model()` dispatch.
 
-| Função                  | Descrição                                   |
-| ----------------------- | ------------------------------------------- |
-| `predict_main()`        | Orquestra processamento de todas as usinas  |
-| `processar_usina()`     | Processa uma usina individual               |
-| `organiza_resultados()` | Agrupa resultados por tipo (com/sem cortes) |
-| `get_dataset()`         | Carrega todos os dados necessários          |
+| Função                        | Descrição                                   |
+| ----------------------------- | ------------------------------------------- |
+| `predict_main()`              | Orquestra processamento de todas as usinas  |
+| `processar_usina()`           | Processa uma usina individual               |
+| `load_predict_resume_state()` | Carrega estado de retomada do checkpoint    |
+| `organiza_resultados()`       | Agrupa resultados por tipo (com/sem cortes) |
+| `get_dataset()`               | Carrega todos os dados necessários          |
 
-### 6. Preenchimento de Lacunas (`preenchimento-dados-faltantes.r`)
+### 8. Preenchimento de Lacunas (`preenchimento-dados-faltantes.r`)
 
 Imputa valores faltantes usando modelo treinado.
 
@@ -217,7 +268,102 @@ Imputa valores faltantes usando modelo treinado.
     └── zera_horarios_extremos() → Limpa horários noturnos
 ```
 
-### 7. Utilitários (`utils.r`)
+### 9. Paralelismo (`parallel.r`)
+
+Gerencia o backend de execução paralela usando o pacote `future`.
+
+| Função                  | Descrição                                         |
+| ----------------------- | ------------------------------------------------- |
+| `setup_parallel_plan()` | Configura plano paralelo (multisession/multicore) |
+| `reset_parallel_plan()` | Restaura plano anterior                           |
+| `get_parallel_config()` | Consulta configuração ativa (workers, strategy)   |
+
+O número de workers é resolvido com a seguinte precedência:
+
+1. Argumento explícito `workers`
+2. Variável de ambiente `MHPFV_WORKERS`
+3. Auto-detect: `future::availableCores() - 1` (mínimo 1)
+
+### 10. Artefatos de Modelo (`artifact.r`)
+
+Constrói e valida artefatos de modelo enriquecidos com metadados de proveniência.
+
+| Função                        | Descrição                                              |
+| ----------------------------- | ------------------------------------------------------ |
+| `build_model_artifact()`      | Monta artefato completo (id + modelo + metadados)      |
+| `validate_artifact()`         | Valida estrutura (aceita formato antigo sem metadados) |
+| `normalize_config_for_hash()` | Normaliza config para hash determinístico              |
+
+### 11. Proveniência e Checkpoints (`provenance.r`)
+
+Rastreabilidade completa de cada execução do pipeline.
+
+| Função                  | Descrição                                        |
+| ----------------------- | ------------------------------------------------ |
+| `generate_run_id()`     | Gera ID único `{mode}-{YYYYMMDD}-{HHMMSS}-{hex}` |
+| `create_provenance()`   | Cria registro de proveniência inicial            |
+| `update_plant_status()` | Atualiza status de uma usina                     |
+| `finalize_provenance()` | Marca fim da execução com duração                |
+| `write_provenance()`    | Serializa proveniência como JSON                 |
+| `write_checkpoint()`    | Persiste estado para retomada                    |
+| `read_checkpoint()`     | Lê e valida checkpoint (verifica config hash)    |
+| `get_pending_plants()`  | Retorna usinas pendentes de um checkpoint        |
+| `write_plant_result()`  | Salva resultado intermediário de uma usina       |
+| `read_plant_result()`   | Carrega resultado intermediário                  |
+| `cleanup_checkpoint()`  | Remove checkpoints após conclusão                |
+
+#### Fluxo de Retomada
+
+```
+1. read_checkpoint() → valida config_hash
+2. get_pending_plants() → identifica usinas não completadas
+3. read_plant_result() → carrega resultados já processados
+4. Processa apenas usinas pendentes
+5. cleanup_checkpoint() → remove arquivos temporários
+```
+
+### 12. Métricas (`metrics.r`)
+
+Coleta de métricas por usina e agregados do pipeline.
+
+| Função                       | Descrição                                          |
+| ---------------------------- | -------------------------------------------------- |
+| `create_metrics()`           | Cria registro de métricas vazio                    |
+| `record_plant_timing()`      | Registra duração de processamento por usina        |
+| `record_plant_data_volume()` | Registra volume de dados e taxa de NA              |
+| `record_model_quality()`     | Registra qualidade do modelo (slots, coeficientes) |
+| `finalize_metrics()`         | Computa agregados (mean/max/min duração)           |
+| `write_metrics()`            | Serializa métricas como JSON                       |
+
+### 13. Relatório de Saúde (`health-report.r`)
+
+Classificação de saúde por usina e do pipeline.
+
+| Função                      | Descrição                                          |
+| --------------------------- | -------------------------------------------------- |
+| `build_health_report()`     | Agrega proveniência e métricas em relatório        |
+| `classify_plant_health()`   | Classifica usina: `healthy`/`warning`/`failed`     |
+| `classify_overall_health()` | Classifica pipeline: `healthy`/`degraded`/`failed` |
+| `write_health_report()`     | Serializa relatório como JSON                      |
+
+Critérios de classificação:
+
+- **failed**: proveniência com status != "completed"
+- **healthy**: caso contrário
+
+### 14. Logging (`logging.r`)
+
+Logging estruturado com contexto de execução.
+
+| Função                | Descrição                                         |
+| --------------------- | ------------------------------------------------- |
+| `get_pkg_logger()`    | Retorna o logger do pacote                        |
+| `set_log_context()`   | Injeta `run_id`, `mode`, `stage` em todos os logs |
+| `clear_log_context()` | Remove contexto estruturado                       |
+
+Suporta saída em formato JSON via `MHPFV_LOG_FORMAT=json`.
+
+### 16. Utilitários (`utils.r`)
 
 Funções auxiliares reutilizáveis.
 
@@ -229,15 +375,16 @@ Funções auxiliares reutilizáveis.
 | `adicionar_passo_previsao()` | Calcula D+0, D+1, etc.                      |
 | `interpolar_30min()`         | Interpola NWP de 1h para 30min              |
 
-### 8. Escrita (`escrita.r`)
+### 17. Escrita (`escrita.r`)
 
 Exportação de resultados.
 
-| Função                                        | Descrição             |
-| --------------------------------------------- | --------------------- |
-| `write_model_artifact()`                      | Salva modelo em RDS   |
-| `write_melhor_historico_geracao()`            | Exporta MH em Parquet |
-| `write_melhor_historico_geracao_sem_cortes()` | Exporta MH sem cortes |
+| Função                                        | Descrição                        |
+| --------------------------------------------- | -------------------------------- |
+| `write_melhor_historico_geracao()`            | Exporta MH em Parquet            |
+| `write_melhor_historico_geracao_sem_cortes()` | Exporta MH sem cortes em Parquet |
+
+> **Nota:** `write_model_artifact()` é fornecida pelo pacote externo `pfvIO`.
 
 ## Fluxo de Dados
 
@@ -268,10 +415,16 @@ pfvIO::conectamock_pfv()
 ```
 out/
 ├── melhor_historico_geracao.parquet
-└── melhor_historico_geracao_sem_cortes.parquet
+├── melhor_historico_geracao_sem_cortes.parquet
+├── provenance-{run_id}.json
+├── metrics-{run_id}.json
+└── health-{run_id}.json
 
 artifact/
-└── {id_usina}.rds  # Um por usina
+├── {id_usina}.rds  # Um por usina (com metadados)
+├── provenance-{run_id}.json
+├── metrics-{run_id}.json
+└── health-{run_id}.json
 ```
 
 ## Decisões de Design
@@ -284,45 +437,47 @@ artifact/
 
 ### Por que regressão linear sem intercepto?
 
-- Irradiância zero implica geração zero (físicamente correto)
+- Irradiância zero implica geração zero (fisicamente correto)
 - Modelo simples e interpretável
 - Robusto com poucos dados
 
+### Por que Strategy Pattern para modelos?
+
+- Permite trocar o tipo de modelo sem alterar o pipeline
+- Facilita testes com mocks (ex: `test_strategy` nos testes)
+- Suporta futura adição de modelos mais sofisticados (ML, ensemble)
+- Metadados do modelo são extraídos de forma uniforme
+
 ### Por que processar usinas individualmente?
 
-- Permite paralelização futura trivial (`parallel::mclapply`)
+- Permite paralelização via `future_lapply`
 - Isola falhas (uma usina com erro não afeta outras)
 - Facilita debugging e logging por usina
+- Suporta retomada granular (checkpoint por usina)
 
 ### Por que dois históricos (com/sem cortes)?
 
 - **Com cortes**: Reflete geração real observada
 - **Sem cortes**: Estima geração potencial
 
-## Extensibilidade
+### Por que checkpoints e retomada?
 
-### Adicionar nova fonte de dados
+- Pipelines com centenas de usinas podem levar horas
+- Falhas pontuais não devem exigir reprocessamento completo
+- Hash da configuração garante que checkpoints incompatíveis são rejeitados
+- Checkpoints são limpos após conclusão bem-sucedida
 
-1. Atualizar `ordem_prioridade_fontes` no config
-2. Garantir que dados sigam schema esperado
-3. Lógica de combinação já é genérica
+### Por que artefatos de observabilidade (proveniência, métricas, saúde)?
 
-### Adicionar novo modelo NWP
-
-1. Atualizar `ordem_prioridade_modelosNWP` no config
-2. Garantir que coordenadas e timestamps estão corretos
-3. Associação usina-NWP é automática
-
-### Modificar modelo de regressão
-
-1. Alterar `ajusta_regressao_ger_irrad()` em `train.r`
-2. Atualizar `substitui_por_estimativas()` em `preenchimento-dados-faltantes.r`
-3. Manter interface do artefato (lista com `id_usina` e `parametros`)
+- Rastreabilidade completa de cada execução para auditoria
+- Métricas por usina permitem identificar gargalos e anomalias
+- Relatórios de saúde fornecem visão rápida do estado do pipeline
+- Formato JSON facilita integração com ferramentas de monitoramento
 
 ## Dependências Externas
 
 ```
-pfvIO (>= 0.2.2)
+pfvIO (>= 0.3.1)
 ├── Leitura padronizada de dados
 ├── Validação de schemas
 └── Conexão mock para testes
@@ -334,9 +489,35 @@ data.table (>= 1.17.0)
 lubridate (>= 1.9.4)
 └── Manipulação de datas/horas
 
-arrow (>= 22.0.0)
-└── Leitura/escrita Parquet
+future (>= 1.34.0)
+├── Backend de paralelismo
+└── Planos: multisession, multicore, sequential
+
+future.apply (>= 1.11.0)
+└── future_lapply para paralelização
+
+digest (>= 0.6.0)
+└── SHA-256 hash para config e proveniência
+
+jsonlite (>= 1.8.0)
+└── Serialização JSON (proveniência, métricas, saúde)
 
 lgr (>= 0.4.4)
-└── Logging estruturado
+├── Logging estruturado
+└── Contexto por execução (FilterInject)
+
+argparse (>= 2.2.5)
+└── Parsing de argumentos CLI
+
+arrow (>= 22.0.0) [Suggests]
+└── Leitura/escrita Parquet
 ```
+
+## CI/CD
+
+| Workflow        | Descrição                                   |
+| --------------- | ------------------------------------------- |
+| `R-CMD-check`   | Verificação completa do pacote R            |
+| `test-coverage` | Testes com relatório de cobertura (Codecov) |
+| `lint`          | lintr com complexidade ciclomática          |
+| `docker`        | Build e publicação da imagem Docker         |
